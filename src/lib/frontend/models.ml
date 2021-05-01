@@ -56,7 +56,8 @@ type t = {
   constants : ModelMap.t;
   functions : ModelMap.t;
   arrays : ModelMap.t;
-  objectives: (Expr.t * objective_value) Util.MI.t
+  objectives: (Expr.t * objective_value) Util.MI.t;
+  terms_values : (Shostak.Combine.r * string) Expr.Map.t
 }
 
 module Pp_smtlib_term = struct
@@ -436,9 +437,6 @@ module SmtlibCounterExample = struct
          | _ -> ()
       ) fprofs;
     !records
-
-  let output_arrays_counterexample fmt _arrays =
-    fprintf fmt "@ ; Arrays not yet supported@ "
 
   let output_objectives fmt objectives =
     (* TODO: we can decide to print objectives to stderr if
