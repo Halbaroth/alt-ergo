@@ -12,28 +12,26 @@
 (** TODO: use the newly available Sys.backend_type to simplify things ? *)
 
 module Default_Unix = struct
-
   open Unix
 
-  let cur_time () = (times()).tms_utime
+  let cur_time () = (times ()).tms_utime
 
   let set_timeout ~is_gui timelimit =
-    if Stdlib.(<>) timelimit 0. then
+    if Stdlib.( <> ) timelimit 0. then
       let itimer =
         if is_gui then Unix.ITIMER_REAL (* troubles with VIRTUAL *)
         else Unix.ITIMER_VIRTUAL
       in
-      ignore (Unix.setitimer itimer
-                { Unix.it_value = timelimit; Unix.it_interval = 0. })
+      ignore
+        (Unix.setitimer itimer
+           { Unix.it_value = timelimit; Unix.it_interval = 0. })
 
   let unset_timeout ~is_gui =
     let itimer =
       if is_gui then Unix.ITIMER_REAL (* troubles with VIRTUAL *)
       else Unix.ITIMER_VIRTUAL
     in
-    ignore (Unix.setitimer itimer
-              { Unix.it_value = 0.; Unix.it_interval = 0. })
-
+    ignore (Unix.setitimer itimer { Unix.it_value = 0.; Unix.it_interval = 0. })
 end
 
 include Default_Unix

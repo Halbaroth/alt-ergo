@@ -26,8 +26,10 @@
 (*                                                                            *)
 (******************************************************************************)
 
-module type S = sig
+module Util = Alt_ergo_lib_util
+module Structs = Alt_ergo_lib_structs
 
+module type S = sig
   (* the type of amalgamated AC semantic values *)
   type r
 
@@ -35,10 +37,10 @@ module type S = sig
   type t = r Sig.ac
 
   (* builds an embeded semantic value from an AC term *)
-  val make : Expr.t -> r * Expr.t list
+  val make : Structs.Expr.t -> r * Structs.Expr.t list
 
   (* tells whether the given term is AC*)
-  val is_mine_symb : Symbols.t -> Ty.t -> bool
+  val is_mine_symb : Structs.Sy.t -> Structs.Ty.t -> bool
 
   (* compares two AC semantic values *)
   val compare : t -> t -> int
@@ -50,7 +52,7 @@ module type S = sig
   val hash : t -> int
 
   (* returns the type infos of the given term *)
-  val type_info : t -> Ty.t
+  val type_info : t -> Structs.Ty.t
 
   (* prints the AC semantic value *)
   val print : Format.formatter -> t -> unit
@@ -63,14 +65,10 @@ module type S = sig
 
   (* add flatten the 2nd arg w.r.t HS.t, add it to the given list
      and compact the result *)
-  val add : Symbols.t -> r * int -> (r * int) list -> (r * int) list
-
-  val fully_interpreted : Symbols.t -> bool
-
+  val add : Structs.Sy.t -> r * int -> (r * int) list -> (r * int) list
+  val fully_interpreted : Structs.Sy.t -> bool
   val abstract_selectors : t -> (r * r) list -> r * (r * r) list
-
   val compact : (r * int) list -> (r * int) list
-
 end
 
 module Make (X : Sig.X) : S with type r = X.r

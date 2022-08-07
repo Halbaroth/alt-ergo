@@ -26,65 +26,70 @@
 (*                                                                            *)
 (******************************************************************************)
 
-module type S = sig
+module Util = Alt_ergo_lib_util
+module Structs = Alt_ergo_lib_structs
 
+module type S = sig
   module P : Polynome.T with type r = Shostak.Combine.r
   module MP : Map.S with type key = P.t
 
   type t = {
     ple0 : P.t;
     is_le : bool;
-    dep : (Numbers.Q.t * P.t * bool) Util.MI.t;
-    expl : Explanation.t;
-    age : Numbers.Z.t;
+    dep : (Util.Numbers.Q.t * P.t * bool) Util.Util.MI.t;
+    expl : Structs.Ex.t;
+    age : Util.Numbers.Z.t;
   }
 
   module MINEQS : sig
-    type mp = (t * Numbers.Q.t) MP.t
+    type mp = (t * Util.Numbers.Q.t) MP.t
+
     val empty : mp
     val is_empty : mp -> bool
     val younger : t -> t -> bool
     val insert : t -> mp -> mp
     val ineqs_of : mp -> t list
     val add_to_map : mp -> t list -> mp
-    val iter : (P.t -> (t * Numbers.Q.t) -> unit) -> mp -> unit
-    val fold : (P.t -> (t * Numbers.Q.t) -> 'a -> 'a) -> mp -> 'a -> 'a
+    val iter : (P.t -> t * Util.Numbers.Q.t -> unit) -> mp -> unit
+    val fold : (P.t -> t * Util.Numbers.Q.t -> 'a -> 'a) -> mp -> 'a -> 'a
   end
 
-  val current_age : unit -> Numbers.Z.t
+  val current_age : unit -> Util.Numbers.Z.t
   val incr_age : unit -> unit
 
   val create_ineq :
-    P.t -> P.t -> bool -> Expr.t option -> Explanation.t -> t
+    P.t -> P.t -> bool -> Structs.Expr.t option -> Structs.Ex.t -> t
 
   val print_inequation : Format.formatter -> t -> unit
 
   val fourierMotzkin :
-    ('are_eq -> 'acc -> P.r option -> t list -> 'acc) -> 'are_eq -> 'acc ->
-    MINEQS.mp -> 'acc
+    ('are_eq -> 'acc -> P.r option -> t list -> 'acc) ->
+    'are_eq ->
+    'acc ->
+    MINEQS.mp ->
+    'acc
 
   val fmSimplex :
-    ('are_eq -> 'acc -> P.r option -> t list -> 'acc) -> 'are_eq -> 'acc ->
-    MINEQS.mp -> 'acc
+    ('are_eq -> 'acc -> P.r option -> t list -> 'acc) ->
+    'are_eq ->
+    'acc ->
+    MINEQS.mp ->
+    'acc
 
   val available :
-    ('are_eq -> 'acc -> P.r option -> t list -> 'acc) -> 'are_eq -> 'acc ->
-    MINEQS.mp -> 'acc
-
+    ('are_eq -> 'acc -> P.r option -> t list -> 'acc) ->
+    'are_eq ->
+    'acc ->
+    MINEQS.mp ->
+    'acc
 end
 
-
-module FM
-    (P : Polynome.T with type r = Shostak.Combine.r)
-  : S with module P = P
+module FM (P : Polynome.T with type r = Shostak.Combine.r) : S with module P = P
 
 module type Container_SIG = sig
-  module Make
-      (P : Polynome.T with type r = Shostak.Combine.r)
-    : S with module P = P
+  module Make (P : Polynome.T with type r = Shostak.Combine.r) :
+    S with module P = P
 end
-
-
 
 val get_current : unit -> (module Container_SIG)
 (** returns the current activated 'inequalities reasoner'. The default value is

@@ -9,26 +9,23 @@
 (*                                                                            *)
 (******************************************************************************)
 
-module Make (Th : Theory.S) : sig
+module Util = Alt_ergo_lib_util
+module Structs = Alt_ergo_lib_structs
 
+module Make (Th : Theory.S) : sig
   type t
 
-  exception Bottom of Explanation.t * Expr.Set.t list * t
+  exception Bottom of Structs.Ex.t * Structs.Expr.Set.t list * t
 
   val empty : unit -> t
-
-  val is_true : t -> Expr.t -> (Explanation.t Lazy.t * int) option
-
-  val assume : bool -> t -> (Expr.gformula * Explanation.t) list -> t
-
-  val decide : t -> Expr.t -> int -> t
+  val is_true : t -> Structs.Expr.t -> (Structs.Ex.t Lazy.t * int) option
+  val assume : bool -> t -> (Structs.Expr.gformula * Structs.Ex.t) list -> t
+  val decide : t -> Structs.Expr.t -> int -> t
 
   (* forget decisions one by one *)
-  val forget_decision : t -> Expr.t -> int -> t
-
+  val forget_decision : t -> Structs.Expr.t -> int -> t
   val reset_decisions : t -> t
   (*val solve : t -> t*)
 
-  val get_decisions : t -> (int * Expr.t) list
-
+  val get_decisions : t -> (int * Structs.Expr.t) list
 end

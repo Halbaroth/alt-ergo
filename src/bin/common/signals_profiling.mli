@@ -26,11 +26,11 @@
 (*                                                                            *)
 (******************************************************************************)
 
+val get_timers : unit -> Alt_ergo_lib_util.Timers.t
 (** Return a timer *)
-val get_timers : unit -> AltErgoLib.Timers.t
 
-(** Initialise signals handler for system signals *)
 val init_signals : unit -> unit
+(** Initialise signals handler for system signals *)
 
-(** Initialise timers and profiling if profiling option is set *)
 val init_profiling : unit -> unit
+(** Initialise timers and profiling if profiling option is set *)

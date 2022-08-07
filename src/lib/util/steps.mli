@@ -34,18 +34,19 @@
 
 (** {1 Steps counters} *)
 
-type incr_kind =
-    Matching          (** Matching step increment *)
-  | Interval_Calculus (** Arith : Interval Calculus increment *)
-  | Fourier           (** Arith : FourierMotzkin step increment *)
-  | Omega             (** Arith : number of omega procedure on  Real and Int *)
-  | Uf                (** UF step increment *)
-  | Ac                (** AC step reasoning *)
-  | Th_assumed of int (** Increment the counter for each term assumed in the
-                          theories environment *)
 (** Define the type of increment *)
+type incr_kind =
+  | Matching  (** Matching step increment *)
+  | Interval_Calculus  (** Arith : Interval Calculus increment *)
+  | Fourier  (** Arith : FourierMotzkin step increment *)
+  | Omega  (** Arith : number of omega procedure on  Real and Int *)
+  | Uf  (** UF step increment *)
+  | Ac  (** AC step reasoning *)
+  | Th_assumed of int
+      (** Increment the counter for each term assumed in the
+                          theories environment *)
 
-val incr  : incr_kind -> unit
+val incr : incr_kind -> unit
 (** Increment the number of steps depending of the incr_kind
     @raise Errors.Error.Invalid_steps_count if the number of steps is inbound
     by the --steps-bound option.
@@ -60,11 +61,11 @@ val reset_steps : unit -> unit
 val get_steps : unit -> int
 (** Return the number of steps *)
 
-(** Return the number of case-split steps *)
 val cs_steps : unit -> int
+(** Return the number of case-split steps *)
 
-(** Increase the number of case-split steps *)
 val incr_cs_steps : unit -> unit
+(** Increase the number of case-split steps *)
 
 (** {2 Incrementality} *)
 

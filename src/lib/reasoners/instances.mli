@@ -26,50 +26,57 @@
 (*                                                                            *)
 (******************************************************************************)
 
+module Util = Alt_ergo_lib_util
+module Structs = Alt_ergo_lib_structs
+
 module type S = sig
   type t
   type tbox
-  type instances = (Expr.gformula * Explanation.t) list
+  type instances = (Structs.Expr.gformula * Structs.Ex.t) list
 
   val empty : t
-  val add_terms : t -> Expr.Set.t -> Expr.gformula -> t
-  val add_lemma : t -> Expr.gformula -> Explanation.t -> t
+  val add_terms : t -> Structs.Expr.Set.t -> Structs.Expr.gformula -> t
+  val add_lemma : t -> Structs.Expr.gformula -> Structs.Ex.t -> t
+
   val add_predicate :
     t ->
-    guard:Expr.t ->
+    guard:Structs.Expr.t ->
     name:string ->
-    Expr.gformula ->
-    Explanation.t ->
+    Structs.Expr.gformula ->
+    Structs.Ex.t ->
     t
 
   (* the first returned expr is the guard (incremental mode),
      the second one is the defn of the given predicate *)
-  val ground_pred_defn:
-    Expr.t -> t -> (Expr.t * Expr.t * Explanation.t) option
+  val ground_pred_defn :
+    Structs.Expr.t ->
+    t ->
+    (Structs.Expr.t * Structs.Expr.t * Structs.Ex.t) option
 
-  val pop : t -> guard:Expr.t -> t
+  val pop : t -> guard:Structs.Expr.t -> t
 
   val m_lemmas :
-    Util.matching_env ->
+    Util.Util.matching_env ->
     t ->
     tbox ->
-    (Expr.t -> Expr.t -> bool) ->
+    (Structs.Expr.t -> Structs.Expr.t -> bool) ->
     int ->
     instances * instances (* goal_directed, others *)
 
   val m_predicates :
-    Util.matching_env ->
+    Util.Util.matching_env ->
     t ->
     tbox ->
-    (Expr.t -> Expr.t -> bool) ->
+    (Structs.Expr.t -> Structs.Expr.t -> bool) ->
     int ->
     instances * instances (* goal_directed, others *)
 
   val register_max_term_depth : t -> int -> t
 
   val matching_terms_info :
-    t -> Matching_types.info Expr.Map.t * Expr.t list Expr.Map.t Symbols.Map.t
-
+    t ->
+    Matching_types.info Structs.Expr.Map.t
+    * Structs.Expr.t list Structs.Expr.Map.t Structs.Sy.Map.t
 end
 
 module Make (X : Theory.S) : S with type tbox = X.t

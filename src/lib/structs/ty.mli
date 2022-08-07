@@ -26,6 +26,8 @@
 (*                                                                            *)
 (******************************************************************************)
 
+module Util = Alt_ergo_lib_util
+
 (** Types
 
     This module defines the representation of types. *)
@@ -33,41 +35,31 @@
 (** {2 Definition} *)
 
 type t =
-  | Tint
-  (** Integer numbers *)
-  | Treal
-  (** Real numbers *)
-  | Tbool
-  (** Booleans *)
-  | Tunit
-  (** The unit type *)
-  | Tvar of tvar
-  (** Type variables *)
-  | Tbitv of int
-  (** Bitvectors of a given length *)
-  | Text of t list * Hstring.t
-  (** Abstract types applied to arguments. [Text (args, s)] is
+  | Tint  (** Integer numbers *)
+  | Treal  (** Real numbers *)
+  | Tbool  (** Booleans *)
+  | Tunit  (** The unit type *)
+  | Tvar of tvar  (** Type variables *)
+  | Tbitv of int  (** Bitvectors of a given length *)
+  | Text of t list * Util.Hstring.t
+      (** Abstract types applied to arguments. [Text (args, s)] is
       the application of the abstract type constructor [s] to
       arguments [args]. *)
   | Tfarray of t * t
-  (** Functional arrays. [TFarray (src,dst)] maps values of type [src]
+      (** Functional arrays. [TFarray (src,dst)] maps values of type [src]
       to values of type [dst]. *)
-  | Tsum of Hstring.t * Hstring.t list
-  (** Enumeration, with its name, and the list of its constructors. *)
-
-  | Tadt of Hstring.t * t list
-  (** Algebraic types applied to arguments. [Tadt (s, args)] is
+  | Tsum of Util.Hstring.t * Util.Hstring.t list
+      (** Enumeration, with its name, and the list of its constructors. *)
+  | Tadt of Util.Hstring.t * t list
+      (** Algebraic types applied to arguments. [Tadt (s, args)] is
       the application of the datatype constructor [s] to
       arguments [args]. *)
-
-  | Trecord of trecord
-  (** Record type. *)
+  | Trecord of trecord  (** Record type. *)
 
 and tvar = {
-  v : int;
-  (** Unique identifier *)
+  v : int;  (** Unique identifier *)
   mutable value : t option;
-  (** Pointer to the current value of the type variable. *)
+      (** Pointer to the current value of the type variable. *)
 }
 (** Type variables.
     The [value] field is mutated during unification,
@@ -75,34 +67,28 @@ and tvar = {
     type variables (see function {!val:fresh}). *)
 
 and trecord = {
-  mutable args : t list;
-  (** Arguments passed to the record constructor *)
-  name : Hstring.t;
-  (** Name of the record type *)
-  mutable lbs :  (Hstring.t * t) list;
-  (** List of fields of the record. Each field has a name,
+  mutable args : t list;  (** Arguments passed to the record constructor *)
+  name : Util.Hstring.t;  (** Name of the record type *)
+  mutable lbs : (Util.Hstring.t * t) list;
+      (** List of fields of the record. Each field has a name,
       and an associated type. *)
-  record_constr : Hstring.t;
-  (** record constructor. Useful is case it's a specialization of an
+  record_constr : Util.Hstring.t;
+      (** record constructor. Useful is case it's a specialization of an
       algeberaic datatype. Default value is "\{__[name]" *)
 }
 (** Record types. *)
 
-type adt_constr =
-  { constr : Hstring.t ;
-    (** constructor of an ADT type *)
-
-    destrs : (Hstring.t * t) list
-    (** the list of destructors associated with the constructor and
+type adt_constr = {
+  constr : Util.Hstring.t;  (** constructor of an ADT type *)
+  destrs : (Util.Hstring.t * t) list;
+      (** the list of destructors associated with the constructor and
         their respective types *)
-  }
+}
 
 (** bodies of types definitions. Currently, bodies are inlined in the
     type [t] for records and enumerations. But, this is not possible
     for recursive ADTs *)
-type type_body =
-  | Adt of adt_constr list
-  (** body of an algebraic datatype *)
+type type_body = Adt of adt_constr list  (** body of an algebraic datatype *)
 
 module Svty : Set.S with type elt = int
 (** Sets of type variables, indexed by their identifier. *)
@@ -110,12 +96,12 @@ module Svty : Set.S with type elt = int
 module Set : Set.S with type elt = t
 (** Sets of types *)
 
-
-val assoc_destrs : Hstring.t -> adt_constr list -> (Hstring.t * t) list
+val assoc_destrs :
+  Util.Hstring.t -> adt_constr list -> (Util.Hstring.t * t) list
 (** returns the list of destructors associated with the given consturctor.
     raises Not_found if the constructor is not in the given list *)
 
-val type_body : Hstring.t -> t list -> type_body
+val type_body : Util.Hstring.t -> t list -> type_body
 
 (** {2 Type inspection} *)
 
@@ -142,7 +128,6 @@ val print_full : Format.formatter -> t -> unit
 val vty_of : t -> Svty.t
 (** Returns the set of type variables that occur in a given type. *)
 
-
 (** {2 Building types} *)
 
 val tunit : t
@@ -167,9 +152,7 @@ val tsum : string -> string list -> t
     named [name], with constructors [enums]. *)
 
 val t_adt :
-  ?body: ((string * (string * t) list) list) option ->
-  string -> t list ->
-  t
+  ?body:(string * (string * t) list) list option -> string -> t list -> t
 (** Crearte and algebraic datatype. The body is a list of
     constructors, where each constructor is associated with the list of
     its destructors with their respective types. If [body] is none,
@@ -181,7 +164,6 @@ val trecord :
   ?record_constr:string -> t list -> string -> (string * t) list -> t
 (** Create a record type. [trecord args name lbs] creates a record
     type with name [name], arguments [args] and fields [lbs]. *)
-
 
 (** {2 Substitutions} *)
 
@@ -198,7 +180,7 @@ val compare_subst : subst -> subst -> int
 val equal_subst : subst -> subst -> bool
 (** Equality of substitutions. *)
 
-val print_subst: Format.formatter -> subst -> unit
+val print_subst : Format.formatter -> subst -> unit
 (** Print function for substitutions. *)
 
 val esubst : subst
@@ -211,7 +193,6 @@ val union_subst : subst -> subst -> subst
 (** [union_subst u v] applies [v] to [u], resulting in [u'].
     It then computes the union of [u'] and [v], prioritizing
     bindings from [u'] in case of conflict. *)
-
 
 (** {2 Unification/Matching} *)
 
@@ -240,7 +221,6 @@ val shorten : t -> t
     This function short-circuits such chains so that the value
     of a type variable can be accessed directly. *)
 
-
 (** {2 Manipulations on types} *)
 
 val fresh : t -> subst -> t * subst
@@ -262,7 +242,6 @@ val instantiate : t list -> t list -> t -> t
       a type variable.
 *)
 
-val monomorphize: t -> t
+val monomorphize : t -> t
 (** Return a monomorphized variant of the given type, where
     type variable without values have been replaced by abstract types. *)
-

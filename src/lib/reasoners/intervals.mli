@@ -26,26 +26,22 @@
 (*                                                                            *)
 (******************************************************************************)
 
+module Util = Alt_ergo_lib_util
+module Structs = Alt_ergo_lib_structs
+
 type t
 
-exception NotConsistent of Explanation.t
+exception NotConsistent of Structs.Ex.t
 exception No_finite_bound
 
-val undefined : Ty.t -> t
-
+val undefined : Structs.Ty.t -> t
 val is_undefined : t -> bool
-
-val point : Numbers.Q.t -> Ty.t -> Explanation.t -> t
-
+val point : Util.Numbers.Q.t -> Structs.Ty.t -> Structs.Ex.t -> t
 val doesnt_contain_0 : t -> Th_util.answer
-
 val is_positive : t -> Th_util.answer
-
 val is_strict_smaller : t -> t -> bool
-
-val new_borne_sup : Explanation.t -> Numbers.Q.t -> is_le : bool -> t -> t
-
-val new_borne_inf : Explanation.t -> Numbers.Q.t -> is_le : bool -> t -> t
+val new_borne_sup : Structs.Ex.t -> Util.Numbers.Q.t -> is_le:bool -> t -> t
+val new_borne_inf : Structs.Ex.t -> Util.Numbers.Q.t -> is_le:bool -> t -> t
 
 val only_borne_sup : t -> t
 (** Keep only the upper bound of the interval,
@@ -55,25 +51,17 @@ val only_borne_inf : t -> t
 (** Keep only the lower bound of the interval,
     setting the upper bound to plus infty. *)
 
-val is_point : t -> (Numbers.Q.t * Explanation.t) option
-
+val is_point : t -> (Util.Numbers.Q.t * Structs.Ex.t) option
 val intersect : t -> t -> t
-
 val exclude : t -> t -> t
-
 val mult : t -> t -> t
-
 val power : int -> t -> t
-
 val sqrt : t -> t
-
 val root : int -> t -> t
-
 val add : t -> t -> t
+val scale : Util.Numbers.Q.t -> t -> t
 
-val scale : Numbers.Q.t -> t -> t
-
-val affine_scale : const:Numbers.Q.t -> coef:Numbers.Q.t -> t -> t
+val affine_scale : const:Util.Numbers.Q.t -> coef:Util.Numbers.Q.t -> t -> t
 (** Perform an affine transformation on the given bounds.
     Suposing input bounds (b1, b2), this will return
     (const + coef * b1, const + coef * b2).
@@ -81,28 +69,23 @@ val affine_scale : const:Numbers.Q.t -> coef:Numbers.Q.t -> t -> t
     can take place when scaling down an integer range. *)
 
 val sub : t -> t -> t
-
 val merge : t -> t -> t
-
 val abs : t -> t
-
 val pretty_print : Format.formatter -> t -> unit
-
 val print : Format.formatter -> t -> unit
+val finite_size : t -> Util.Numbers.Q.t option
 
-val finite_size : t -> Numbers.Q.t option
-
-val borne_inf : t -> Numbers.Q.t * Explanation.t * bool
+val borne_inf : t -> Util.Numbers.Q.t * Structs.Ex.t * bool
 (** bool is true when bound is large. Raise: No_finite_bound if no
     finite lower bound *)
 
-val borne_sup : t -> Numbers.Q.t * Explanation.t * bool
+val borne_sup : t -> Util.Numbers.Q.t * Structs.Ex.t * bool
 (** bool is true when bound is large. Raise: No_finite_bound if no
     finite upper bound*)
 
 val div : t -> t -> t
 
-val coerce : Ty.t -> t -> t
+val coerce : Structs.Ty.t -> t -> t
 (** Coerce an interval to the given type. The main use of that function is
     to round a rational interval to an integer interval. This is particularly
     useful to avoid roudning too many times when manipulating intervals that
@@ -111,8 +94,14 @@ val coerce : Ty.t -> t -> t
     an integer polynome from the intervals of the monomes). *)
 
 val mk_closed :
-  Numbers.Q.t -> Numbers.Q.t -> bool -> bool ->
-  Explanation.t -> Explanation.t -> Ty.t -> t
+  Util.Numbers.Q.t ->
+  Util.Numbers.Q.t ->
+  bool ->
+  bool ->
+  Structs.Ex.t ->
+  Structs.Ex.t ->
+  Structs.Ty.t ->
+  t
 (**
    takes as argument in this order:
    - a lower bound
@@ -121,9 +110,9 @@ val mk_closed :
    - a bool that says if the upper bound it is large (true) or strict
    - an explanation of the lower bound
    - an explanation of the upper bound
-   - a type Ty.t (Tint or Treal *)
+   - a type Structs.Ty.t (Tint or Treal *)
 
-type bnd = (Numbers.Q.t * Numbers.Q.t) option * Explanation.t
+type bnd = (Util.Numbers.Q.t * Util.Numbers.Q.t) option * Structs.Ex.t
 (* - None <-> Infinity
    - the first number is the real bound
    - the second number if +1 (resp. -1) for strict lower (resp. upper) bound,
@@ -131,22 +120,23 @@ type bnd = (Numbers.Q.t * Numbers.Q.t) option * Explanation.t
 *)
 
 val bounds_of : t -> (bnd * bnd) list
-
-val contains : t -> Numbers.Q.t -> bool
-
-val add_explanation : t -> Explanation.t -> t
-
+val contains : t -> Util.Numbers.Q.t -> bool
+val add_explanation : t -> Structs.Ex.t -> t
 val equal : t -> t -> bool
 
-
 type interval_matching =
-  ((Numbers.Q.t * bool) option * (Numbers.Q.t * bool) option * Ty.t)
-    Var.Map.t
+  ((Util.Numbers.Q.t * bool) option
+  * (Util.Numbers.Q.t * bool) option
+  * Structs.Ty.t)
+  Structs.Var.Map.t
 
+val match_interval :
+  Structs.Sy.bound ->
+  Structs.Sy.bound ->
+  t ->
+  interval_matching ->
+  interval_matching option
 (** matchs the given lower and upper bounds against the given interval, and
     update the given accumulator with the constraints. Returns None if
     the matching problem is inconsistent
 *)
-val match_interval:
-  Symbols.bound -> Symbols.bound -> t -> interval_matching ->
-  interval_matching option

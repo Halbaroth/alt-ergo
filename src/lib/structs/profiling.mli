@@ -9,6 +9,8 @@
 (*                                                                            *)
 (******************************************************************************)
 
+module Util = Alt_ergo_lib_util
+
 type t
 
 val init : unit -> unit
@@ -19,6 +21,7 @@ val instantiation : int -> unit
 val instances : 'a list -> unit
 val bool_conflict : unit -> unit
 val theory_conflict : unit -> unit
+
 (* each boolean is true for Boolean conflict and false for Theory conflict *)
 val bcp_conflict : bool -> bool -> unit
 
@@ -33,16 +36,21 @@ val reset_ilevel : int -> unit
 (* record when the axioms are instantiated. Bool tells whether the
    instance is kept or removed by the selector function. The formula
    is the instance that has been generated *)
-val new_instance_of : string -> Expr.t -> Loc.t -> bool -> unit
-val conflicting_instance : string -> Loc.t -> unit
+val new_instance_of : string -> Expr.t -> Util.Loc.t -> bool -> unit
+val conflicting_instance : string -> Util.Loc.t -> unit
+
 val register_produced_terms :
   string ->
-  Loc.t ->
-  Expr.Set.t -> (* consumed *)
-  Expr.Set.t -> (* all terms of the instance *)
-  Expr.Set.t -> (* produced *)
-  Expr.Set.t -> (* produced that are new *)
+  Util.Loc.t ->
+  Expr.Set.t ->
+  (* consumed *)
+  Expr.Set.t ->
+  (* all terms of the instance *)
+  Expr.Set.t ->
+  (* produced *)
+  Expr.Set.t ->
+  (* produced that are new *)
   unit
 
-val print : bool -> int -> Timers.t -> Format.formatter -> unit
+val print : bool -> int -> Util.Timers.t -> Format.formatter -> unit
 val switch : Format.formatter -> unit

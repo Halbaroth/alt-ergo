@@ -16,13 +16,8 @@ type in_file
 type entry
 
 val open_in : string -> in_file
-
 val close_in : in_file -> unit
-
 val entries : in_file -> entry list
-
 val read_entry : in_file -> entry -> string
-
 val filename : entry -> string
-
 val is_directory : entry -> bool

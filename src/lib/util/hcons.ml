@@ -26,63 +26,54 @@
 (*                                                                            *)
 (******************************************************************************)
 
-type t
+[@@@ocaml.warning "-33"]
 
-type rootdep = { name : string; f : Expr.t; loc : Loc.t}
-type exp =
-  | Literal of Satml_types.Atom.atom
-  | Fresh of int
-  | Bj of Expr.t
-  | Dep of Expr.t
-  | RootDep of rootdep
+open Options
 
-exception Inconsistent of t * Expr.Set.t list
+module type HASHED = sig
+  type elt
 
-val empty : t
+  val eq : elt -> elt -> bool
+  val hash : elt -> int
+  val set_id : int -> elt -> elt
+  val initial_size : int
+  val disable_weaks : unit -> bool
+end
 
-val is_empty : t -> bool
+module type S = sig
+  type t
 
-val mem : exp -> t -> bool
+  val make : t -> t
+  val elements : unit -> t list
+end
 
-val singleton : exp -> t
+module Make (Hashed : HASHED) : S with type t = Hashed.elt = struct
+  type t = Hashed.elt
 
-val union : t -> t -> t
+  module HWeak = Weak.Make (struct
+    type t = Hashed.elt
 
-val merge : t -> t -> t
+    let equal = Hashed.eq
+    let hash = Hashed.hash
+  end)
 
-val iter_atoms : (exp -> unit)  -> t -> unit
+  let storage = HWeak.create Hashed.initial_size
+  let retain_list = ref []
+  let next_id = ref 0
 
-val fold_atoms : (exp -> 'a -> 'a )  -> t -> 'a -> 'a
+  let make d =
+    let d = Hashed.set_id !next_id d in
+    let o = HWeak.merge storage d in
+    if o == d then (
+      incr next_id;
+      if Hashed.disable_weaks () then
+        (* retain a pointer to 'd' to prevent the GC from collecting
+           the object if H.disable_weaks is set *)
+        retain_list := d :: !retain_list);
+    o
 
-val fresh_exp : unit -> exp
-
-val exists_fresh : t -> bool
-(** Does there exists a [Fresh _] exp in an explanation set. *)
-
-val remove_fresh : exp -> t -> t option
-
-val remove : exp -> t -> t
-
-val add_fresh : exp -> t -> t
-
-val print : Format.formatter -> t -> unit
-
-val get_unsat_core : t -> rootdep list
-
-val print_unsat_core : ?tab:bool -> Format.formatter -> t -> unit
-
-val formulas_of : t -> Expr.Set.t
-
-val bj_formulas_of : t -> Expr.Set.t
-
-module MI : Map.S with type key = int
-
-val literals_ids_of : t -> int MI.t
-
-val make_deps : Expr.Set.t -> t
-
-val has_no_bj : t -> bool
-
-val compare : t -> t -> int
-
-val subset : t -> t -> bool
+  let elements () =
+    let acc = ref [] in
+    HWeak.iter (fun e -> acc := e :: !acc) storage;
+    !acc
+end

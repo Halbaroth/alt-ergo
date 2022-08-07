@@ -9,6 +9,6 @@
 (*                                                                            *)
 (******************************************************************************)
 
+val register_legacy : unit -> unit
 (** Register the legacy frontend with parser for natif and smt2/psmt2 format
     as Input *)
-val register_legacy : unit -> unit

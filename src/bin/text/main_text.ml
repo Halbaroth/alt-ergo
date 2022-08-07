@@ -29,8 +29,7 @@
 open Alt_ergo_common
 
 (* Register input method and parsers *)
-let register_input () =
-  Input_frontend.register_legacy ()
+let register_input () = Input_frontend.register_legacy ()
 
 (* done here to initialize options,
    before the instantiations of functors *)
@@ -41,7 +40,7 @@ let parse_cmdline () =
 let () =
   register_input ();
   parse_cmdline ();
-  AltErgoLib.Printer.init_colors ();
-  AltErgoLib.Printer.init_output_format ();
+  Alt_ergo_lib_util.Printer.init_colors ();
+  Alt_ergo_lib_util.Printer.init_output_format ();
   Signals_profiling.init_signals ();
   Solving_loop.main ()

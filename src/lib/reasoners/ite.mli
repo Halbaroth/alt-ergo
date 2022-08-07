@@ -30,9 +30,10 @@ type 'a abstract
 
 module type ALIEN = sig
   include Sig.X
+
   val embed : r abstract -> r
-  val extract : r -> (r abstract) option
+  val extract : r -> r abstract option
 end
 
-module Shostak
-    (X : ALIEN) : Sig.SHOSTAK with type r = X.r and type t = X.r abstract
+module Shostak (X : ALIEN) :
+  Sig.SHOSTAK with type r = X.r and type t = X.r abstract

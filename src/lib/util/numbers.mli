@@ -26,8 +26,8 @@
 (*                                                                            *)
 (******************************************************************************)
 
-(** Integers implementation. **)
 module Z : NumbersInterface.ZSig
+(** Integers implementation. **)
 
 (** Rationals implementation. **)
 module Q : sig
@@ -40,7 +40,7 @@ module Q : sig
      are more accurate and faster than their equivalent root_xxx when
      the integer is 2*)
   val root_default : t -> int -> t option
-  val root_excess  : t -> int -> t option
+  val root_excess : t -> int -> t option
   val sqrt_default : t -> t option
-  val sqrt_excess  : t -> t option
+  val sqrt_excess : t -> t option
 end

@@ -21,19 +21,17 @@ open AltErgoLib
 type loc = Loc.t
 type integer_constant = string
 type constant = string
-type label  = string
-
-
-
-type ident = { id_str : string; id_lab : label list; id_loc : loc; }
+type label = string
+type ident = { id_str : string; id_lab : label list; id_loc : loc }
 type qualid = Parsed.lexpr
 type pty = Parsed.ppure_type
-
 type binder = loc * ident option * Parsed.ppure_type option
 type param = loc * ident option * Parsed.ppure_type
+
 type pattern =
   | Pwild
   | Pvar of ident
   | Ptuple of pattern list
   | Pcast of pattern * pty
-type term =  Parsed.lexpr
+
+type term = Parsed.lexpr

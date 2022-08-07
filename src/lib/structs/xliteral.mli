@@ -26,42 +26,75 @@
 (*                                                                            *)
 (******************************************************************************)
 
-open Typed
+module Util = Alt_ergo_lib_util
 
-(* Sat entry *)
+type builtin = Sy.builtin =
+  | LE
+  | LT
+  | (* arithmetic *)
+    IsConstr of Util.Hstring.t (* ADT tester *)
 
-type sat_decl_aux =
-  | Assume of string * Expr.t * bool
-  | PredDef of Expr.t * string (*name of the predicate*)
-  | RwtDef of (Expr.t rwt_rule) list
-  | Query of string *  Expr.t * goal_sort
-  | ThAssume of Expr.th_elt
-  | Push of int
-  | Pop of int
+type 'a view =
+  (*private*)
+  | Eq of 'a * 'a
+  | Distinct of bool * 'a list
+  | Builtin of bool * builtin * 'a list
+  | Pred of 'a * bool
 
-type sat_tdecl = {
-  st_loc : Loc.t;
-  st_decl : sat_decl_aux
-}
+type 'a atom_view
+(* We do not need to export internal representation
+   of literals !
+   =
+   | EQ of 'a * 'a
+   | BT of builtin * 'a list
+   | PR of 'a
+   | EQ_LIST of 'a list*)
 
-let print_aux fmt = function
-  | Assume (name, e, b) ->
-    Format.fprintf fmt "assume %s(%b): @[<hov>%a@]" name b Expr.print e
-  | PredDef (e, name) ->
-    Format.fprintf fmt "pred-def %s: @[<hov>%a@]" name Expr.print e
-  | RwtDef l ->
-    Format.fprintf fmt "rwrts: @[<v>%a@]"
-      (Util.print_list_pp
-         ~sep:Format.pp_print_space
-         ~pp:(print_rwt Expr.print)
-      ) l
-  | Query (name, e, sort) ->
-    Format.fprintf fmt "query %s(%a): @[<hov>%a@]"
-      name print_goal_sort sort Expr.print e
-  | ThAssume t ->
-    Format.fprintf fmt "th assume %a" Expr.print_th_elt t
-  | Push n -> Format.fprintf fmt "Push %d" n
-  | Pop n ->  Format.fprintf fmt "Pop %d" n
+module type OrderedType = sig
+  type t
 
-let print fmt decl = print_aux fmt decl.st_decl
+  val compare : t -> t -> int
+  val hash : t -> int
+  val print : Format.formatter -> t -> unit
+  val top : unit -> t
+  val bot : unit -> t
+  val type_info : t -> Ty.t
+end
 
+module type S = sig
+  type elt
+  type t
+
+  val make : elt view -> t
+  val view : t -> elt view
+  val atom_view : t -> elt atom_view * bool (* is_negated ? *)
+  val mk_eq : elt -> elt -> t
+  val mk_distinct : bool -> elt list -> t
+  val mk_builtin : bool -> builtin -> elt list -> t
+  val mk_pred : elt -> bool -> t
+  val mkv_eq : elt -> elt -> elt view
+  val mkv_distinct : bool -> elt list -> elt view
+  val mkv_builtin : bool -> builtin -> elt list -> elt view
+  val mkv_pred : elt -> bool -> elt view
+  val neg : t -> t
+  val add_label : Util.Hstring.t -> t -> unit
+  val label : t -> Util.Hstring.t
+  val print : Format.formatter -> t -> unit
+  val compare : t -> t -> int
+  val equal : t -> t -> bool
+  val hash : t -> int
+  val uid : t -> int
+  val elements : t -> elt list
+
+  module Map : Map.S with type key = t
+  module Set : Set.S with type elt = t
+end
+
+val print_view :
+  ?lbl:string ->
+  (Format.formatter -> 'a -> unit) ->
+  Format.formatter ->
+  'a view ->
+  unit
+
+module Make (X : OrderedType) : S with type elt = X.t

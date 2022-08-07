@@ -9,8 +9,8 @@
 (*                                                                            *)
 (******************************************************************************)
 
-(** Prints some debug info about the GC's activity. *)
 val init : unit -> unit
+(** Prints some debug info about the GC's activity. *)
 
 (** Gc logging
 

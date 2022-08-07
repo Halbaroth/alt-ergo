@@ -54,15 +54,13 @@ let replay_unprune id env =
 
 let replay_addinstance id _aname entries env =
   match findbyid id env.ast with
-  | AD (ad, _) ->
-    begin
+  | AD (ad, _) -> (
       match ad.c with
       | AAxiom (_, aname, ax_kd, af) ->
-        add_instance ~register:false env id af ax_kd aname entries
-      | APredicate_def (_, aname,_ , af) ->
-        add_instance ~register:false env id af Util.Default aname entries
-      | _ -> assert false
-    end
+          add_instance ~register:false env id af ax_kd aname entries
+      | APredicate_def (_, aname, _, af) ->
+          add_instance ~register:false env id af Util.Default aname entries
+      | _ -> assert false)
   | _ -> assert false
 
 let replay_limitlemma id name nb env =
@@ -74,15 +72,13 @@ let replay env = function
   | Unprune id -> replay_unprune id env
   | AddInstance (id, aname, entries) -> replay_addinstance id aname entries env
   | AddTrigger (id, inst_buf, str) ->
-    readd_trigger ~register:false env id str inst_buf
+      readd_trigger ~register:false env id str inst_buf
   | LimitLemma (id, name, nb) -> replay_limitlemma id name nb env
   | UnlimitLemma (id, name) -> replay_limitlemma id name (-1) env
 
-
-
 let replay_session env =
   let l = ref [] in
-  Stack.iter (fun a -> l := a::!l) env.actions;
+  Stack.iter (fun a -> l := a :: !l) env.actions;
   List.iter (replay env) !l
 
 (* unused --
@@ -102,4 +98,3 @@ let replay_session env =
       replay env (LimitLemma (id, name, -1))
     with Exit -> ()
 *)
-

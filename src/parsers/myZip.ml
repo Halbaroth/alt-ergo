@@ -14,6 +14,7 @@
 
 module ZipWrapper = struct
   include Zip
+
   let filename e = e.Zip.filename
   let is_directory e = e.Zip.is_directory
 end

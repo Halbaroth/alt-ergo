@@ -19,31 +19,29 @@
 open AltErgoLib
 open Lexing
 
-
 type position = Loc.t
 
 let user_position fname lnum cnum1 cnum2 =
   let upos =
-    {pos_fname = fname; pos_lnum = lnum; pos_bol = cnum1;
-     pos_cnum = cnum2} in
+    { pos_fname = fname; pos_lnum = lnum; pos_bol = cnum1; pos_cnum = cnum2 }
+  in
   (upos, upos)
 
-let get ({pos_fname; pos_lnum; pos_bol; pos_cnum}, _) =
+let get ({ pos_fname; pos_lnum; pos_bol; pos_cnum }, _) =
   (pos_fname, pos_lnum, pos_bol, pos_cnum)
-
 
 let join (p1 : position) (p2 : position) =
   match (get p1, get p2) with
-    ((f1, l1, b1, e1), (_, _, b2, e2 )) ->
-    let pos =
-      {pos_fname = f1; pos_lnum = l1; pos_bol = b1 ; pos_cnum = e1 + e2 - b2} in
-    (pos, pos)
+  | (f1, l1, b1, e1), (_, _, b2, e2) ->
+      let pos =
+        { pos_fname = f1; pos_lnum = l1; pos_bol = b1; pos_cnum = e1 + e2 - b2 }
+      in
+      (pos, pos)
 
 exception Why3_located of position * exn
 
-let error ?loc e = match loc with
-  | Some loc -> raise (Why3_located (loc, e))
-  | None -> raise e
+let error ?loc e =
+  match loc with Some loc -> raise (Why3_located (loc, e)) | None -> raise e
 
 (* located messages *)
 
@@ -54,8 +52,9 @@ let errorm ?loc f =
   let fmt = Format.formatter_of_buffer buf in
   Format.kfprintf
     (fun _ ->
-       Format.pp_print_flush fmt ();
-       let s = Buffer.contents buf in
-       Buffer.clear buf;
-       error ?loc (Message s))
-    fmt ("@[" ^^ f ^^ "@]")
+      Format.pp_print_flush fmt ();
+      let s = Buffer.contents buf in
+      Buffer.clear buf;
+      error ?loc (Message s))
+    fmt
+    ("@[" ^^ f ^^ "@]")

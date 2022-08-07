@@ -26,66 +26,39 @@
 (*                                                                            *)
 (******************************************************************************)
 
+module Util = Alt_ergo_lib_util
+module Structs = Alt_ergo_lib_structs
+open Structs.Typed
 
-(** Generic Hashconsing.
+(* Sat entry *)
 
-    This module defines generic hashconsing over structures.
-*)
+type sat_decl_aux =
+  | Assume of string * Structs.Expr.t * bool
+  | PredDef of Structs.Expr.t * string (*name of the predicate*)
+  | RwtDef of Structs.Expr.t rwt_rule list
+  | Query of string * Structs.Expr.t * goal_sort
+  | ThAssume of Structs.Expr.th_elt
+  | Push of int
+  | Pop of int
 
-(** {2 Hashconsing} *)
+type sat_tdecl = { st_loc : Util.Loc.t; st_decl : sat_decl_aux }
 
-module type HASHED = sig
+let print_aux fmt = function
+  | Assume (name, e, b) ->
+      Format.fprintf fmt "assume %s(%b): @[<hov>%a@]" name b Structs.Expr.print
+        e
+  | PredDef (e, name) ->
+      Format.fprintf fmt "pred-def %s: @[<hov>%a@]" name Structs.Expr.print e
+  | RwtDef l ->
+      Format.fprintf fmt "rwrts: @[<v>%a@]"
+        (Util.Util.print_list_pp ~sep:Format.pp_print_space
+           ~pp:(print_rwt Structs.Expr.print))
+        l
+  | Query (name, e, sort) ->
+      Format.fprintf fmt "query %s(%a): @[<hov>%a@]" name print_goal_sort sort
+        Structs.Expr.print e
+  | ThAssume t -> Format.fprintf fmt "th assume %a" Structs.Expr.print_th_elt t
+  | Push n -> Format.fprintf fmt "Push %d" n
+  | Pop n -> Format.fprintf fmt "Pop %d" n
 
-  (** Hashed values.
-
-      This signature defines the interface required for
-      values to be hashconsed. *)
-
-  type elt
-  (** The type of hashed elements*)
-
-  val eq : elt -> elt -> bool
-  (** Equality predicate on values. *)
-
-  val hash : elt -> int
-  (** Hash function on values. Must be compatible with the equality
-      function, i.e: equality of values imply that hashes are equal. *)
-
-  val set_id : int -> elt -> elt
-  (** Set an id to the given value.
-      This id should not be considered by the equality function
-      when comparing values.
-      Should not mutate the given value for the hashconsing to be correct. *)
-
-  val initial_size : int
-  (** Initial size for the hashconsing table. *)
-
-  val disable_weaks : unit -> bool
-  (** Values hashconsed when this returns [true] are treated
-      as always reachable by the gc and thus will not be collected. *)
-
-end
-
-module type S = sig
-
-  (** Hashconsed values
-
-      This signature defines a hashconsing module,
-      used to implement maximal sharing of hashconsed values. *)
-
-  type t
-  (** The type of value used. *)
-
-  val make : t -> t
-  (** Hashcons a value [t], either returning [t], or a value equal
-      to [t] that was hashconsed previously. *)
-
-  val elements : unit -> t list
-  (** Returns the list of all unique hashconsed elements. *)
-
-end
-
-module Make(H : HASHED) : (S with type t = H.elt)
-(** Functor to create a hashconsing module from a module describing values. *)
-
-
+let print fmt decl = print_aux fmt decl.st_decl

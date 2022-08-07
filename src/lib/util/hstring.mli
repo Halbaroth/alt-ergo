@@ -29,25 +29,15 @@
 type t
 
 val make : string -> t
-
 val view : t -> string
-
 val print : Format.formatter -> t -> unit
-
 val equal : t -> t -> bool
-
 val compare : t -> t -> int
-
 val hash : t -> int
-
 val empty : t
-
 val list_assoc : t -> (t * 'a) list -> 'a
-
 val fresh_string : unit -> string
-
 val is_fresh_string : string -> bool
-
 val is_fresh_skolem : string -> bool
 
 module Set : Set.S with type elt = t

@@ -23,21 +23,19 @@ open AltErgoLib
 type position = Loc.t
 
 val join : position -> position -> position
-
 val user_position : string -> int -> int -> int -> position
-
 val get : position -> string * int * int * int
 
 (* located exceptions *)
 
 exception Why3_located of position * exn
 
-val error: ?loc:position -> exn -> 'a
+val error : ?loc:position -> exn -> 'a
 
 (* messages *)
 
 exception Message of string
 
-val errorm: ?loc:position -> ('a, Format.formatter, unit, 'b) format4 -> 'a
+val errorm : ?loc:position -> ('a, Format.formatter, unit, 'b) format4 -> 'a
 
 (*val with_location: (Lexing.lexbuf -> 'a) -> (Lexing.lexbuf -> 'a)*)

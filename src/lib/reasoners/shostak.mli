@@ -26,42 +26,40 @@
 (*                                                                            *)
 (******************************************************************************)
 
+module Util = Alt_ergo_lib_util
+module Structs = Alt_ergo_lib_structs
 module Combine : Sig.X
+module Polynome : Polynome.T with type r = Combine.r
+module Arith : Sig.SHOSTAK with type r = Combine.r and type t = Polynome.t
 
-module Polynome : Polynome.T
-  with type r = Combine.r
+module Records :
+  Sig.SHOSTAK with type r = Combine.r and type t = Combine.r Records.abstract
 
-module Arith : Sig.SHOSTAK
-  with type r = Combine.r and type t = Polynome.t
+module Bitv :
+  Sig.SHOSTAK with type r = Combine.r and type t = Combine.r Bitv.abstract
 
-module Records : Sig.SHOSTAK
-  with type r = Combine.r and type t = Combine.r Records.abstract
+module Arrays :
+  Sig.SHOSTAK with type r = Combine.r and type t = Combine.r Arrays.abstract
 
-module Bitv : Sig.SHOSTAK
-  with type r = Combine.r and type t = Combine.r Bitv.abstract
+module Enum :
+  Sig.SHOSTAK with type r = Combine.r and type t = Combine.r Enum.abstract
 
-module Arrays : Sig.SHOSTAK
-  with type r = Combine.r and type t = Combine.r Arrays.abstract
+module Adt :
+  Sig.SHOSTAK with type r = Combine.r and type t = Combine.r Adt.abstract
 
-module Enum : Sig.SHOSTAK
-  with type r = Combine.r and type t = Combine.r Enum.abstract
-
-module Adt : Sig.SHOSTAK
-  with type r = Combine.r and type t = Combine.r Adt.abstract
-
-module Ite : Sig.SHOSTAK
-  with type r = Combine.r and type t = Combine.r Ite.abstract
+module Ite :
+  Sig.SHOSTAK with type r = Combine.r and type t = Combine.r Ite.abstract
 
 module Ac : Ac.S with type r = Combine.r and type t = Combine.r Sig.ac
 
-(** map of semantic values using Combine.hash_cmp *)
 module MXH : Map.S with type key = Combine.r
+(** map of semantic values using Combine.hash_cmp *)
 
-(** set of semantic values using Combine.hash_cmp *)
 module SXH : Set.S with type elt = Combine.r
+(** set of semantic values using Combine.hash_cmp *)
 
-(** map of semantic values using structural compare Combine.str_cmp *)
 module MXS : Map.S with type key = Combine.r
+(** map of semantic values using structural compare Combine.str_cmp *)
 
-(** set of semantic values using structural compare Combine.str_cmp *)
 module SXS : Set.S with type elt = Combine.r
+(** set of semantic values using structural compare Combine.str_cmp *)

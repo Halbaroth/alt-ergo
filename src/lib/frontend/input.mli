@@ -8,6 +8,8 @@
 (*                                                                            *)
 (******************************************************************************)
 
+module Structs = Alt_ergo_lib_structs
+
 (** Typed input
 
     This module defines an abstraction layer over the
@@ -28,7 +30,6 @@ exception Method_not_registered of string
     with some preludes files), or arbitrary terms. This last functionality
     is currently only used in the GUI. *)
 module type S = sig
-
   (** {5 Parsing} *)
 
   type parsed
@@ -47,10 +48,9 @@ module type S = sig
   (** The empty/initial environment *)
 
   val type_parsed :
-    env -> env Stack.t -> parsed -> int Typed.atdecl list * env
-    (** Parse and typecheck some input file,
+    env -> env Stack.t -> parsed -> int Structs.Typed.atdecl list * env
+  (** Parse and typecheck some input file,
         together with some prelude files. *)
-
 end
 
 val register : string -> (module S) -> unit
@@ -59,5 +59,3 @@ val register : string -> (module S) -> unit
 val find : string -> (module S)
 (** Find an input method by name.
     @raise Method_not_registered if the name is not registered. *)
-
-

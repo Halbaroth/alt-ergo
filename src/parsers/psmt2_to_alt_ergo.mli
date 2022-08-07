@@ -17,5 +17,5 @@
     extension.
 *)
 
-(** Register the psmt2 frontend as a parser for smt2 and psmt2 extension *)
 val register_psmt2 : unit -> unit
+(** Register the psmt2 frontend as a parser for smt2 and psmt2 extension *)

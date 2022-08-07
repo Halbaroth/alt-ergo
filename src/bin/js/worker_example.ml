@@ -11,7 +11,6 @@
 
 open Js_of_ocaml
 open Js_of_ocaml_lwt
-
 module Html = Dom_html
 
 let document = Html.window##.document
@@ -34,12 +33,12 @@ let exec worker file options =
   Lwt.on_cancel t (fun () -> worker##terminate);
   (* Get the messages returned from the worker and return them *)
   worker##.onmessage :=
-    (Js_of_ocaml.Dom_html.handler (fun msg ->
-         let res = msg##.data in
-         Lwt.wakeup resolver res;
-         Js_of_ocaml.Js._true));
+    Js_of_ocaml.Dom_html.handler (fun msg ->
+        let res = msg##.data in
+        Lwt.wakeup resolver res;
+        Js_of_ocaml.Js._true);
   (* Start the worker with the correspondin input, here file_options *)
-  worker##postMessage (file,options);
+  worker##postMessage (file, options);
   t
 
 (* Create the web worker and launch 2 threads.
@@ -47,36 +46,36 @@ let exec worker file options =
    the second on for the call to Alt-Ergo through his web worker *)
 let solve () =
   let options =
-    {(Worker_interface.init_options ()) with
-     input_format=Some Native;
-     file = Some "try-alt-ergo";
-     debug = Some true;
-     verbose = Some true;
-     answers_with_loc = Some false;
-     interpretation = Some 1;
-     sat_solver = Some Worker_interface.Tableaux;
-     unsat_core = Some true;
-    } in
+    {
+      (Worker_interface.init_options ()) with
+      input_format = Some Native;
+      file = Some "try-alt-ergo";
+      debug = Some true;
+      verbose = Some true;
+      answers_with_loc = Some false;
+      interpretation = Some 1;
+      sat_solver = Some Worker_interface.Tableaux;
+      unsat_core = Some true;
+    }
+  in
 
   let worker = Worker.create "./alt-ergo-worker.js" in
 
-  (Lwt.pick [
+  Lwt.pick
+    [
       (let%lwt () = Lwt_js.sleep !timeout in
-       Lwt.return {(Worker_interface.init_results ()) with
-                   debugs =Some ["Timeout"]});
-      (
-        let file = String.split_on_char '\n' !file in
-        let json_file = Worker_interface.file_to_json None (Some 42) file in
-        Firebug.console##log json_file;
-        let json_options = Worker_interface.options_to_json options in
-        Firebug.console##log json_options;
-        let%lwt results = exec worker json_file json_options in
-        Firebug.console##log results;
-        let res = Worker_interface.results_from_json results in
-        Lwt.return res
-      )
+       Lwt.return
+         { (Worker_interface.init_results ()) with debugs = Some [ "Timeout" ] });
+      (let file = String.split_on_char '\n' !file in
+       let json_file = Worker_interface.file_to_json None (Some 42) file in
+       Firebug.console##log json_file;
+       let json_options = Worker_interface.options_to_json options in
+       Firebug.console##log json_options;
+       let%lwt results = exec worker json_file json_options in
+       Firebug.console##log results;
+       let res = Worker_interface.results_from_json results in
+       Lwt.return res);
     ]
-  )
 
 let string_input f area_name area =
   let res = document##createDocumentFragment in
@@ -86,8 +85,7 @@ let string_input f area_name area =
   input##.value := Js.string !area;
   input##.onchange :=
     Html.handler (fun _ ->
-        (try area := Js.to_string input##.value
-         with Invalid_argument _ -> ());
+        (try area := Js.to_string input##.value with Invalid_argument _ -> ());
         input##.value := Js.string !area;
         Js._false);
   Dom.appendChild res input;
@@ -119,70 +117,78 @@ let button name callback =
   res
 
 let process_results = function
-  | Some r ->
-    Some (String.concat "" r)
+  | Some r -> Some (String.concat "" r)
   | None -> None
 
 let result = document##createTextNode (Js.string "")
+
 (* update result text area *)
 let print_res = function
-  | Some res ->
-    result##.data := Js.string res
+  | Some res -> result##.data := Js.string res
   | None -> ()
 
 let error = document##createTextNode (Js.string "")
+
 (* update error text area *)
 let print_error = function
-  | Some err ->
-    error##.data := Js.string err
+  | Some err -> error##.data := Js.string err
   | None -> ()
 
 let warning = document##createTextNode (Js.string "")
+
 (* update warning text area *)
 let print_warning = function
-  | Some wrn ->
-    warning##.data := Js.string wrn
+  | Some wrn -> warning##.data := Js.string wrn
   | None -> ()
 
 let debug = document##createTextNode (Js.string "")
+
 (* update error text area *)
 let print_debug = function
-  | Some dbg ->
-    debug##.data := Js.string dbg
+  | Some dbg -> debug##.data := Js.string dbg
   | None -> ()
 
 let model = document##createTextNode (Js.string "")
+
 (* update model text area *)
 let print_model = function
-  | Some mdl ->
-    model##.data := Js.string mdl
+  | Some mdl -> model##.data := Js.string mdl
   | None -> ()
 
 let unsat_core = document##createTextNode (Js.string "")
+
 (* update unsat core text area *)
 let print_unsat_core = function
-  | Some usc ->  unsat_core##.data := Js.string usc
+  | Some usc -> unsat_core##.data := Js.string usc
   | None -> ()
 
 let statistics = document##createTextNode (Js.string "")
+
 (* update statistics text area *)
 let print_statistics = function
   | None -> ()
   | Some l ->
-    let stats = List.fold_left (fun acc (name,begin_pos,end_pos,nb,used) ->
-        let used = match used with
-          | Worker_interface.Used -> "Used"
-          | Worker_interface.Unused -> "Unused"
-          | Worker_interface.Unknown -> "_"
-        in
-        (Format.sprintf "%s \n %s (%d-%d) #%d: %s"
-           acc name begin_pos end_pos nb used)
-      ) "" l in
-    statistics##.data := Js.string stats
+      let stats =
+        List.fold_left
+          (fun acc (name, begin_pos, end_pos, nb, used) ->
+            let used =
+              match used with
+              | Worker_interface.Used -> "Used"
+              | Worker_interface.Unused -> "Unused"
+              | Worker_interface.Unknown -> "_"
+            in
+            Format.sprintf "%s \n %s (%d-%d) #%d: %s" acc name begin_pos end_pos
+              nb used)
+          "" l
+      in
+      statistics##.data := Js.string stats
 
 let onload _ =
-  let main = Js.Opt.get (document##getElementById (Js.string "main"))
-      (fun () -> assert false) in
+  let main =
+    Js.Opt.get
+      (document##getElementById (Js.string "main"))
+      (fun () -> assert false)
+  in
   (* Create a text area for the input file *)
   Dom.appendChild main
     (string_input Html.createTextarea "Input file to solve" file);
@@ -194,8 +200,7 @@ let onload _ =
   Dom.appendChild main (float_input "Timeout" timeout);
   Dom.appendChild main (Html.createBr document);
   (* Create a button to start the solving *)
-  Dom.appendChild
-    main
+  Dom.appendChild main
     (button "Ask Alt-Ergo" (fun _ ->
          let div = Html.createDiv document in
          Dom.appendChild main div;
@@ -208,15 +213,15 @@ let onload _ =
              (* Update results area *)
              print_res (process_results res.results);
              (* Update errors area if errors occurs at solving *)
-             print_error  (process_results res.errors);
+             print_error (process_results res.errors);
              (* Update warning area if warning occurs at solving *)
-             print_warning  (process_results res.warnings);
+             print_warning (process_results res.warnings);
              (* Update debug area *)
-             print_debug  (process_results res.debugs);
+             print_debug (process_results res.debugs);
              (* Update model *)
-             print_model  (process_results res.model);
+             print_model (process_results res.model);
              (* Update unsat core *)
-             print_unsat_core  (process_results res.unsat_core);
+             print_unsat_core (process_results res.unsat_core);
              (* Update statistics *)
              print_statistics res.statistics;
              Lwt.return_unit);

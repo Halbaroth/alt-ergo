@@ -26,33 +26,32 @@
 (*                                                                            *)
 (******************************************************************************)
 
+module Structs = Alt_ergo_lib_structs
+module Reasoners = Alt_ergo_lib_reasoners
+
 module type S = sig
-
   type sat_env
-
   type used_context
 
   type status =
-    | Unsat of Commands.sat_tdecl * Explanation.t
+    | Unsat of Commands.sat_tdecl * Structs.Ex.t
     | Inconsistent of Commands.sat_tdecl
     | Sat of Commands.sat_tdecl * sat_env
     | Unknown of Commands.sat_tdecl * sat_env
     | Timeout of Commands.sat_tdecl option
     | Preprocess
 
-  val process_decl:
+  val process_decl :
     (status -> int -> unit) ->
     used_context ->
-    (bool * Explanation.t) Stack.t ->
-    sat_env * bool * Explanation.t ->
+    (bool * Structs.Ex.t) Stack.t ->
+    sat_env * bool * Structs.Ex.t ->
     Commands.sat_tdecl ->
-    sat_env * bool * Explanation.t
+    sat_env * bool * Structs.Ex.t
 
   val print_status : status -> int -> unit
-
   val init_all_used_context : unit -> used_context
   val choose_used_context : used_context -> goal_name:string -> used_context
-
 end
 
-module Make (SAT: Sat_solver_sig.S) : S with type sat_env = SAT.t
+module Make (SAT : Reasoners.Sat_solver_sig.S) : S with type sat_env = SAT.t

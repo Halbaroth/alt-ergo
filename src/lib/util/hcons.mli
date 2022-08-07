@@ -26,57 +26,59 @@
 (*                                                                            *)
 (******************************************************************************)
 
-[@@@ocaml.warning "-33"]
-open Options
+(** Generic Hashconsing.
 
-module type HASHED =
-sig
+    This module defines generic hashconsing over structures.
+*)
+
+(** {2 Hashconsing} *)
+
+module type HASHED = sig
+  (** Hashed values.
+
+      This signature defines the interface required for
+      values to be hashconsed. *)
+
   type elt
+  (** The type of hashed elements*)
+
   val eq : elt -> elt -> bool
+  (** Equality predicate on values. *)
+
   val hash : elt -> int
+  (** Hash function on values. Must be compatible with the equality
+      function, i.e: equality of values imply that hashes are equal. *)
+
   val set_id : int -> elt -> elt
+  (** Set an id to the given value.
+      This id should not be considered by the equality function
+      when comparing values.
+      Should not mutate the given value for the hashconsing to be correct. *)
+
   val initial_size : int
+  (** Initial size for the hashconsing table. *)
+
   val disable_weaks : unit -> bool
+  (** Values hashconsed when this returns [true] are treated
+      as always reachable by the gc and thus will not be collected. *)
 end
 
-module type S =
-sig
+module type S = sig
+  (** Hashconsed values
+
+      This signature defines a hashconsing module,
+      used to implement maximal sharing of hashconsed values. *)
+
   type t
+  (** The type of value used. *)
+
   val make : t -> t
+  (** Hashcons a value [t], either returning [t], or a value equal
+      to [t] that was hashconsed previously. *)
+
   val elements : unit -> t list
+  (** Returns the list of all unique hashconsed elements. *)
 end
 
-module Make(Hashed : HASHED) : (S with type t = Hashed.elt) =
-struct
-  type t = Hashed.elt
-
-  module HWeak = Weak.Make
-      (struct
-        type t = Hashed.elt
-        let equal = Hashed.eq
-        let hash = Hashed.hash
-      end)
-
-  let storage = HWeak.create Hashed.initial_size
-  let retain_list = ref []
-
-  let next_id = ref 0
-
-  let make d =
-    let d = Hashed.set_id !next_id d in
-    let o = HWeak.merge storage d in
-    if o == d then begin
-      incr next_id;
-      if Hashed.disable_weaks() then
-        (* retain a pointer to 'd' to prevent the GC from collecting
-           the object if H.disable_weaks is set *)
-        retain_list := d :: !retain_list
-    end;
-    o
-
-  let elements () =
-    let acc = ref [] in
-    HWeak.iter (fun e -> acc := e :: !acc) storage;
-    !acc
-
-end
+(** Functor to create a hashconsing module from a module describing values. *)
+module Make (H : HASHED) : S with type t = H.elt

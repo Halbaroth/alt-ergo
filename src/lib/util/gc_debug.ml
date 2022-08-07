@@ -25,32 +25,22 @@ open Gc
 *)
 
 let init () =
-  if get_debug_gc() then
-    begin
-      let tmp = ref (quick_stat ()) in
-      ignore
-        (create_alarm
-           (fun () ->
-              let e = quick_stat () in
-              let d = !tmp in
+  if get_debug_gc () then
+    let tmp = ref (quick_stat ()) in
+    ignore
+      (create_alarm (fun () ->
+           let e = quick_stat () in
+           let d = !tmp in
 
-              Printer.print_dbg
-                ~module_name:"Gc_debug"
-                "@[<v 0>[major collections] %d th@,\
-                 [minor collections] %d th@,\
-                 [stack used] %d words@,\
-                 [size of major heap] %d words@,\
-                 [max size major heap] %d words@,\
-                 [major words diff] %0f Kwords@,\
-                 [minor words diff] %0f Kwords@]"
-                e.major_collections
-                e.minor_collections
-                e.stack_size
-                e.heap_words
-                e.top_heap_words
-                ((e.major_words -. d.major_words) /. 1000.)
-                ((e.minor_words -. d.minor_words) /. 1000.);
-              tmp := e
-           )
-        )
-    end
+           Printer.print_dbg ~module_name:"Gc_debug"
+             "@[<v 0>[major collections] %d th@,\
+              [minor collections] %d th@,\
+              [stack used] %d words@,\
+              [size of major heap] %d words@,\
+              [max size major heap] %d words@,\
+              [major words diff] %0f Kwords@,\
+              [minor words diff] %0f Kwords@]" e.major_collections
+             e.minor_collections e.stack_size e.heap_words e.top_heap_words
+             ((e.major_words -. d.major_words) /. 1000.)
+             ((e.minor_words -. d.minor_words) /. 1000.);
+           tmp := e))

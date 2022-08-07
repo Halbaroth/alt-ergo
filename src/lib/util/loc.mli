@@ -43,4 +43,3 @@ val dummy : t
 val report : Format.formatter -> t -> unit
 (** Report a location on the given formatter, using standard
     human-redable location reporting. *)
-

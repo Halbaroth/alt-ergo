@@ -26,75 +26,43 @@
 (*                                                                            *)
 (******************************************************************************)
 
-type builtin = Symbols.builtin =
-    LE | LT | (* arithmetic *)
-    IsConstr of Hstring.t (* ADT tester *)
+module Util = Alt_ergo_lib_util
 
-type 'a view = (*private*)
-  | Eq of 'a * 'a
-  | Distinct of bool * 'a list
-  | Builtin of bool * builtin * 'a list
-  | Pred of 'a * bool
+type t
+type rootdep = { name : string; f : Expr.t; loc : Util.Loc.t }
 
-type 'a atom_view
-(* We do not need to export internal representation
-   of literals !
-   =
-   | EQ of 'a * 'a
-   | BT of builtin * 'a list
-   | PR of 'a
-   | EQ_LIST of 'a list*)
+type exp =
+  | Literal of Satml_types.Atom.atom
+  | Fresh of int
+  | Bj of Expr.t
+  | Dep of Expr.t
+  | RootDep of rootdep
 
-module type OrderedType = sig
-  type t
-  val compare : t -> t -> int
-  val hash :  t -> int
-  val print : Format.formatter -> t -> unit
-  val top : unit -> t
-  val bot : unit -> t
-  val type_info : t -> Ty.t
-end
+exception Inconsistent of t * Expr.Set.t list
 
-module type S = sig
-  type elt
-  type t
+val empty : t
+val is_empty : t -> bool
+val mem : exp -> t -> bool
+val singleton : exp -> t
+val union : t -> t -> t
+val merge : t -> t -> t
+val iter_atoms : (exp -> unit) -> t -> unit
+val fold_atoms : (exp -> 'a -> 'a) -> t -> 'a -> 'a
+val fresh_exp : unit -> exp
 
-  val make : elt view -> t
-  val view : t -> elt view
-  val atom_view : t -> elt atom_view * bool (* is_negated ? *)
+val exists_fresh : t -> bool
+(** Does there exists a [Fresh _] exp in an explanation set. *)
 
-  val mk_eq : elt -> elt -> t
-  val mk_distinct : bool -> elt list -> t
-  val mk_builtin : bool -> builtin -> elt list -> t
-  val mk_pred : elt -> bool -> t
-
-  val mkv_eq : elt -> elt -> elt view
-  val mkv_distinct : bool -> elt list -> elt view
-  val mkv_builtin : bool -> builtin -> elt list -> elt view
-  val mkv_pred : elt -> bool -> elt view
-
-  val neg : t -> t
-
-  val add_label : Hstring.t -> t -> unit
-  val label : t -> Hstring.t
-
-  val print : Format.formatter -> t -> unit
-
-  val compare : t -> t -> int
-  val equal : t -> t -> bool
-  val hash : t -> int
-  val uid : t -> int
-  val elements : t -> elt list
-
-  module Map : Map.S with type key = t
-  module Set : Set.S with type elt = t
-end
-
-val print_view :
-  ?lbl:string ->
-  (Format.formatter -> 'a -> unit) ->
-  Format.formatter ->
-  'a view ->
-  unit
-
-module Make ( X : OrderedType ) : S with type elt = X.t
+val remove_fresh : exp -> t -> t option
+val remove : exp -> t -> t
+val add_fresh : exp -> t -> t
+val print : Format.formatter -> t -> unit
+val get_unsat_core : t -> rootdep list
+val print_unsat_core : ?tab:bool -> Format.formatter -> t -> unit
+val formulas_of : t -> Expr.Set.t
+val bj_formulas_of : t -> Expr.Set.t
+val literals_ids_of : t -> int Util.Util.MI.t
+val make_deps : Expr.Set.t -> t
+val has_no_bj : t -> bool
+val compare : t -> t -> int
+val subset : t -> t -> bool

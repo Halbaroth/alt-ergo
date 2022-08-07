@@ -14,68 +14,67 @@ open Worker_interface
 
 let get_case_split_policy = function
   | None -> None
-  | Some csp -> match csp with
-    | AfterTheoryAssume -> Some Util.AfterTheoryAssume
-    | BeforeMatching -> Some Util.BeforeMatching
-    | AfterMatching -> Some Util.AfterMatching
+  | Some csp -> (
+      match csp with
+      | AfterTheoryAssume -> Some Util.AfterTheoryAssume
+      | BeforeMatching -> Some Util.BeforeMatching
+      | AfterMatching -> Some Util.AfterMatching)
 
 let get_input_format = function
   | None -> None
-  | Some f -> match f with
-    | Native -> Some Options.Native
-    | Smtlib2 -> Some Options.Smtlib2
-    | Why3 -> Some Options.Why3
-    | Unknown s -> Some (Options.Unknown s)
+  | Some f -> (
+      match f with
+      | Native -> Some Options.Native
+      | Smtlib2 -> Some Options.Smtlib2
+      | Why3 -> Some Options.Why3
+      | Unknown s -> Some (Options.Unknown s))
 
 let get_output_format = function
   | None -> None
-  | Some f -> match f with
-    | Native -> Some Options.Native
-    | Smtlib2 -> Some Options.Smtlib2
-    | Why3 -> Some Options.Why3
-    | Unknown s -> Some (Options.Unknown s)
+  | Some f -> (
+      match f with
+      | Native -> Some Options.Native
+      | Smtlib2 -> Some Options.Smtlib2
+      | Why3 -> Some Options.Why3
+      | Unknown s -> Some (Options.Unknown s))
 
 let get_sat_solver = function
   | None -> None
-  | Some s -> match s with
-    | CDCL -> Some Util.CDCL
-    | CDCL_Tableaux -> Some Util.CDCL_Tableaux
-    | Tableaux -> Some Util.Tableaux
-    | Tableaux_CDCL -> Some Util.Tableaux_CDCL
+  | Some s -> (
+      match s with
+      | CDCL -> Some Util.CDCL
+      | CDCL_Tableaux -> Some Util.CDCL_Tableaux
+      | Tableaux -> Some Util.Tableaux
+      | Tableaux_CDCL -> Some Util.Tableaux_CDCL)
 
 let get_instantiation_heuristic = function
   | None -> None
-  | Some m -> match m with
-    | INormal -> Some Options.INormal
-    | IAuto -> Some Options.IAuto
-    | IGreedy -> Some Options.IGreedy
+  | Some m -> (
+      match m with
+      | INormal -> Some Options.INormal
+      | IAuto -> Some Options.IAuto
+      | IGreedy -> Some Options.IGreedy)
 
 let get_no_decisions_on = function
   | None -> None
   | Some l ->
-    Some (List.fold_left (fun acc d ->
-        Util.SS.add d acc
-      ) Util.SS.empty l)
+      Some (List.fold_left (fun acc d -> Util.SS.add d acc) Util.SS.empty l)
 
 let get_frontend = function
-    None -> None
-  | Some f -> match f with
-    | Legacy -> Some "legacy"
-    | Unknown f -> Some f
+  | None -> None
+  | Some f -> ( match f with Legacy -> Some "legacy" | Unknown f -> Some f)
 
 let get_numbers = function
-    None -> None
+  | None -> None
   | Some i -> Some (Numbers.Q.from_int i)
 
-let set_options_opt f = function
-  | None -> ()
-  | Some v -> f v
+let set_options_opt f = function None -> () | Some v -> f v
 
 let set_options r =
   set_options_opt Options.set_frontend (get_frontend r.frontend);
   set_options_opt Options.set_debug r.debug;
-  set_options_opt Options.set_debug_ac r.debug_ac ;
-  set_options_opt Options.set_debug_adt r.debug_adt ;
+  set_options_opt Options.set_debug_ac r.debug_ac;
+  set_options_opt Options.set_debug_adt r.debug_adt;
   set_options_opt Options.set_debug_arith r.debug_arith;
   set_options_opt Options.set_debug_arrays r.debug_arrays;
   set_options_opt Options.set_debug_bitv r.debug_bitv;
@@ -107,14 +106,12 @@ let set_options r =
   set_options_opt Options.set_max_split (get_numbers r.max_split);
 
   set_options_opt Options.set_replay r.replay;
-  set_options_opt Options.set_replay_all_used_context
-    r.replay_all_used_context;
+  set_options_opt Options.set_replay_all_used_context r.replay_all_used_context;
   set_options_opt Options.set_replay_used_context r.replay_used_context;
   set_options_opt Options.set_save_used_context r.save_used_context;
 
   set_options_opt Options.set_answers_with_loc r.answers_with_loc;
-  set_options_opt Options.set_input_format
-    (get_input_format r.input_format);
+  set_options_opt Options.set_input_format (get_input_format r.input_format);
   Options.set_infer_input_format (get_input_format r.input_format);
   set_options_opt Options.set_parse_only r.parse_only;
   set_options_opt Options.set_parsers r.parsers;
@@ -131,8 +128,7 @@ let set_options r =
 
   set_options_opt Options.set_interpretation r.interpretation;
 
-  set_options_opt Options.set_output_format
-    (get_output_format r.output_format);
+  set_options_opt Options.set_output_format (get_output_format r.output_format);
   Options.set_infer_output_format (get_input_format r.output_format);
   set_options_opt Options.set_unsat_core r.unsat_core;
 
@@ -183,4 +179,4 @@ let set_options r =
   set_options_opt Options.set_use_fpa r.use_fpa;
   set_options_opt Options.set_timers r.timers;
 
-  set_options_opt Options.set_file r.file;
+  set_options_opt Options.set_file r.file

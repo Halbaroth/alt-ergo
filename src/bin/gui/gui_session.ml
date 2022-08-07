@@ -58,68 +58,69 @@ let save actions ac =
   Stack.push ac actions
 
 let compute_ids_offsets old_res res =
-  List.fold_left (fun acc (name1, id1) ->
-      try let id2 = List.assoc name1 res in
-        (* if id1 = id2 then acc else *) (id1, id2 - id1)::acc
-      with Not_found -> acc) [] old_res
+  List.fold_left
+    (fun acc (name1, id1) ->
+      try
+        let id2 = List.assoc name1 res in
+        (* if id1 = id2 then acc else *) (id1, id2 - id1) :: acc
+      with Not_found -> acc)
+    [] old_res
 
 let offset_id id offsets =
   let nid = ref id in
   try
     List.iter
       (fun (i, off) ->
-         if id <= i then (nid := id + off; raise Exit))
+        if id <= i then (
+          nid := id + off;
+          raise Exit))
       offsets;
     id
   with Exit -> !nid
 
-
 let offset_stack st offsets =
   let l = ref [] in
   while not (Stack.is_empty st) do
-    let ac = match Stack.pop st with
+    let ac =
+      match Stack.pop st with
       | Prune id -> Prune (offset_id id offsets)
       | IncorrectPrune id -> IncorrectPrune (offset_id id offsets)
       | Unprune id -> Unprune (offset_id id offsets)
       | AddInstance (id, name, vars) ->
-        AddInstance ((offset_id id offsets), name, vars)
+          AddInstance (offset_id id offsets, name, vars)
       | AddTrigger (id, inst_buf, trs) ->
-        AddTrigger ((offset_id id offsets), inst_buf, trs)
-      | LimitLemma (id, name, nb) ->
-        LimitLemma ((offset_id id offsets), name, nb)
-      | UnlimitLemma (id, name) ->
-        UnlimitLemma ((offset_id id offsets), name)
+          AddTrigger (offset_id id offsets, inst_buf, trs)
+      | LimitLemma (id, name, nb) -> LimitLemma (offset_id id offsets, name, nb)
+      | UnlimitLemma (id, name) -> UnlimitLemma (offset_id id offsets, name)
     in
     l := ac :: !l
   done;
   List.iter (fun ac -> Stack.push ac st) !l
 
 let read_actions res = function
-  | Some cin ->
-    begin
+  | Some cin -> (
       try
-        let old_res = (input_value cin: (string * int) list) in
-        let st = (input_value cin: action Stack.t) in
+        let old_res = (input_value cin : (string * int) list) in
+        let st = (input_value cin : action Stack.t) in
         let offsets = compute_ids_offsets old_res res in
         offset_stack st offsets;
         st
-      with End_of_file -> Stack.create ()
-    end
+      with End_of_file -> Stack.create ())
   | None -> Stack.create ()
-
 
 module SI = Util.SI
 
 let safe_session actions =
   let l = ref [] in
-  Stack.iter (fun a -> l := a::!l) actions;
+  Stack.iter (fun a -> l := a :: !l) actions;
   let list_actions = !l in
   let _, incorrect_prunes =
-    List.fold_left (fun (prunes, incorrect_prunes) -> function
-        | Prune id -> SI.add id prunes, incorrect_prunes
-        | IncorrectPrune id -> prunes, SI.add id incorrect_prunes
-        | Unprune id -> SI.remove id prunes, SI.remove id incorrect_prunes
-        | _ -> prunes, incorrect_prunes)
+    List.fold_left
+      (fun (prunes, incorrect_prunes) -> function
+        | Prune id -> (SI.add id prunes, incorrect_prunes)
+        | IncorrectPrune id -> (prunes, SI.add id incorrect_prunes)
+        | Unprune id -> (SI.remove id prunes, SI.remove id incorrect_prunes)
+        | _ -> (prunes, incorrect_prunes))
       (SI.empty, SI.empty) list_actions
   in
   SI.is_empty incorrect_prunes

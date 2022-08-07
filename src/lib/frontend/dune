@@ -1,0 +1,5 @@
+(library
+ (name alt_ergo_lib_frontend)
+ (public_name alt-ergo-lib.frontend)
+ (modules Cnf Commands Input Frontend Parsed_interface Typechecker)
+ (libraries alt_ergo_lib_structs alt_ergo_lib_reasoners))

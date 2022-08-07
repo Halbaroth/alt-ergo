@@ -1,5 +1,4 @@
 (executable
-  (name ocp_checker)
-  (modules Ocp_checker)
-  (libraries stdlib-shims)
-)
+ (name ocp_checker)
+ (modules Ocp_checker)
+ (libraries stdlib-shims))

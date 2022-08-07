@@ -26,37 +26,51 @@
 (*                                                                            *)
 (******************************************************************************)
 
+module Util = Alt_ergo_lib_util
+module Structs = Alt_ergo_lib_structs
+
 module type S = sig
   type t
   type theory
+
   open Matching_types
 
   val empty : t
 
-  val make:
+  val make :
     max_t_depth:int ->
-    Matching_types.info Expr.Map.t ->
-    Expr.t list Expr.Map.t Symbols.Map.t ->
+    Matching_types.info Structs.Expr.Map.t ->
+    Structs.Expr.t list Structs.Expr.Map.t Structs.Sy.Map.t ->
     Matching_types.trigger_info list ->
     t
 
-  val add_term : term_info -> Expr.t -> t -> t
+  val add_term : term_info -> Structs.Expr.t -> t -> t
   val max_term_depth : t -> int -> t
+
   val add_triggers :
-    Util.matching_env -> t -> (Expr.t * int * Explanation.t) Expr.Map.t -> t
-  val terms_info : t -> info Expr.Map.t * Expr.t list Expr.Map.t Symbols.Map.t
+    Util.Util.matching_env ->
+    t ->
+    (Structs.Expr.t * int * Structs.Ex.t) Structs.Expr.Map.t ->
+    t
+
+  val terms_info :
+    t ->
+    info Structs.Expr.Map.t
+    * Structs.Expr.t list Structs.Expr.Map.t Structs.Sy.Map.t
+
   val query :
-    Util.matching_env -> t -> theory -> (trigger_info * gsubst list) list
-
+    Util.Util.matching_env -> t -> theory -> (trigger_info * gsubst list) list
 end
-
 
 module type Arg = sig
   type t
-  val term_repr : t -> Expr.t -> init_term:bool -> Expr.t
-  val are_equal : t -> Expr.t -> Expr.t -> init_terms:bool -> Th_util.answer
-  val class_of : t -> Expr.t -> Expr.t list
-end
 
+  val term_repr : t -> Structs.Expr.t -> init_term:bool -> Structs.Expr.t
+
+  val are_equal :
+    t -> Structs.Expr.t -> Structs.Expr.t -> init_terms:bool -> Th_util.answer
+
+  val class_of : t -> Structs.Expr.t -> Structs.Expr.t list
+end
 
 module Make (X : Arg) : S with type theory = X.t

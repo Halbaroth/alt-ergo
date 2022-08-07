@@ -9,34 +9,34 @@
 (*                                                                            *)
 (******************************************************************************)
 
-open AltErgoLib
+module Frontend = Alt_ergo_lib_frontend
+module Structs = Alt_ergo_lib_structs
+module Util = Alt_ergo_lib_util
 open AltErgoParsers
 
 (* === LEGACY input method === *)
 
 let register_legacy () =
-  let module M : Input.S = struct
-
+  let module M : Frontend.Input.S = struct
     (* Parsing *)
 
-    type parsed = Parsed.decl
+    type parsed = Structs.Parsed.decl
 
     let parse_file ~content ~format =
       let l = Parsers.parse_problem_as_string ~content ~format in
-      Lists.to_seq l
+      Util.Lists.to_seq l
 
     let parse_files ~filename ~preludes =
       let l = Parsers.parse_problem ~filename ~preludes in
-      Lists.to_seq l
+      Util.Lists.to_seq l
 
     (* Typechecking *)
 
-    include Typechecker
-
+    include Frontend.Typechecker
   end in
   (* Register the parser for natif format *)
   AltErgoParsers.Native_lexer.register_native ();
   (* Register the parser for smt2 format *)
   AltErgoParsers.Psmt2_to_alt_ergo.register_psmt2 ();
   (* Register the legacy frontend *)
-  Input.register "legacy" (module M)
+  Frontend.Input.register "legacy" (module M)

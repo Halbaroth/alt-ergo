@@ -27,4 +27,3 @@ val set_timeout : is_gui:bool -> float -> unit
 
 val unset_timeout : is_gui:bool -> unit
 (** Unset the previously set timer. *)
-

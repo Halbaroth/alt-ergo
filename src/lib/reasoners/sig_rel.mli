@@ -26,58 +26,68 @@
 (*                                                                            *)
 (******************************************************************************)
 
-type 'a literal = LTerm of Expr.t | LSem of 'a Xliteral.view
+module Util = Alt_ergo_lib_util
+module Structs = Alt_ergo_lib_structs
 
-type instances = (Expr.t list * Expr.gformula * Explanation.t) list
+type 'a literal = LTerm of Structs.Expr.t | LSem of 'a Structs.Xliteral.view
+
+type instances =
+  (Structs.Expr.t list * Structs.Expr.gformula * Structs.Ex.t) list
 
 type 'a input =
-  'a Xliteral.view * Expr.t option * Explanation.t * Th_util.lit_origin
+  'a Structs.Xliteral.view
+  * Structs.Expr.t option
+  * Structs.Ex.t
+  * Th_util.lit_origin
 
-type 'a fact = 'a literal * Explanation.t * Th_util.lit_origin
+type 'a fact = 'a literal * Structs.Ex.t * Th_util.lit_origin
 
 type 'a facts = {
-  equas     : 'a fact Queue.t;
-  diseqs  : 'a fact Queue.t;
-  ineqs   : 'a fact Queue.t;
-  mutable touched : 'a Util.MI.t;
+  equas : 'a fact Queue.t;
+  diseqs : 'a fact Queue.t;
+  ineqs : 'a fact Queue.t;
+  mutable touched : 'a Util.Util.MI.t;
 }
 
-type 'a result = {
-  assume : 'a fact list;
-  remove: Expr.t list;
-}
+type 'a result = { assume : 'a fact list; remove : Structs.Expr.t list }
 
 module type RELATION = sig
   type t
 
-  val empty : Expr.Set.t list -> t
+  val empty : Structs.Expr.Set.t list -> t
 
-  val assume : t ->
-    Uf.t -> (Shostak.Combine.r input) list -> t * Shostak.Combine.r result
-  val query  : t -> Uf.t -> Shostak.Combine.r input -> Th_util.answer
+  val assume :
+    t -> Uf.t -> Shostak.Combine.r input list -> t * Shostak.Combine.r result
+
+  val query : t -> Uf.t -> Shostak.Combine.r input -> Th_util.answer
 
   val case_split :
-    t -> Uf.t ->
+    t ->
+    Uf.t ->
     for_model:bool ->
-    (Shostak.Combine.r Xliteral.view * bool * Th_util.lit_origin) list
+    (Shostak.Combine.r Structs.Xliteral.view * bool * Th_util.lit_origin) list
   (** case_split env returns a list of equalities *)
 
-  val add : t -> Uf.t -> Shostak.Combine.r -> Expr.t ->
-    t * (Shostak.Combine.r Xliteral.view * Explanation.t) list
+  val add :
+    t ->
+    Uf.t ->
+    Shostak.Combine.r ->
+    Structs.Expr.t ->
+    t * (Shostak.Combine.r Structs.Xliteral.view * Structs.Ex.t) list
   (** add a representant to take into account *)
 
   val instantiate :
     do_syntactic_matching:bool ->
-    Matching_types.info Expr.Map.t * Expr.t list Expr.Map.t Symbols.Map.t ->
-    t -> Uf.t -> (Expr.t -> Expr.t -> bool) ->
+    Matching_types.info Structs.Expr.Map.t
+    * Structs.Expr.t list Structs.Expr.Map.t Structs.Sy.Map.t ->
+    t ->
+    Uf.t ->
+    (Structs.Expr.t -> Structs.Expr.t -> bool) ->
     t * instances
 
   val print_model :
-    Format.formatter -> t -> (Expr.t * Shostak.Combine.r) list -> unit
+    Format.formatter -> t -> (Structs.Expr.t * Shostak.Combine.r) list -> unit
 
-  val new_terms : t -> Expr.Set.t
-
-  val assume_th_elt : t -> Expr.th_elt -> Explanation.t -> t
-
+  val new_terms : t -> Structs.Expr.Set.t
+  val assume_th_elt : t -> Structs.Expr.th_elt -> Structs.Ex.t -> t
 end
-

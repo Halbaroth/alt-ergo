@@ -29,25 +29,23 @@
 open AltErgoLib
 open Annoted_ast
 
-
 val prune : ?register:bool -> env -> 'a annoted -> unit
-
 val incorrect_prune : ?register:bool -> env -> 'a annoted -> unit
-
 val unprune : ?register:bool -> env -> 'a annoted -> unit
-
 val toggle_prune : env -> 'a annoted -> unit
-
 val connect : env -> unit
-
 val clear_used_lemmas_tags : env -> unit
-
 val show_used_lemmas : env -> Explanation.t -> unit
-
 val prune_unused : env -> unit
 
 val add_instance :
-  ?register:bool -> env -> int -> aform -> Util.axiom_kind -> string ->
-  string list -> unit
+  ?register:bool ->
+  env ->
+  int ->
+  aform ->
+  Util.axiom_kind ->
+  string ->
+  string list ->
+  unit
 
 val readd_trigger : ?register:bool -> env -> int -> string -> bool -> unit

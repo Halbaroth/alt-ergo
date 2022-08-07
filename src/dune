@@ -10,5 +10,4 @@
  (release ;; The release profile has optimizations enabled.
   (flags
    (:standard -bin-annot))
-  (ocamlopt_flags -O3 -unbox-closures))
-)
+  (ocamlopt_flags -O3 -unbox-closures)))

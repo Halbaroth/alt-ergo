@@ -8,6 +8,6 @@
 (*                                                                            *)
 (******************************************************************************)
 
+val load : unit -> unit
 (** Dynamicaly load parser p if option --add-parser p is enable
     @raise Errors.Dynlink_error {!Errors.Dynlink_error} *)
-val load : unit -> unit

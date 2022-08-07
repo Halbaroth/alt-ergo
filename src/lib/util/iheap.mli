@@ -43,7 +43,7 @@ val insert : (int -> int -> bool) -> t -> int -> unit
 (** Inset a new element in the heap.
     TODO: document comparison function. *)
 
-val grow_to_by_double: t -> int -> unit
+val grow_to_by_double : t -> int -> unit
 (** Grow the size of the heap by multiplying it by 2
     until it is at least the size specified. *)
 
@@ -53,4 +53,3 @@ val remove_min : (int -> int -> bool) -> t -> int
 val filter : t -> (int -> bool) -> (int -> int -> bool) -> unit
 (** Filter elements in the heap.
     TODO: document comparison function ! *)
-

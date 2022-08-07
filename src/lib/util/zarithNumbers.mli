@@ -26,8 +26,8 @@
 (*                                                                            *)
 (******************************************************************************)
 
-(** Integers implementation. Based on Zarith's integers **)
 module Z : NumbersInterface.ZSig with type t = Z.t
+(** Integers implementation. Based on Zarith's integers **)
 
-(** Rationals implementation. Based on Zarith's rationals **)
 module Q : NumbersInterface.QSig with module Z = Z
+(** Rationals implementation. Based on Zarith's rationals **)

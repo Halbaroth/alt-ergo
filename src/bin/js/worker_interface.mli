@@ -18,7 +18,13 @@
 (** Types extract from AltErgoLib Utils.util and Utils.options usefull for
     interact with the worker *)
 
-type input_format = Native | Smtlib2 | Why3 (* | SZS *) | Unknown of string
+type input_format =
+  | Native
+  | Smtlib2
+  | Why3
+  (* | SZS *)
+  | Unknown of string
+
 type output_format = input_format
 
 type case_split_policy =
@@ -26,20 +32,10 @@ type case_split_policy =
   | BeforeMatching
   | AfterMatching
 
-type sat_solver =
-  | Tableaux
-  | Tableaux_CDCL
-  | CDCL
-  | CDCL_Tableaux
+type sat_solver = Tableaux | Tableaux_CDCL | CDCL | CDCL_Tableaux
+type frontend = Legacy | Unknown of string
+type instantiation_heuristic = INormal | IAuto | IGreedy
 
-type frontend =
-  | Legacy
-  | Unknown of string
-
-type instantiation_heuristic =  INormal | IAuto | IGreedy
-
-(** Record type that contains all options that can be set for the Alt-Ergo's
-    worker. *)
 type options = {
   debug : bool option;
   debug_ac : bool option;
@@ -68,40 +64,30 @@ type options = {
   debug_use : bool option;
   debug_warnings : bool option;
   rule : int option;
-
   case_split_policy : case_split_policy option;
   enable_adts_cs : bool option;
   max_split : int option;
-
   replay : bool option;
   replay_all_used_context : bool option;
   replay_used_context : bool option;
   save_used_context : bool option;
-
   answers_with_loc : bool option;
   frontend : frontend option;
   input_format : input_format option;
   parse_only : bool option;
-  parsers : (string list) option;
-  preludes : (string list) option;
+  parsers : string list option;
+  preludes : string list option;
   type_only : bool option;
   type_smt2 : bool option;
-
   disable_weaks : bool option;
   enable_assertions : bool option;
-
   age_bound : int option;
   fm_cross_limit : int option;
   steps_bound : int option;
-
   interpretation : int option;
-
   output_format : output_format option;
   unsat_core : bool option;
-
-
   verbose : bool option;
-
   instantiation_heuristic : instantiation_heuristic option;
   instantiate_after_backjump : bool option;
   max_multi_triggers_size : int option;
@@ -110,7 +96,6 @@ type options = {
   no_user_triggers : bool option;
   normalize_instances : bool option;
   triggers_var : bool option;
-
   arith_matching : bool option;
   bottom_classes : bool option;
   cdcl_tableaux_inst : bool option;
@@ -121,16 +106,14 @@ type options = {
   no_backjumping : bool option;
   no_backward : bool option;
   no_decisions : bool option;
-  no_decisions_on : (string list) option;
+  no_decisions_on : string list option;
   no_sat_learning : bool option;
   sat_solver : sat_solver option;
   tableaux_cdcl : bool option;
-
   disable_ites : bool option;
   inline_lets : bool option;
   rewriting : bool option;
   term_like_pp : bool option;
-
   disable_adts : bool option;
   no_ac : bool option;
   no_contracongru : bool option;
@@ -142,21 +125,18 @@ type options = {
   tighten_vars : bool option;
   use_fpa : bool option;
   timers : bool option;
-
   file : string option;
 }
+(** Record type that contains all options that can be set for the Alt-Ergo's
+    worker. *)
 
-type used_axiom =
-  | Used
-  | Unused
-  | Unknown
+type used_axiom = Used | Unused | Unknown
 
+type statistics = (string * int * int * int * used_axiom) list
 (** type that contains a list of the axiom used in instances.
     axiom name, start pos, end pos, number of time its used in insstances,
     Used if its usefull to solve the goal (from unsat core), Unused otherwise
     Unknown if the unsat-core option is not setted *)
-type statistics =
-  (string * int * int * int * used_axiom) list
 
 (** Type used to return the status of solving
     This can be usefull to match status instead of analysing
@@ -169,8 +149,6 @@ type status =
   | LimitReached of string
   | Error of string
 
-(** Record type that contains all results that can be returned by the
-    Alt-Ergo's worker. *)
 type results = {
   worker_id : int option;
   status : status;
@@ -182,48 +160,52 @@ type results = {
   model : string list option;
   unsat_core : string list option;
 }
+(** Record type that contains all results that can be returned by the
+    Alt-Ergo's worker. *)
 
 (** {2 Functions} *)
 
 (** {3 File functions} *)
 
+val file_to_json :
+  string option ->
+  int option ->
+  string list ->
+  Js_of_ocaml.Js.js_string Js_of_ocaml.Js.t
 (** Take an optional file name, an optional worker identifier (integer) and
     the file content as a string and convert
     it to a json file into Js string *)
-val file_to_json :
-  string option -> int option -> string list ->
-  Js_of_ocaml.Js.js_string Js_of_ocaml.Js.t
 
-(** Take a Js string corresponding to a Json file and decoding in into
-    an optional file name, an optional worker identifier and the file content *)
 val file_from_json :
   Js_of_ocaml.Js.js_string Js_of_ocaml.Js.t ->
   string option * int option * string list
+(** Take a Js string corresponding to a Json file and decoding in into
+    an optional file name, an optional worker identifier and the file content *)
 
 (** {3 Options functions} *)
 
+val init_options : unit -> options
 (** Return a record containing None for all options in the option type
     Since the function set_options in options_interface set only options
     with value (Some v), this function is use to create a record with all
     field to None. *)
-val init_options : unit -> options
 
+val options_to_json : options -> Js_of_ocaml.Js.js_string Js_of_ocaml.Js.t
 (** Return a JS string correspondind of the encoding in Json of the options.
     Field with None value or not included in the Json.*)
-val options_to_json : options -> Js_of_ocaml.Js.js_string Js_of_ocaml.Js.t
 
+val options_from_json : Js_of_ocaml.Js.js_string Js_of_ocaml.Js.t -> options
 (** Get a JS string corresponding of a Json and decoding it into a record of
     the options type. If some field are not included in the Json,
     the value None is set for this fields *)
-val options_from_json : Js_of_ocaml.Js.js_string Js_of_ocaml.Js.t -> options
 
 (** {3 Results functions} *)
 
-(** Return a record containing None for all results field in the results type *)
 val init_results : unit -> results
+(** Return a record containing None for all results field in the results type *)
 
-(** Convert the results type to Json into a Js string *)
 val results_to_json : results -> Js_of_ocaml.Js.js_string Js_of_ocaml.Js.t
+(** Convert the results type to Json into a Js string *)
 
-(** Convert Js string corresponding to a Json file into the results type *)
 val results_from_json : Js_of_ocaml.Js.js_string Js_of_ocaml.Js.t -> results
+(** Convert Js string corresponding to a Json file into the results type *)

@@ -27,7 +27,9 @@
 (******************************************************************************)
 
 [@@@ocaml.warning "-33"]
-open Options
+
+module Util = Alt_ergo_lib_util
+open Util.Options
 
 type constant =
   | ConstBitv of string
@@ -38,13 +40,26 @@ type constant =
   | ConstVoid
 
 type pp_infix =
-  | PPand | PPor | PPxor | PPimplies | PPiff
-  | PPlt | PPle | PPgt | PPge | PPeq | PPneq
-  | PPadd | PPsub | PPmul | PPdiv | PPmod
-  | PPpow_int | PPpow_real
+  | PPand
+  | PPor
+  | PPxor
+  | PPimplies
+  | PPiff
+  | PPlt
+  | PPle
+  | PPgt
+  | PPge
+  | PPeq
+  | PPneq
+  | PPadd
+  | PPsub
+  | PPmul
+  | PPdiv
+  | PPmod
+  | PPpow_int
+  | PPpow_real
 
-type pp_prefix =
-  | PPneg | PPnot
+type pp_prefix = PPneg | PPnot
 
 type ppure_type =
   | PPTint
@@ -52,22 +67,19 @@ type ppure_type =
   | PPTreal
   | PPTunit
   | PPTbitv of int
-  | PPTvarid of string * Loc.t
-  | PPTexternal of ppure_type list * string * Loc.t
+  | PPTvarid of string * Util.Loc.t
+  | PPTexternal of ppure_type list * string * Util.Loc.t
 
-type pattern =
-  { pat_loc : Loc.t; pat_desc : string * string list }
+type pattern = { pat_loc : Util.Loc.t; pat_desc : string * string list }
 
-type lexpr =
-  { pp_loc : Loc.t; pp_desc : pp_desc }
+type lexpr = { pp_loc : Util.Loc.t; pp_desc : pp_desc }
 
 and pp_desc =
   | PPvar of string
   | PPapp of string * lexpr list
   | PPmapsTo of string * lexpr
   | PPinInterval of lexpr * bool * lexpr * lexpr * bool
-  (* bool = true <-> interval is_open *)
-
+    (* bool = true <-> interval is_open *)
   | PPdistinct of lexpr list
   | PPconst of constant
   | PPinfix of lexpr * pp_infix * lexpr
@@ -85,11 +97,15 @@ and pp_desc =
   | PPexists of
       (string * ppure_type) list * (lexpr list * bool) list * lexpr list * lexpr
   | PPforall_named of
-      (string * string * ppure_type) list * (lexpr list * bool) list *
-      lexpr list * lexpr
+      (string * string * ppure_type) list
+      * (lexpr list * bool) list
+      * lexpr list
+      * lexpr
   | PPexists_named of
-      (string * string * ppure_type) list * (lexpr list * bool) list *
-      lexpr list * lexpr
+      (string * string * ppure_type) list
+      * (lexpr list * bool) list
+      * lexpr list
+      * lexpr
   | PPnamed of string * lexpr
   | PPlet of (string * lexpr) list * lexpr
   | PPcheck of lexpr
@@ -106,27 +122,32 @@ type plogic_type =
   | PFunction of ppure_type list * ppure_type
 
 type body_type_decl =
-  | Record of string * (string * ppure_type) list  (* lbl : t *)
+  | Record of string * (string * ppure_type) list (* lbl : t *)
   | Enum of string list
   | Algebraic of (string * (string * ppure_type) list) list
   | Abstract
 
-type type_decl = Loc.t * string list * string * body_type_decl
+type type_decl = Util.Loc.t * string list * string * body_type_decl
 
 type decl =
-  | Theory of Loc.t * string * string * decl list
-  | Axiom of Loc.t * string * Util.axiom_kind * lexpr
-  | Rewriting of Loc.t * string * lexpr list
-  | Goal of Loc.t * string * lexpr
-  | Logic of Loc.t * Symbols.name_kind * (string * string) list * plogic_type
+  | Theory of Util.Loc.t * string * string * decl list
+  | Axiom of Util.Loc.t * string * Util.Util.axiom_kind * lexpr
+  | Rewriting of Util.Loc.t * string * lexpr list
+  | Goal of Util.Loc.t * string * lexpr
+  | Logic of Util.Loc.t * Sy.name_kind * (string * string) list * plogic_type
   | Predicate_def of
-      Loc.t * (string * string) *
-      (Loc.t * string * ppure_type) list * lexpr
+      Util.Loc.t
+      * (string * string)
+      * (Util.Loc.t * string * ppure_type) list
+      * lexpr
   | Function_def of
-      Loc.t * (string * string) *
-      (Loc.t * string * ppure_type) list * ppure_type * lexpr
+      Util.Loc.t
+      * (string * string)
+      * (Util.Loc.t * string * ppure_type) list
+      * ppure_type
+      * lexpr
   | TypeDecl of type_decl list
-  | Push of Loc.t * int
-  | Pop of Loc.t * int
+  | Push of Util.Loc.t * int
+  | Pop of Util.Loc.t * int
 
 type file = decl list

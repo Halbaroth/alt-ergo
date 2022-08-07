@@ -58,7 +58,6 @@ type inst_model = {
 
 type timers_model = {
   timers : Timers.t;
-
   label_sat : GMisc.label;
   label_match : GMisc.label;
   label_cc : GMisc.label;
@@ -67,7 +66,6 @@ type timers_model = {
   label_sum : GMisc.label;
   label_records : GMisc.label;
   label_ac : GMisc.label;
-
   tl_sat : GMisc.label;
   tl_match : GMisc.label;
   tl_cc : GMisc.label;
@@ -76,7 +74,6 @@ type timers_model = {
   tl_sum : GMisc.label;
   tl_records : GMisc.label;
   tl_ac : GMisc.label;
-
   pr_sat : GRange.progress_bar;
   pr_match : GRange.progress_bar;
   pr_cc : GRange.progress_bar;
@@ -87,22 +84,20 @@ type timers_model = {
   pr_ac : GRange.progress_bar;
 }
 
-type 'a annoted =
-  { mutable c : 'a;
-    mutable pruned : bool;
-    mutable polarity : bool;
-    tag : GText.tag;
-    ptag : GText.tag;
-    id : int;
-    buf : sbuffer;
-    mutable line : int;
-  }
+type 'a annoted = {
+  mutable c : 'a;
+  mutable pruned : bool;
+  mutable polarity : bool;
+  tag : GText.tag;
+  ptag : GText.tag;
+  id : int;
+  buf : sbuffer;
+  mutable line : int;
+}
 
-type aoplogic =
-    AOPand | AOPor | AOPxor | AOPimp | AOPnot | AOPif | AOPiff
+type aoplogic = AOPand | AOPor | AOPxor | AOPimp | AOPnot | AOPif | AOPiff
 
-type aterm =
-  { at_ty : Ty.t; at_desc : at_desc }
+type aterm = { at_ty : Ty.t; at_desc : at_desc }
 
 and at_desc =
   | ATconst of tconstant
@@ -134,11 +129,11 @@ and aatom =
   | AApred of aterm * bool (* true <-> negated *)
 
 and aquant_form = {
-  aqf_bvars : (Symbols.t * Ty.t) list ;
-  aqf_upvars : (Symbols.t * Ty.t) list ;
-  mutable aqf_triggers : (aterm annoted list * bool) list ;
+  aqf_bvars : (Symbols.t * Ty.t) list;
+  aqf_upvars : (Symbols.t * Ty.t) list;
+  mutable aqf_triggers : (aterm annoted list * bool) list;
   aqf_hyp : aform annoted list;
-  aqf_form : aform annoted
+  aqf_form : aform annoted;
 }
 
 and aform =
@@ -150,22 +145,23 @@ and aform =
       (Symbols.t * Ty.t) list * (Symbols.t * atlet_kind) list * aform annoted
   | AFnamed of Hstring.t * aform annoted
 
-and atlet_kind =
-  | ATletTerm of aterm annoted
-  | ATletForm of aform annoted
+and atlet_kind = ATletTerm of aterm annoted | ATletForm of aform annoted
 
 type atyped_decl =
   | ATheory of
       Loc.t * string * Util.theories_extensions * atyped_decl annoted list
   | AAxiom of Loc.t * string * Util.axiom_kind * aform
-  | ARewriting of Loc.t * string * ((aterm rwt_rule) annoted) list
+  | ARewriting of Loc.t * string * aterm rwt_rule annoted list
   | AGoal of Loc.t * goal_sort * string * aform annoted
   | ALogic of Loc.t * string list * plogic_type * tlogic_type
-  | APredicate_def
-    of Loc.t * string * (string * ppure_type * Ty.t) list * aform
-  | AFunction_def
-    of Loc.t * string * (string * ppure_type * Ty.t) list
-       * ppure_type * Ty.t * aform
+  | APredicate_def of Loc.t * string * (string * ppure_type * Ty.t) list * aform
+  | AFunction_def of
+      Loc.t
+      * string
+      * (string * ppure_type * Ty.t) list
+      * ppure_type
+      * Ty.t
+      * aform
   | ATypeDecl of Loc.t * string list * string * body_type_decl * Ty.t
 
 type annoted_node =
@@ -174,11 +170,8 @@ type annoted_node =
   | AT of aterm annoted
   | QF of aquant_form annoted
 
-
 module MDep : Map.S with type key = atyped_decl annoted
-
 module MTag : Map.S with type key = GText.tag
-
 
 type env = {
   buffer : sbuffer;
@@ -203,12 +196,10 @@ type env = {
 }
 
 val font : GPango.font_description
-
 val increase_size : env list -> unit
 val decrease_size : env list -> unit
 val reset_size : env list -> unit
 val set_font : ?family:string -> ?size:int -> ?ratio:float -> unit -> unit
-
 
 val create_env :
   sbuffer ->
@@ -234,45 +225,55 @@ val create_replay_env :
   env
 
 val find :
-  GText.tag -> sbuffer -> (atyped_decl annoted * Typechecker.env) list ->
+  GText.tag ->
+  sbuffer ->
+  (atyped_decl annoted * Typechecker.env) list ->
   annoted_node option
 
 val find_decl :
-  GText.tag -> sbuffer -> (atyped_decl annoted * Typechecker.env) list ->
+  GText.tag ->
+  sbuffer ->
+  (atyped_decl annoted * Typechecker.env) list ->
   annoted_node option
 
 val find_tag_inversedeps :
   (atyped_decl annoted list * atyped_decl annoted list) MDep.t ->
-  GText.tag -> atyped_decl annoted list option
+  GText.tag ->
+  atyped_decl annoted list option
 
 val find_tag_deps :
   (atyped_decl annoted list * atyped_decl annoted list) MDep.t ->
-  GText.tag -> atyped_decl annoted list option
+  GText.tag ->
+  atyped_decl annoted list option
 
 val make_dep :
-  (atyped_decl annoted  * Typechecker.env) list ->
+  (atyped_decl annoted * Typechecker.env) list ->
   (atyped_decl annoted list * atyped_decl annoted list) MDep.t
 
 val tag : sbuffer -> GText.tag
-
 val new_annot : sbuffer -> 'a -> int -> GText.tag -> 'a annoted
 
 val annot :
-  sbuffer -> ((int tdecl, int) Typed.annoted * Typechecker.env) list ->
+  sbuffer ->
+  ((int tdecl, int) Typed.annoted * Typechecker.env) list ->
   (atyped_decl annoted * Typechecker.env) list
 
-val annot_of_tterm :
-  sbuffer -> (int tterm, int) Typed.annoted -> aterm annoted
+val annot_of_tterm : sbuffer -> (int tterm, int) Typed.annoted -> aterm annoted
 
 val add_aaterm_list_at :
   error_model ->
   int ->
   sbuffer ->
-  GText.tag list -> ?multi_line:bool -> ?offset:int -> GText.iter ->
-  string -> aterm annoted list -> unit
+  GText.tag list ->
+  ?multi_line:bool ->
+  ?offset:int ->
+  GText.iter ->
+  string ->
+  aterm annoted list ->
+  unit
 
-val add_aaform : error_model -> sbuffer -> int -> GText.tag list ->
-  aform annoted -> unit
+val add_aaform :
+  error_model -> sbuffer -> int -> GText.tag list -> aform annoted -> unit
 
 val to_ast :
   (atyped_decl annoted * Typechecker.env) list ->
@@ -281,7 +282,7 @@ val to_ast :
 val add_to_buffer :
   error_model -> sbuffer -> (atyped_decl annoted * Typechecker.env) list -> unit
 
-val print_typed_decl_list  :
+val print_typed_decl_list :
   Format.formatter -> (int tdecl, int) Typed.annoted list -> unit
 
 val findtags_using :
@@ -297,11 +298,11 @@ val findtags_dep_adecl :
   atyped_decl -> (atyped_decl annoted * Typechecker.env) list -> GText.tag list
 
 val findtags_proof :
-  Explanation.t -> (atyped_decl annoted * Typechecker.env) list ->
+  Explanation.t ->
+  (atyped_decl annoted * Typechecker.env) list ->
   GText.tag list * int MTag.t
 
-val find_line :
-  int -> (atyped_decl annoted * 'a) list -> int * GText.tag
+val find_line : int -> (atyped_decl annoted * 'a) list -> int * GText.tag
 
 val findbyid :
   int -> (atyped_decl annoted * Typechecker.env) list -> annoted_node
@@ -311,6 +312,5 @@ val findbyid_decl :
 
 val compute_resulting_ids :
   (atyped_decl annoted * Typechecker.env) list -> (string * int) list
-
 
 val commit_tags_buffer : sbuffer -> unit

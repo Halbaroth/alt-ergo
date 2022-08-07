@@ -27,10 +27,11 @@
 /******************************************************************************/
 
 %{
+  module Util = Alt_ergo_lib_util
+  module Frontend = Alt_ergo_lib_frontend
   [@@@ocaml.warning "-33"]
-  open AltErgoLib
-  open Options
-  open Parsed_interface
+  open Util.Options
+  open Frontend.Parsed_interface
 %}
 
 /* Tokens */
@@ -73,13 +74,13 @@
 
 /* Entry points */
 
-%type <AltErgoLib.Parsed.lexpr list * bool> trigger_parser
+%type <Alt_ergo_lib_structs.Parsed.lexpr list * bool> trigger_parser
 %start trigger_parser
 
-%type <AltErgoLib.Parsed.lexpr> lexpr_parser
+%type <Alt_ergo_lib_structs.Parsed.lexpr> lexpr_parser
 %start lexpr_parser
 
-%type <AltErgoLib.Parsed.file> file_parser
+%type <Alt_ergo_lib_structs.Parsed.file> file_parser
 %start file_parser
 %%
 
@@ -116,7 +117,7 @@ decl:
              List.map
                (fun (a, b, c, d) ->
                  match mk_algebraic_type_decl a b c d with
-                 | Parsed.TypeDecl [e] -> e
+                 | Alt_ergo_lib_structs.Parsed.TypeDecl [e] -> e
                  | _ -> assert false
                ) l
            in
@@ -163,8 +164,8 @@ theory_elt:
 
 
 ac_modifier:
-| /* */ { Symbols.Other }
-| AC    { Symbols.Ac }
+| /* */ { Structs.Sy.Other }
+| AC    { Structs.Sy.Ac }
 
 primitive_type:
 | INT  { int_type }

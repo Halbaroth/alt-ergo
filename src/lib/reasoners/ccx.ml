@@ -26,157 +26,139 @@
 (*                                                                            *)
 (******************************************************************************)
 
+module Util = Alt_ergo_lib_util
+module Structs = Alt_ergo_lib_structs
 open Format
-open Options
-
+open Util.Options
 module X = Shostak.Combine
-module Ex = Explanation
-module E = Expr
-module A = Xliteral
-module SE = Expr.Set
+module A = Structs.Xliteral
 open Sig_rel
 
-module Sy = Symbols
-
 module type S = sig
-
   type t
   type r = Shostak.Combine.r
 
   val empty : unit -> t
-
   val empty_facts : unit -> r facts
-
   val add_fact : r facts -> r fact -> unit
 
   val add_term :
-    t ->
-    r facts -> (* acc *)
-    Expr.t ->
-    Explanation.t ->
-    t * r facts
+    t -> r facts -> (* acc *)
+                    Structs.Expr.t -> Structs.Ex.t -> t * r facts
 
   val add :
-    t ->
-    r facts -> (* acc *)
-    E.t ->
-    Explanation.t -> t * r facts
+    t -> r facts -> (* acc *)
+                    Structs.Expr.t -> Structs.Ex.t -> t * r facts
 
   val assume_literals :
     t ->
-    (r literal * Explanation.t * Th_util.lit_origin) list ->
+    (r literal * Structs.Ex.t * Th_util.lit_origin) list ->
     r facts ->
-    t * (r literal * Explanation.t * Th_util.lit_origin) list
+    t * (r literal * Structs.Ex.t * Th_util.lit_origin) list
 
   val case_split :
-    t -> for_model:bool ->
-    (r Xliteral.view * bool * Th_util.lit_origin) list * t
-  val query :  t -> E.t -> Th_util.answer
-  val new_terms : t -> Expr.Set.t
-  val class_of : t -> Expr.t -> Expr.t list
-  val are_equal : t -> Expr.t -> Expr.t -> init_terms:bool -> Th_util.answer
-  val are_distinct : t -> Expr.t -> Expr.t -> Th_util.answer
-  val cl_extract : t -> Expr.Set.t list
-  val term_repr : t -> Expr.t -> init_term:bool -> Expr.t
+    t ->
+    for_model:bool ->
+    (r Structs.Xliteral.view * bool * Th_util.lit_origin) list * t
+
+  val query : t -> Structs.Expr.t -> Th_util.answer
+  val new_terms : t -> Structs.Expr.Set.t
+  val class_of : t -> Structs.Expr.t -> Structs.Expr.t list
+
+  val are_equal :
+    t -> Structs.Expr.t -> Structs.Expr.t -> init_terms:bool -> Th_util.answer
+
+  val are_distinct : t -> Structs.Expr.t -> Structs.Expr.t -> Th_util.answer
+  val cl_extract : t -> Structs.Expr.Set.t list
+  val term_repr : t -> Structs.Expr.t -> init_term:bool -> Structs.Expr.t
   val print_model : Format.formatter -> t -> unit
   val get_union_find : t -> Uf.t
+  val assume_th_elt : t -> Structs.Expr.th_elt -> Structs.Ex.t -> t
 
-  val assume_th_elt : t -> Expr.th_elt -> Explanation.t -> t
   val theories_instances :
     do_syntactic_matching:bool ->
-    Matching_types.info Expr.Map.t * Expr.t list Expr.Map.t Symbols.Map.t ->
-    t -> (Expr.t -> Expr.t -> bool) -> t * instances
-
+    Matching_types.info Structs.Expr.Map.t
+    * Structs.Expr.t list Structs.Expr.Map.t Structs.Sy.Map.t ->
+    t ->
+    (Structs.Expr.t -> Structs.Expr.t -> bool) ->
+    t * instances
 end
 
 module Main : S = struct
-
   module SetA = Use.SA
   module Rel = Relation
   module Q = Queue
   module LR = Uf.LX
 
-  type t = {
-    use : Use.t;
-    uf : Uf.t ;
-    relation : Rel.t
-  }
-
+  type t = { use : Use.t; uf : Uf.t; relation : Rel.t }
   type r = Shostak.Combine.r
 
-  let empty () = {
-    use = Use.empty ;
-    uf = Uf.empty () ;
-    relation = Rel.empty [];
-  }
+  let empty () = { use = Use.empty; uf = Uf.empty (); relation = Rel.empty [] }
 
   let empty_facts () =
-    { equas   = Queue.create ();
-      ineqs   = Queue.create ();
-      diseqs  = Queue.create ();
-      touched = Util.MI.empty }
+    {
+      equas = Queue.create ();
+      ineqs = Queue.create ();
+      diseqs = Queue.create ();
+      touched = Util.Util.MI.empty;
+    }
 
   let add_fact facts ((lit, _, _) as e) =
     match lit with
-    | LSem Xliteral.Pred _ | LSem Xliteral.Eq _ ->
-      Queue.push e facts.equas
-    | LSem Xliteral.Distinct _ -> Queue.push e facts.diseqs
-    | LSem Xliteral.Builtin _  -> Queue.push e facts.ineqs
-    | LTerm a ->
-      match E.lit_view a with
-      | E.Pred _ | E.Eq _ | E.Eql _ -> Queue.push e facts.equas
-      | E.Distinct _ -> Queue.push e facts.diseqs
-      | E.Builtin _  -> Queue.push e facts.ineqs
-      | E.Not_a_lit _ -> assert false
+    | LSem (Structs.Xliteral.Pred _) | LSem (Structs.Xliteral.Eq _) ->
+        Queue.push e facts.equas
+    | LSem (Structs.Xliteral.Distinct _) -> Queue.push e facts.diseqs
+    | LSem (Structs.Xliteral.Builtin _) -> Queue.push e facts.ineqs
+    | LTerm a -> (
+        match Structs.Expr.lit_view a with
+        | Structs.Expr.Pred _ | Structs.Expr.Eq _ | Structs.Expr.Eql _ ->
+            Queue.push e facts.equas
+        | Structs.Expr.Distinct _ -> Queue.push e facts.diseqs
+        | Structs.Expr.Builtin _ -> Queue.push e facts.ineqs
+        | Structs.Expr.Not_a_lit _ -> assert false)
 
   (*BISECT-IGNORE-BEGIN*)
   module Debug = struct
-    open Printer
+    open Util.Printer
 
     let facts (f : r facts) msg =
       let aux fmt q =
         Q.iter
-          (fun (lit,_,_) ->
-             match lit with
-             | LSem sa -> fprintf fmt "  > LSem  %a@." LR.print (LR.make sa)
-             | LTerm a -> fprintf fmt "  > LTerm %a@."E.print a
-          )q
+          (fun (lit, _, _) ->
+            match lit with
+            | LSem sa -> fprintf fmt "  > LSem  %a@." LR.print (LR.make sa)
+            | LTerm a -> fprintf fmt "  > LTerm %a@." Structs.Expr.print a)
+          q
       in
       let aux2 fmt mp =
-        Util.MI.iter
-          (fun _ x -> fprintf fmt "%a |-> ... (See Uf)@." X.print x) mp
+        Util.Util.MI.iter
+          (fun _ x -> fprintf fmt "%a |-> ... (See Uf)@." X.print x)
+          mp
       in
       if get_debug_cc () then
-        print_dbg
-          ~module_name:"Ccx" ~function_name:"facts"
-          "@[<v 0>I am in %s with the following facts@ \
-           ---- Begin Facts -----------------------------------@ \
-           Equalities:@ %a@ \
-           Disequalities:@ %a@ \
-           Inequalities:@ %a@ \
-           Touched:@ %a@ \
-           ---- End   Facts -----------------------------------@]"
+        print_dbg ~module_name:"Ccx" ~function_name:"facts"
+          "@[<v 0>I am in %s with the following facts@ ---- Begin Facts \
+           -----------------------------------@ Equalities:@ %a@ \
+           Disequalities:@ %a@ Inequalities:@ %a@ Touched:@ %a@ ---- End   \
+           Facts -----------------------------------@]"
           msg aux f.equas aux f.diseqs aux f.ineqs aux2 f.touched
 
     let cc r1 r2 =
       if get_debug_cc () then
-        print_dbg
-          ~module_name:"Ccx" ~function_name:"cc"
-          "congruence closure : %a = %a"
-          X.print r1 X.print r2
+        print_dbg ~module_name:"Ccx" ~function_name:"cc"
+          "congruence closure : %a = %a" X.print r1 X.print r2
 
     let make_cst t ctx =
       if ctx != [] then
         let c = ref 0 in
         let print fmt a =
           incr c;
-          fprintf fmt " %d) %a@ " !c E.print a
+          fprintf fmt " %d) %a@ " !c Structs.Expr.print a
         in
         if get_debug_cc () then
-          print_dbg
-            ~module_name:"Ccx" ~function_name:"make_ctx"
-            "constraints of make(%a)@ %a"
-            Expr.print t (pp_list_no_space print) ctx
+          print_dbg ~module_name:"Ccx" ~function_name:"make_ctx"
+            "constraints of make(%a)@ %a" Structs.Expr.print t
+            (pp_list_no_space print) ctx
 
     let rel_add_cst t ctx =
       if ctx != [] then
@@ -186,16 +168,14 @@ module Main : S = struct
           fprintf fmt " %d) %a@ " !c (A.print_view X.print) a
         in
         if get_debug_cc () then
-          print_dbg
-            ~module_name:"Ccx" ~function_name:"rel_add_cst"
-            "constraints of Rel.add(%a)@ %a"
-            Expr.print t (pp_list_no_space print) ctx
+          print_dbg ~module_name:"Ccx" ~function_name:"rel_add_cst"
+            "constraints of Rel.add(%a)@ %a" Structs.Expr.print t
+            (pp_list_no_space print) ctx
 
     let add_to_use t =
       if get_debug_cc () then
-        print_dbg
-          ~module_name:"Ccx" ~function_name:"add_to_use"
-          "%a" E.print t
+        print_dbg ~module_name:"Ccx" ~function_name:"add_to_use" "%a"
+          Structs.Expr.print t
 
     (* unused --
        let lrepr fmt =
@@ -203,137 +183,137 @@ module Main : S = struct
 
        let leaves t lvs =
        print_dbg
-        (asprintf "[cc] leaves of %a" E.print t); lrepr (get_fmt_dbg ()) lvs
+        (asprintf "[cc] leaves of %a" Structs.Expr.print t); lrepr (get_fmt_dbg ()) lvs
     *)
 
     let contra_congruence a ex =
       if get_debug_cc () then
-        print_dbg
-          ~module_name:"Ccx" ~function_name:"contra_congruence"
-          "find that %a %a by contra-congruence"
-          E.print a Ex.print ex
+        print_dbg ~module_name:"Ccx" ~function_name:"contra_congruence"
+          "find that %a %a by contra-congruence" Structs.Expr.print a
+          Structs.Ex.print ex
 
     let assume_literal sa =
       if get_debug_cc () then
-        print_dbg
-          ~module_name:"Ccx" ~function_name:"assume_literal"
+        print_dbg ~module_name:"Ccx" ~function_name:"assume_literal"
           "assume literal : %a" LR.print (LR.make sa)
 
     let congruent a ex =
       if get_debug_cc () then
-        print_dbg
-          ~module_name:"Ccx" ~function_name:"congruent"
-          "new fact by congruence : %a ex[%a]"
-          E.print a Ex.print ex
+        print_dbg ~module_name:"Ccx" ~function_name:"congruent"
+          "new fact by congruence : %a ex[%a]" Structs.Expr.print a
+          Structs.Ex.print ex
 
     let cc_result p v touched =
-      let print fmt (x,y,_) =
+      let print fmt (x, y, _) =
         fprintf fmt "  > %a ~~ becomes ~> %a" X.print x X.print y
       in
       if get_debug_cc () then
-        print_dbg
-          ~module_name:"Ccx" ~function_name:"cc_result"
-          "the binding %a -> %a touched:@,%a"
-          X.print p X.print v
+        print_dbg ~module_name:"Ccx" ~function_name:"cc_result"
+          "the binding %a -> %a touched:@,%a" X.print p X.print v
           (pp_list_no_space print) touched
-
   end
   (*BISECT-IGNORE-END*)
 
-  let one, _ = X.make (Expr.mk_term (Sy.name "@bottom") [] Ty.Tint)
+  let one, _ =
+    X.make (Structs.Expr.mk_term (Structs.Sy.name "@bottom") [] Structs.Ty.Tint)
 
   let concat_leaves uf l =
     let concat_rec acc t =
-      match  X.leaves (fst (Uf.find uf t)) , acc with
-        [] , _ -> one::acc
+      match (X.leaves (fst (Uf.find uf t)), acc) with
+      | [], _ -> one :: acc
       | res, [] -> res
-      | res , _ -> List.rev_append res acc
+      | res, _ -> List.rev_append res acc
     in
-    match List.fold_left concat_rec [] l with
-      [] -> [one]
-    | res -> res
+    match List.fold_left concat_rec [] l with [] -> [ one ] | res -> res
 
   let explain_equality env ex t1 t2 =
-    if E.equal t1 t2 then ex
-    else match Uf.are_equal env.uf t1 t2 ~added_terms:true with
-      | Some (dep, _) -> Ex.union ex dep
+    if Structs.Expr.equal t1 t2 then ex
+    else
+      match Uf.are_equal env.uf t1 t2 ~added_terms:true with
+      | Some (dep, _) -> Structs.Ex.union ex dep
       | None -> raise Exit
 
   let equal_only_by_congruence env facts t1 t2 =
-    if not (E.equal t1 t2) then
-      let { E.f = f1; xs = xs1; ty = ty1; _ } =
-        match E.term_view t1 with
-        | E.Not_a_term _ -> assert false
-        | E.Term tt -> tt
+    if not (Structs.Expr.equal t1 t2) then
+      let { Structs.Expr.f = f1; xs = xs1; ty = ty1; _ } =
+        match Structs.Expr.term_view t1 with
+        | Structs.Expr.Not_a_term _ -> assert false
+        | Structs.Expr.Term tt -> tt
       in
-      let { E.f = f2; xs = xs2; ty = ty2; _ } =
-        match E.term_view t2 with
-        | E.Not_a_term _ -> assert false
-        | E.Term tt -> tt
+      let { Structs.Expr.f = f2; xs = xs2; ty = ty2; _ } =
+        match Structs.Expr.term_view t2 with
+        | Structs.Expr.Not_a_term _ -> assert false
+        | Structs.Expr.Term tt -> tt
       in
-      if Symbols.equal f1 f2 && Ty.equal ty1 ty2 then
+      if Structs.Sy.equal f1 f2 && Structs.Ty.equal ty1 ty2 then
         try
-          let ex = List.fold_left2 (explain_equality env) Ex.empty xs1 xs2 in
-          let a = E.mk_eq ~iff:false t1 t2 in
+          let ex =
+            List.fold_left2 (explain_equality env) Structs.Ex.empty xs1 xs2
+          in
+          let a = Structs.Expr.mk_eq ~iff:false t1 t2 in
           Debug.congruent a ex;
           Q.push (LTerm a, ex, Th_util.Other) facts.equas
         with Exit -> ()
 
   let congruents env facts t1 s =
-    match E.term_view t1 with
-    | E.Term { E.xs = []; _ } -> ()
-    | E.Term { E.f; ty; _ } when X.fully_interpreted f ty -> ()
-    | E.Term _ -> SE.iter (equal_only_by_congruence env facts t1) s
-    | E.Not_a_term _ -> assert false
+    match Structs.Expr.term_view t1 with
+    | Structs.Expr.Term { Structs.Expr.xs = []; _ } -> ()
+    | Structs.Expr.Term { Structs.Expr.f; ty; _ } when X.fully_interpreted f ty
+      ->
+        ()
+    | Structs.Expr.Term _ ->
+        Structs.Expr.Set.iter (equal_only_by_congruence env facts t1) s
+    | Structs.Expr.Not_a_term _ -> assert false
 
   let fold_find_with_explanation find ex l =
     List.fold_left
       (fun (lr, ex) t ->
-         let r, ex_r = find t in r::lr, Ex.union ex_r ex)
+        let r, ex_r = find t in
+        (r :: lr, Structs.Ex.union ex_r ex))
       ([], ex) l
 
   let view find va ex_a =
     match va with
-    | E.Not_a_lit _ -> assert false
-    | E.Pred (t1, b) ->
-      let r1, ex1 = find t1 in
-      let ex = Ex.union ex1 ex_a in
-      LR.mkv_pred r1 b, ex
-    | E.Eq (t1, t2) ->
-      let r1, ex1 = find t1 in
-      let r2, ex2 = find t2 in
-      let ex = Ex.union (Ex.union ex1 ex2) ex_a in
-      LR.mkv_eq r1 r2, ex
-    | E.Eql lt ->
-      let lr, ex = fold_find_with_explanation find ex_a lt in
-      LR.mkv_distinct true (* not distinct*) (List.rev lr), ex
-    | E.Distinct lt ->
-      let lr, ex = fold_find_with_explanation find ex_a lt in
-      LR.mkv_distinct false (*not neg*) (List.rev lr), ex
-    | E.Builtin(b, s, l) ->
-      let lr, ex  = fold_find_with_explanation find ex_a l in
-      LR.mkv_builtin b s (List.rev lr), ex
+    | Structs.Expr.Not_a_lit _ -> assert false
+    | Structs.Expr.Pred (t1, b) ->
+        let r1, ex1 = find t1 in
+        let ex = Structs.Ex.union ex1 ex_a in
+        (LR.mkv_pred r1 b, ex)
+    | Structs.Expr.Eq (t1, t2) ->
+        let r1, ex1 = find t1 in
+        let r2, ex2 = find t2 in
+        let ex = Structs.Ex.union (Structs.Ex.union ex1 ex2) ex_a in
+        (LR.mkv_eq r1 r2, ex)
+    | Structs.Expr.Eql lt ->
+        let lr, ex = fold_find_with_explanation find ex_a lt in
+        (LR.mkv_distinct true (* not distinct*) (List.rev lr), ex)
+    | Structs.Expr.Distinct lt ->
+        let lr, ex = fold_find_with_explanation find ex_a lt in
+        (LR.mkv_distinct false (*not neg*) (List.rev lr), ex)
+    | Structs.Expr.Builtin (b, s, l) ->
+        let lr, ex = fold_find_with_explanation find ex_a l in
+        (LR.mkv_builtin b s (List.rev lr), ex)
 
   let view_r find va ex_a =
     match va with
-    | Xliteral.Pred (t1, b) ->
-      let r1, ex1 = find t1 in
-      let ex = Ex.union ex1 ex_a in
-      LR.mkv_pred r1 b, ex
-    | Xliteral.Eq (t1, t2) ->
-      let r1, ex1 = find t1 in
-      let r2, ex2 = find t2 in
-      let ex = Ex.union (Ex.union ex1 ex2) ex_a in
-      LR.mkv_eq r1 r2, ex
-    | Xliteral.Distinct (b, lt) ->
-      let lr, ex = fold_find_with_explanation find ex_a lt in
-      LR.mkv_distinct b (List.rev lr), ex
-    | Xliteral.Builtin(b, s, l) ->
-      let lr, ex  = fold_find_with_explanation find ex_a l in
-      LR.mkv_builtin b s (List.rev lr), ex
+    | Structs.Xliteral.Pred (t1, b) ->
+        let r1, ex1 = find t1 in
+        let ex = Structs.Ex.union ex1 ex_a in
+        (LR.mkv_pred r1 b, ex)
+    | Structs.Xliteral.Eq (t1, t2) ->
+        let r1, ex1 = find t1 in
+        let r2, ex2 = find t2 in
+        let ex = Structs.Ex.union (Structs.Ex.union ex1 ex2) ex_a in
+        (LR.mkv_eq r1 r2, ex)
+    | Structs.Xliteral.Distinct (b, lt) ->
+        let lr, ex = fold_find_with_explanation find ex_a lt in
+        (LR.mkv_distinct b (List.rev lr), ex)
+    | Structs.Xliteral.Builtin (b, s, l) ->
+        let lr, ex = fold_find_with_explanation find ex_a l in
+        (LR.mkv_builtin b s (List.rev lr), ex)
 
   let term_canonical_view env a ex_a =
-    view (Uf.find env.uf) (E.lit_view a) ex_a
+    view (Uf.find env.uf) (Structs.Expr.lit_view a) ex_a
 
   let canonical_view env a ex_a = view_r (Uf.find_r env.uf) a ex_a
 
@@ -343,155 +323,155 @@ module Main : S = struct
     match X.term_extract r with
     | None, _ -> ()
     | Some _, false -> () (* not an original term *)
-    | Some t1, true ->  (* original term *)
-      match E.term_view t1 with
-      | E.Not_a_term _ -> assert false
-      | E.Term { E.f = f1; xs = [x]; _ } ->
-        let ty_x = Expr.type_info x in
-        List.iter
-          (fun t2 ->
-             match E.term_view t2 with
-             | E.Not_a_term _ -> assert false
-             | E.Term { E.f = f2 ; xs = [y]; _ } when Sy.equal f1 f2 ->
-               let ty_y = Expr.type_info y in
-               if Ty.equal ty_x ty_y then
-                 begin match Uf.are_distinct env.uf t1 t2 with
-                   | Some (ex_r, _) ->
-                     let a = E.mk_distinct ~iff:false [x; y] in
-                     Debug.contra_congruence a ex_r;
-                     Q.push
-                       (LTerm a, ex_r, Th_util.Other)
-                       facts.diseqs
-                   | None -> assert false
-                 end
-             | _ -> ()
-          ) (Uf.class_of env.uf bol)
-      | _ -> ()
+    | Some t1, true -> (
+        (* original term *)
+        match Structs.Expr.term_view t1 with
+        | Structs.Expr.Not_a_term _ -> assert false
+        | Structs.Expr.Term { Structs.Expr.f = f1; xs = [ x ]; _ } ->
+            let ty_x = Structs.Expr.type_info x in
+            List.iter
+              (fun t2 ->
+                match Structs.Expr.term_view t2 with
+                | Structs.Expr.Not_a_term _ -> assert false
+                | Structs.Expr.Term { Structs.Expr.f = f2; xs = [ y ]; _ }
+                  when Structs.Sy.equal f1 f2 -> (
+                    let ty_y = Structs.Expr.type_info y in
+                    if Structs.Ty.equal ty_x ty_y then
+                      match Uf.are_distinct env.uf t1 t2 with
+                      | Some (ex_r, _) ->
+                          let a =
+                            Structs.Expr.mk_distinct ~iff:false [ x; y ]
+                          in
+                          Debug.contra_congruence a ex_r;
+                          Q.push (LTerm a, ex_r, Th_util.Other) facts.diseqs
+                      | None -> assert false)
+                | _ -> ())
+              (Uf.class_of env.uf bol)
+        | _ -> ())
 
   let clean_use =
-    List.fold_left
-      (fun env a ->
-         match E.lit_view a with
-         | E.Distinct lt
-         | E.Builtin (_, _, lt) ->
-           let lvs = concat_leaves env.uf lt in
-           List.fold_left
-             (fun env rx ->
+    List.fold_left (fun env a ->
+        match Structs.Expr.lit_view a with
+        | Structs.Expr.Distinct lt | Structs.Expr.Builtin (_, _, lt) ->
+            let lvs = concat_leaves env.uf lt in
+            List.fold_left
+              (fun env rx ->
                 let st, sa = Use.find rx env.use in
-                (* SetA does not use ex, so Ex.empty is OK for removing *)
-                let sa = SetA.remove (a, Ex.empty) sa in
-                { env with use = Use.add rx (st,sa) env.use }
-             ) env lvs
-         | _ -> assert false
-      )
+                (* SetA does not use ex, so Structs.Ex.empty is OK for removing *)
+                let sa = SetA.remove (a, Structs.Ex.empty) sa in
+                { env with use = Use.add rx (st, sa) env.use })
+              env lvs
+        | _ -> assert false)
 
   let contra_congruence env facts r =
-    Options.exec_thread_yield ();
-    if X.equal (fst (Uf.find_r env.uf r)) (X.top()) then
-      new_facts_by_contra_congruence env facts r E.faux
-    else if X.equal (fst (Uf.find_r env.uf r)) (X.bot()) then
-      new_facts_by_contra_congruence env facts r E.vrai
+    Util.Options.exec_thread_yield ();
+    if X.equal (fst (Uf.find_r env.uf r)) (X.top ()) then
+      new_facts_by_contra_congruence env facts r Structs.Expr.faux
+    else if X.equal (fst (Uf.find_r env.uf r)) (X.bot ()) then
+      new_facts_by_contra_congruence env facts r Structs.Expr.vrai
 
-  let congruence_closure env (facts:r facts) r1 r2 ex =
-    Options.exec_thread_yield ();
+  let congruence_closure env (facts : r facts) r1 r2 ex =
+    Util.Options.exec_thread_yield ();
     Debug.cc r1 r2;
     let uf, res = Uf.union env.uf r1 r2 ex in
     List.fold_left
       (fun env (p, touched, v) ->
-         Options.exec_thread_yield ();
-         Debug.cc_result p v touched;
-         assert (X.is_a_leaf p);
-         (* we look for use(p) *)
-         let p_t, p_a = Use.find p env.use in
+        Util.Options.exec_thread_yield ();
+        Debug.cc_result p v touched;
+        assert (X.is_a_leaf p);
+        (* we look for use(p) *)
+        let p_t, p_a = Use.find p env.use in
 
-         (* we compute terms and atoms to consider for congruence *)
-         let repr_touched = List.map (fun (x, y, _) ->
-             facts.touched <-
-               Util.MI.add (X.hash x) x facts.touched;
-             y
-           ) touched
-         in
-         let st_others, sa_others = Use.congr_close_up env.use p repr_touched in
+        (* we compute terms and atoms to consider for congruence *)
+        let repr_touched =
+          List.map
+            (fun (x, y, _) ->
+              facts.touched <- Util.Util.MI.add (X.hash x) x facts.touched;
+              y)
+            touched
+        in
+        let st_others, sa_others = Use.congr_close_up env.use p repr_touched in
 
-         (* we update use *)
-         let nuse = Use.up_close_up env.use p v in
-         let nuse =
-           List.fold_left
-             (fun nuse (_, rr, _) ->
-                match X.leaves rr with
-                | _ :: _ -> nuse
-                | []     -> Use.up_close_up nuse p one
-             )nuse touched
-         in
-         Use.print nuse;
+        (* we update use *)
+        let nuse = Use.up_close_up env.use p v in
+        let nuse =
+          List.fold_left
+            (fun nuse (_, rr, _) ->
+              match X.leaves rr with
+              | _ :: _ -> nuse
+              | [] -> Use.up_close_up nuse p one)
+            nuse touched
+        in
+        Use.print nuse;
 
-         (* we check the congruence of the terms. *)
-         let env =  {env with use=nuse} in
-         SE.iter (fun t -> congruents env facts t st_others) p_t;
+        (* we check the congruence of the terms. *)
+        let env = { env with use = nuse } in
+        Structs.Expr.Set.iter (fun t -> congruents env facts t st_others) p_t;
 
-         (*CC of preds ?*)
-         SetA.iter (fun (a, ex) ->
-             add_fact facts (LTerm a, ex, Th_util.Other)) p_a;
+        (*CC of preds ?*)
+        SetA.iter
+          (fun (a, ex) -> add_fact facts (LTerm a, ex, Th_util.Other))
+          p_a;
 
-         (*touched preds ?*)
-         SetA.iter (fun (a, ex) ->
-             add_fact facts (LTerm a, ex, Th_util.Other))
-           sa_others;
+        (*touched preds ?*)
+        SetA.iter
+          (fun (a, ex) -> add_fact facts (LTerm a, ex, Th_util.Other))
+          sa_others;
 
-         env
-      ) {env with uf=uf}  res
+        env)
+      { env with uf } res
 
-  module LRE =
-    Map.Make (struct
-      type t = LR.t * E.t option
-      let compare (x, y) (x', y') =
-        let c = LR.compare x x' in
-        if c <> 0 then c
-        else match y, y' with
-          | None, None      ->  0
-          | Some _, None    ->  1
-          | None, Some _    -> -1
-          | Some a, Some a' -> E.compare a a'
-    end)
+  module LRE = Map.Make (struct
+    type t = LR.t * Structs.Expr.t option
+
+    let compare (x, y) (x', y') =
+      let c = LR.compare x x' in
+      if c <> 0 then c
+      else
+        match (y, y') with
+        | None, None -> 0
+        | Some _, None -> 1
+        | None, Some _ -> -1
+        | Some a, Some a' -> Structs.Expr.compare a a'
+  end)
 
   let make_unique sa =
     let mp =
       List.fold_left
-        (fun mp ((ra, aopt ,_ ,_) as e) ->
-           LRE.add (LR.make ra, aopt) e mp
-        ) LRE.empty sa
+        (fun mp ((ra, aopt, _, _) as e) -> LRE.add (LR.make ra, aopt) e mp)
+        LRE.empty sa
     in
-    LRE.fold (fun _ e acc -> e::acc)mp []
+    LRE.fold (fun _ e acc -> e :: acc) mp []
 
   let replay_atom env sa =
-    Options.exec_thread_yield ();
+    Util.Options.exec_thread_yield ();
     let sa = make_unique sa in
     let relation, result = Rel.assume env.relation env.uf sa in
-    let env = { env with relation = relation } in
+    let env = { env with relation } in
     let env = clean_use env result.remove in
-    env, result.assume
+    (env, result.assume)
 
   let rec add_term env facts t ex =
-    Options.exec_thread_yield ();
+    Util.Options.exec_thread_yield ();
     (* nothing to do if the term already exists *)
     if Uf.mem env.uf t then env
-    else begin
-      Options.tool_req 3 "TR-CCX-AddTerm";
+    else (
+      Util.Options.tool_req 3 "TR-CCX-AddTerm";
       Debug.add_to_use t;
 
       (* we add t's arguments in env *)
-      let { E.xs; _ } =
-        match E.term_view t with
-        | E.Not_a_term _ -> assert false (* see what to do here *)
-        | E.Term tt -> tt
+      let { Structs.Expr.xs; _ } =
+        match Structs.Expr.term_view t with
+        | Structs.Expr.Not_a_term _ -> assert false (* see what to do here *)
+        | Structs.Expr.Term tt -> tt
       in
       let env = List.fold_left (fun env t -> add_term env facts t ex) env xs in
       (* we update uf and use *)
-      let nuf, ctx  = Uf.add env.uf t in
+      let nuf, ctx = Uf.add env.uf t in
       Debug.make_cst t ctx;
       List.iter (fun a -> add_fact facts (LTerm a, ex, Th_util.Other)) ctx;
-      (*or Ex.empty ?*)
 
+      (*or Ex.empty ?*)
       let rt, _ = Uf.find nuf t in
       let lvs = concat_leaves nuf xs in
       let nuse = Use.up_add env.use t rt lvs in
@@ -500,7 +480,7 @@ module Main : S = struct
       let rel, eqs = Rel.add env.relation nuf rt t in
       Debug.rel_add_cst t eqs;
       (* We add terms made from relations as fact *)
-      List.iter (fun (a,ex) -> add_fact facts (LSem a, ex, Th_util.Other)) eqs;
+      List.iter (fun (a, ex) -> add_fact facts (LSem a, ex, Th_util.Other)) eqs;
       Use.print nuse;
 
       (* we compute terms to consider for congruence *)
@@ -509,273 +489,266 @@ module Main : S = struct
       let st_uset = Use.congr_add nuse lvs in
 
       (* we check the congruence of each term *)
-      let env = {uf = nuf; use = nuse; relation = rel} in
+      let env = { uf = nuf; use = nuse; relation = rel } in
       congruents env facts t st_uset;
-      env
-    end
+      env)
 
   let add env facts a ex =
-    match E.lit_view a with
-    | E.Not_a_lit _ -> assert false
-    | E.Pred (t1, _) ->
-      add_term env facts t1 ex
-    | E.Eq (t1, t2) ->
-      let env = add_term env facts t1 ex in
-      add_term env facts t2 ex
-    | E.Eql lt ->
-      List.fold_left
-        (fun env t-> add_term env facts t ex) env  lt
-    | E.Distinct lt
-    | E.Builtin (_, _, lt) ->
-      let env =
-        List.fold_left
-          (fun env t-> add_term env facts t ex)
-          env  lt
-      in
-      let lvs = concat_leaves env.uf lt in (* A verifier *)
-      List.fold_left (* add Distinct and Builtin to Use *)
-        (fun env rx ->
-           let st, sa = Use.find rx env.use in
-           { env with
-             use = Use.add rx (st,SetA.add (a, ex) sa) env.use }
-        ) env lvs
+    match Structs.Expr.lit_view a with
+    | Structs.Expr.Not_a_lit _ -> assert false
+    | Structs.Expr.Pred (t1, _) -> add_term env facts t1 ex
+    | Structs.Expr.Eq (t1, t2) ->
+        let env = add_term env facts t1 ex in
+        add_term env facts t2 ex
+    | Structs.Expr.Eql lt ->
+        List.fold_left (fun env t -> add_term env facts t ex) env lt
+    | Structs.Expr.Distinct lt | Structs.Expr.Builtin (_, _, lt) ->
+        let env =
+          List.fold_left (fun env t -> add_term env facts t ex) env lt
+        in
+        let lvs = concat_leaves env.uf lt in
+        (* A verifier *)
+        List.fold_left (* add Distinct and Builtin to Use *)
+          (fun env rx ->
+            let st, sa = Use.find rx env.use in
+            { env with use = Use.add rx (st, SetA.add (a, ex) sa) env.use })
+          env lvs
 
   let semantic_view env (a, ex, orig) facts =
     match a with
-    | LTerm a -> (* Over terms: add terms + term_canonical_view *)
-      let env = add env facts a ex in
-      let sa, ex = term_canonical_view env a ex in
-      env, (sa, Some a, ex, orig)
-
-    | LSem sa ->
-      match sa with
-      | A.Builtin _ -> (* we put it in canonical form for FM *)
-        let sa, ex = canonical_view env sa ex in
-        env, (sa, None, ex, orig)
-
-      | _ ->
-        (* XXX if we do canonical_view for
-           A.Distinct, the theory of arrays will get lost *)
-        env, (sa, None, ex, orig)
+    | LTerm a ->
+        (* Over terms: add terms + term_canonical_view *)
+        let env = add env facts a ex in
+        let sa, ex = term_canonical_view env a ex in
+        (env, (sa, Some a, ex, orig))
+    | LSem sa -> (
+        match sa with
+        | A.Builtin _ ->
+            (* we put it in canonical form for FM *)
+            let sa, ex = canonical_view env sa ex in
+            (env, (sa, None, ex, orig))
+        | _ ->
+            (* XXX if we do canonical_view for
+               A.Distinct, the theory of arrays will get lost *)
+            (env, (sa, None, ex, orig)))
 
   let assume_eq env facts r1 r2 ex =
-    Options.tool_req 3 "TR-CCX-Congruence";
+    Util.Options.tool_req 3 "TR-CCX-Congruence";
     let env = congruence_closure env facts r1 r2 ex in
-    if Options.get_no_contracongru () || X.type_info r1 != Ty.Tbool then env
-    else begin
+    if Util.Options.get_no_contracongru () || X.type_info r1 != Structs.Ty.Tbool
+    then env
+    else (
       contra_congruence env facts r1;
       contra_congruence env facts r2;
-      env
-    end
+      env)
 
   let assume_dist env _facts lr ex =
-    Options.tool_req 3 "TR-CCX-Distinct";
+    Util.Options.tool_req 3 "TR-CCX-Distinct";
     if Uf.already_distinct env.uf lr then env
-    else  {env with uf = Uf.distinct env.uf lr ex}
+    else { env with uf = Uf.distinct env.uf lr ex }
 
   let rec assume_equalities env choices facts =
-    if Q.is_empty facts.equas then env, choices
-    else begin
+    if Q.is_empty facts.equas then (env, choices)
+    else (
       Debug.facts facts "equalities";
       let e = Q.pop facts.equas in
-      Q.push e facts.ineqs; (*XXX also added in touched by congruence_closure*)
-      let env, (sa, _, ex, _) =  semantic_view env e facts in
+      Q.push e facts.ineqs;
+      (*XXX also added in touched by congruence_closure*)
+      let env, (sa, _, ex, _) = semantic_view env e facts in
       Debug.assume_literal sa;
-      let env = match sa with
-        | A.Pred (r1,neg) ->
-          let r2, r3 =  if neg then X.bot(), X.top() else X.top(), X.bot() in
-          if X.hash_cmp r1 r2 = 0 then env
-          else
-            let env = assume_eq env facts r1 r2 ex in
-            assume_dist env facts [r1;r3] ex
-        | A.Eq(r1, r2) ->
-          if X.hash_cmp r1 r2 = 0 then env
-          else assume_eq env facts r1 r2 ex
-
-        | A.Distinct(true, lt) -> (* nary equality *)
-          let lt = List.fast_sort X.hash_cmp lt in
-          let env, _ = match lt with
-            | [] | [_] -> assert false
-            | e :: lt ->
-              List.fold_left
-                (fun (env, u) v ->
-                   (if X.hash_cmp u v = 0 then env
-                    else assume_eq env facts u v ex), v
-                )(env, e) lt
-          in
-          env
+      let env =
+        match sa with
+        | A.Pred (r1, neg) ->
+            let r2, r3 =
+              if neg then (X.bot (), X.top ()) else (X.top (), X.bot ())
+            in
+            if X.hash_cmp r1 r2 = 0 then env
+            else
+              let env = assume_eq env facts r1 r2 ex in
+              assume_dist env facts [ r1; r3 ] ex
+        | A.Eq (r1, r2) ->
+            if X.hash_cmp r1 r2 = 0 then env else assume_eq env facts r1 r2 ex
+        | A.Distinct (true, lt) ->
+            (* nary equality *)
+            let lt = List.fast_sort X.hash_cmp lt in
+            let env, _ =
+              match lt with
+              | [] | [ _ ] -> assert false
+              | e :: lt ->
+                  List.fold_left
+                    (fun (env, u) v ->
+                      ( (if X.hash_cmp u v = 0 then env
+                        else assume_eq env facts u v ex),
+                        v ))
+                    (env, e) lt
+            in
+            env
         | _ -> assert false
       in
-      assume_equalities env choices facts
-    end
+      assume_equalities env choices facts)
 
   let rec assume_disequalities env choices facts =
-    if Q.is_empty facts.diseqs then env, choices
-    else begin
+    if Q.is_empty facts.diseqs then (env, choices)
+    else (
       Debug.facts facts "disequalities";
       let e = Q.pop facts.diseqs in
       Q.push e facts.ineqs;
       let env, (sa, _, ex, orig) = semantic_view env e facts in
       Debug.assume_literal sa;
-      let env = match sa with
+      let env =
+        match sa with
         | A.Distinct (false, lr) -> assume_dist env facts lr ex
         | A.Distinct (true, _) -> assert false
         | A.Pred _ ->
-          Q.push (LSem sa, ex, orig) facts.equas;
-          env
+            Q.push (LSem sa, ex, orig) facts.equas;
+            env
         | _ -> assert false
       in
       if Q.is_empty facts.equas then assume_disequalities env choices facts
-      else env, choices (* Return to give priority to equalities *)
-    end
+      else (env, choices (* Return to give priority to equalities *)))
 
-  let rec norm_queue env ineqs (facts:r facts) =
-    if Q.is_empty facts.ineqs then env, List.rev ineqs
+  let rec norm_queue env ineqs (facts : r facts) =
+    if Q.is_empty facts.ineqs then (env, List.rev ineqs)
     else
       let e = Q.pop facts.ineqs in
       let env, e' = semantic_view env e facts in
-      let ineqs = e'::ineqs in
+      let ineqs = e' :: ineqs in
       let ineqs =
         match e with
         (* for case-split, to be sure that CS is given
            back to relations *)
         | LSem ra, ex, ((Th_util.CS _ | Th_util.NCS _) as orig) ->
-          (ra, None, ex, orig) :: ineqs
+            (ra, None, ex, orig) :: ineqs
         | _ -> ineqs
       in
       norm_queue env ineqs facts
 
-  let add_touched uf acc (facts:r facts) =
+  let add_touched uf acc (facts : r facts) =
     let acc =
-      Util.MI.fold
+      Util.Util.MI.fold
         (fun _ x acc ->
-           let y, ex = Uf.find_r uf x in (*use terms ? *)
-           (* PB Here: LR.mkv_eq may swap x and y *)
-           ((*LR.mkv_eq x y*) A.Eq(x, y), None, ex, Th_util.Subst) :: acc)
+          let y, ex = Uf.find_r uf x in
+          (*use terms ? *)
+          (* PB Here: LR.mkv_eq may swap x and y *)
+          ((*LR.mkv_eq x y*) A.Eq (x, y), None, ex, Th_util.Subst) :: acc)
         facts.touched acc
     in
-    facts.touched <- Util.MI.empty;
+    facts.touched <- Util.Util.MI.empty;
     acc
 
   let assume_inequalities env choices facts =
-    Options.tool_req 3 "TR-CCX-Builtin";
-    if Q.is_empty facts.ineqs then env, choices
-    else begin
+    Util.Options.tool_req 3 "TR-CCX-Builtin";
+    if Q.is_empty facts.ineqs then (env, choices)
+    else (
       Debug.facts facts "inequalities";
       let env, ineqs = norm_queue env [] facts in
       let ineqs = add_touched env.uf ineqs facts in
       let env, l = replay_atom env ineqs in
       List.iter (add_fact facts) l;
-      env, List.rev_append l choices
-    end
+      (env, List.rev_append l choices))
 
   let rec assume_literals env choices facts =
     match Q.is_empty facts.equas with
     | false ->
-      let env, choices = assume_equalities env choices facts in
-      assume_literals env choices facts
-    | true ->
-      match Q.is_empty facts.diseqs with
-      | false ->
-        let env, choices = assume_disequalities env choices facts in
+        let env, choices = assume_equalities env choices facts in
         assume_literals env choices facts
-      | true ->
-        match Q.is_empty facts.ineqs with
+    | true -> (
+        match Q.is_empty facts.diseqs with
         | false ->
-          let env, choices = assume_inequalities env choices facts in
-          assume_literals env choices facts
-        | true -> env, choices
-
+            let env, choices = assume_disequalities env choices facts in
+            assume_literals env choices facts
+        | true -> (
+            match Q.is_empty facts.ineqs with
+            | false ->
+                let env, choices = assume_inequalities env choices facts in
+                assume_literals env choices facts
+            | true -> (env, choices)))
 
   let theories_instances ~do_syntactic_matching t_match env selector =
     let rel, th_instances =
-      Rel.instantiate
-        ~do_syntactic_matching t_match env.relation env.uf selector in
-    {env with relation=rel}, th_instances
+      Rel.instantiate ~do_syntactic_matching t_match env.relation env.uf
+        selector
+    in
+    ({ env with relation = rel }, th_instances)
 
   let add_term env facts t ex =
     let env = add_term env facts t ex in
-    env, facts
+    (env, facts)
 
   let add env facts a ex =
     let env = add env facts a ex in
-    env, facts
+    (env, facts)
 
   (* End: new implementation of add, add_term, assume_literals and all that *)
 
   let case_split env ~for_model =
     match Rel.case_split env.relation env.uf ~for_model with
     | [] when for_model ->
-      let l, uf = Uf.assign_next env.uf in
-      (* try to not to modify uf in the future. It's currently done only
-         to add fresh terms in UF to avoid loops *)
-      l, {env with uf}
-    | l -> l, env
+        let l, uf = Uf.assign_next env.uf in
+        (* try to not to modify uf in the future. It's currently done only
+           to add fresh terms in UF to avoid loops *)
+        (l, { env with uf })
+    | l -> (l, env)
 
   let query env a =
-    let ra, ex_ra = term_canonical_view env a Ex.empty in
+    let ra, ex_ra = term_canonical_view env a Structs.Ex.empty in
     Rel.query env.relation env.uf (ra, Some a, ex_ra, Th_util.Other)
 
   let new_terms env = Rel.new_terms env.relation
-
   let class_of env t = Uf.class_of env.uf t
-
   let are_distinct env t1 t2 = Uf.are_distinct env.uf t1 t2
-
   let cl_extract env = Uf.cl_extract env.uf
-
   let get_union_find env = env.uf
 
   let print_model fmt env =
     let zero = ref true in
     let eqs, neqs = Uf.model env.uf in
     let rs =
-      List.fold_left (fun acc (r, l, to_rel) ->
-          if l != [] then begin
-            if !zero then begin
+      List.fold_left
+        (fun acc (r, l, to_rel) ->
+          if l != [] then (
+            if !zero then (
               fprintf fmt "Theory:";
-              zero := false;
-            end;
-            fprintf fmt "\n %a = %a" (E.print_list_sep " = ") l X.print r;
-          end;
-          to_rel@acc
-        ) [] eqs in
-    List.iter (fun lt ->
-        if !zero then begin
+              zero := false);
+            fprintf fmt "\n %a = %a"
+              (Structs.Expr.print_list_sep " = ")
+              l X.print r);
+          to_rel @ acc)
+        [] eqs
+    in
+    List.iter
+      (fun lt ->
+        if !zero then (
           fprintf fmt "Theory:";
-          zero := false;
-        end;
-        fprintf fmt "\n %a" (E.print_list_sep " <> ") lt;
-      ) neqs;
+          zero := false);
+        fprintf fmt "\n %a" (Structs.Expr.print_list_sep " <> ") lt)
+      neqs;
     if not !zero then fprintf fmt "\n@.";
     Rel.print_model fmt env.relation rs
 
   let assume_th_elt env th_elt dep =
-    {env with relation = Rel.assume_th_elt env.relation th_elt dep}
+    { env with relation = Rel.assume_th_elt env.relation th_elt dep }
 
   let are_equal env t1 t2 ~init_terms =
-    if E.equal t1 t2 then Some (Ex.empty, [])
-    else
-    if init_terms then
-      let facts = empty_facts() in
-      let env, facts = add_term env facts t1 Ex.empty in
-      let env, facts = add_term env facts t2 Ex.empty in
+    if Structs.Expr.equal t1 t2 then Some (Structs.Ex.empty, [])
+    else if init_terms then
+      let facts = empty_facts () in
+      let env, facts = add_term env facts t1 Structs.Ex.empty in
+      let env, facts = add_term env facts t2 Structs.Ex.empty in
       try
         let env, _ = assume_literals env [] facts in
         Uf.are_equal env.uf t1 t2 ~added_terms:true
-      with Ex.Inconsistent (ex,cl) -> Some (ex, cl)
-    else
-      Uf.are_equal env.uf t1 t2 ~added_terms:false
+      with Structs.Ex.Inconsistent (ex, cl) -> Some (ex, cl)
+    else Uf.are_equal env.uf t1 t2 ~added_terms:false
 
   let term_repr env t ~init_term =
     let env =
       if not init_term then env
       else
-        let facts = empty_facts() in
-        let env, facts = add_term env facts t Ex.empty in
-        fst (assume_literals env [] facts) (* may raise Inconsistent *)
+        let facts = empty_facts () in
+        let env, facts = add_term env facts t Structs.Ex.empty in
+        fst (assume_literals env [] facts)
+      (* may raise Inconsistent *)
     in
     Uf.term_repr env.uf t
-
-
 end

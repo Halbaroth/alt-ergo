@@ -12,8 +12,7 @@
 open Alt_ergo_common
 
 (* Register input method and parsers *)
-let register_input () =
-  Input_frontend.register_legacy ()
+let register_input () = Input_frontend.register_legacy ()
 
 (* done here to initialize options,
    before the instantiations of functors *)

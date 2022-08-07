@@ -9,19 +9,20 @@
 (*                                                                            *)
 (******************************************************************************)
 
-open Satml_types
+module Util = Alt_ergo_lib_util
+module Structs = Alt_ergo_lib_structs
+open Structs.Satml_types
 
 exception Sat
-exception Unsat of Satml_types.Atom.clause list option
+exception Unsat of Structs.Satml_types.Atom.clause list option
 exception Last_UIP_reason of Atom.Set.t
 
 type conflict_origin =
   | C_none
   | C_bool of Atom.clause
-  | C_theory of Explanation.t
+  | C_theory of Structs.Ex.t
 
 module type SAT_ML = sig
-
   (*module Make (Dummy : sig end) : sig*)
   type th
   type t
@@ -30,54 +31,59 @@ module type SAT_ML = sig
 
   val set_new_proxies :
     t ->
-    (Satml_types.Atom.atom * Satml_types.Atom.atom list * bool) Util.MI.t ->
+    (Structs.Satml_types.Atom.atom * Structs.Satml_types.Atom.atom list * bool)
+    Util.Util.MI.t ->
     unit
 
   val new_vars :
     t ->
-    nbv : int -> (* nb made vars *)
-    Satml_types.Atom.var list ->
-    Satml_types.Atom.atom list list -> Satml_types.Atom.atom list list ->
-    Satml_types.Atom.atom list list * Satml_types.Atom.atom list list
+    nbv:int ->
+    (* nb made vars *)
+    Structs.Satml_types.Atom.var list ->
+    Structs.Satml_types.Atom.atom list list ->
+    Structs.Satml_types.Atom.atom list list ->
+    Structs.Satml_types.Atom.atom list list
+    * Structs.Satml_types.Atom.atom list list
 
   val assume :
     t ->
-    Satml_types.Atom.atom list list ->
-    Satml_types.Atom.atom list list ->
-    Expr.t ->
-    cnumber : int ->
-    Satml_types.Atom.atom option Flat_Formula.Map.t -> dec_lvl:int ->
+    Structs.Satml_types.Atom.atom list list ->
+    Structs.Satml_types.Atom.atom list list ->
+    Structs.Expr.t ->
+    cnumber:int ->
+    Structs.Satml_types.Atom.atom option Flat_Formula.Map.t ->
+    dec_lvl:int ->
     unit
 
-  val boolean_model : t -> Satml_types.Atom.atom list
+  val boolean_model : t -> Structs.Satml_types.Atom.atom list
+
   val instantiation_context :
-    t -> Satml_types.Flat_Formula.hcons_env -> Satml_types.Atom.Set.t
+    t ->
+    Structs.Satml_types.Flat_Formula.hcons_env ->
+    Structs.Satml_types.Atom.Set.t
+
   val current_tbox : t -> th
   val set_current_tbox : t -> th -> unit
   val empty : unit -> t
-
-  val assume_th_elt : t -> Expr.th_elt -> Explanation.t -> unit
+  val assume_th_elt : t -> Structs.Expr.th_elt -> Structs.Ex.t -> unit
   val decision_level : t -> int
   val cancel_until : t -> int -> unit
 
   val update_lazy_cnf :
     t ->
-    do_bcp : bool ->
-    Satml_types.Atom.atom option Flat_Formula.Map.t -> dec_lvl:int -> unit
+    do_bcp:bool ->
+    Structs.Satml_types.Atom.atom option Flat_Formula.Map.t ->
+    dec_lvl:int ->
+    unit
 
   val exists_in_lazy_cnf : t -> Flat_Formula.t -> bool
   val known_lazy_formulas : t -> int Flat_Formula.Map.t
-
-  val reason_of_deduction: Atom.atom -> Atom.Set.t
+  val reason_of_deduction : Atom.atom -> Atom.Set.t
   val assume_simple : t -> Atom.atom list list -> unit
-
   val decide : t -> Atom.atom -> unit
   val conflict_analyze_and_fix : t -> conflict_origin -> unit
-
-  val push : t -> Satml_types.Atom.atom -> unit
+  val push : t -> Structs.Satml_types.Atom.atom -> unit
   val pop : t -> unit
-
 end
 
 module Make (Th : Theory.S) : SAT_ML with type th = Th.t
-

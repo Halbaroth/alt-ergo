@@ -26,20 +26,45 @@
 (*                                                                            *)
 (******************************************************************************)
 
+module Util = Alt_ergo_lib_util
+
 type builtin =
-    LE | LT (* arithmetic *)
-  | IsConstr of Hstring.t (* ADT tester *)
+  | LE
+  | LT (* arithmetic *)
+  | IsConstr of Util.Hstring.t (* ADT tester *)
 
 type operator =
-  | Plus | Minus | Mult | Div | Modulo
-  | Concat | Extract | Get | Set | Fixed | Float
-  | Reach | Access of Hstring.t | Record
-  | Sqrt_real | Abs_int | Abs_real | Real_of_int | Int_floor | Int_ceil
-  | Sqrt_real_default | Sqrt_real_excess
-  | Min_real | Min_int | Max_real | Max_int | Integer_log2
-  | Pow | Integer_round
-  | Constr of Hstring.t (* enums, adts *)
-  | Destruct of Hstring.t * bool
+  | Plus
+  | Minus
+  | Mult
+  | Div
+  | Modulo
+  | Concat
+  | Extract
+  | Get
+  | Set
+  | Fixed
+  | Float
+  | Reach
+  | Access of Util.Hstring.t
+  | Record
+  | Sqrt_real
+  | Abs_int
+  | Abs_real
+  | Real_of_int
+  | Int_floor
+  | Int_ceil
+  | Sqrt_real_default
+  | Sqrt_real_excess
+  | Min_real
+  | Min_int
+  | Max_real
+  | Max_int
+  | Integer_log2
+  | Pow
+  | Integer_round
+  | Constr of Util.Hstring.t (* enums, adts *)
+  | Destruct of Util.Hstring.t * bool
   | Tite
 
 type lit =
@@ -60,19 +85,22 @@ type form =
   | F_Skolem
 
 type name_kind = Ac | Other
+type bound_kind = VarBnd of Var.t | ValBnd of Util.Numbers.Q.t
 
-type bound_kind = VarBnd of Var.t | ValBnd of Numbers.Q.t
-
-type bound = private
-  { kind : bound_kind; sort : Ty.t; is_open : bool; is_lower : bool }
+type bound = private {
+  kind : bound_kind;
+  sort : Ty.t;
+  is_open : bool;
+  is_lower : bool;
+}
 
 type t =
   | True
   | False
   | Void
-  | Name of Hstring.t * name_kind
-  | Int of Hstring.t
-  | Real of Hstring.t
+  | Name of Util.Hstring.t * name_kind
+  | Int of Util.Hstring.t
+  | Real of Util.Hstring.t
   | Bitv of string
   | Op of operator
   | Lit of lit
@@ -92,36 +120,27 @@ val destruct : guarded:bool -> string -> t
 val mk_bound : bound_kind -> Ty.t -> is_open:bool -> is_lower:bool -> bound
 val mk_in : bound -> bound -> t
 val mk_maps_to : Var.t -> t
-
 val is_ac : t -> bool
-
 val equal : t -> t -> bool
 val compare : t -> t -> int
 val compare_bounds : bound -> bound -> int
 val hash : t -> int
-
 val to_string : t -> string
 val print : Format.formatter -> t -> unit
-
 val to_string_clean : t -> string
 val print_clean : Format.formatter -> t -> unit
 
 (*val dummy : t*)
 
 val fresh : ?is_var:bool -> string -> t
-
 val is_get : t -> bool
 val is_set : t -> bool
-
-val fake_eq  : t
+val fake_eq : t
 val fake_neq : t
-val fake_lt  : t
-val fake_le  : t
-
-
-val add_label : Hstring.t -> t -> unit
-val label : t -> Hstring.t
-
+val fake_lt : t
+val fake_le : t
+val add_label : Util.Hstring.t -> t -> unit
+val label : t -> Util.Hstring.t
 val print_bound : Format.formatter -> bound -> unit
 val string_of_bound : bound -> string
 
@@ -129,6 +148,7 @@ module Set : Set.S with type elt = t
 
 module Map : sig
   include Map.S with type key = t
+
   val print :
     (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a t -> unit
 end

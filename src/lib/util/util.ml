@@ -11,17 +11,21 @@
 
 exception Timeout
 exception Unsolvable
-
 exception Cmp of int
 
-module MI = Map.Make(struct type t = int
-    let compare (x: int) y = Stdlib.compare x y end)
+module MI = Map.Make (struct
+  type t = int
 
-module SI = Set.Make(struct type t = int
-    let compare (x: int) y = Stdlib.compare x y end)
+  let compare (x : int) y = Stdlib.compare x y
+end)
 
-module SS = Set.Make(String)
+module SI = Set.Make (struct
+  type t = int
 
+  let compare (x : int) y = Stdlib.compare x y
+end)
+
+module SS = Set.Make (String)
 
 (** Different values for -case-split-policy option:
     -after-theory-assume (default value): after assuming facts in
@@ -33,14 +37,8 @@ type case_split_policy =
   | BeforeMatching
   | AfterMatching
 
-
 type inst_kind = Normal | Forward | Backward
-
-type sat_solver =
-  | Tableaux
-  | Tableaux_CDCL
-  | CDCL
-  | CDCL_Tableaux
+type sat_solver = Tableaux | Tableaux_CDCL | CDCL | CDCL_Tableaux
 
 type theories_extensions =
   | Sum
@@ -68,7 +66,7 @@ let th_ext_of_string ext =
   | "NRA" -> Some NRA
   | "NIA" -> Some NIA
   | "FPA" -> Some FPA
-  |  _ -> None
+  | _ -> None
 
 let string_of_th_ext ext =
   match ext with
@@ -83,64 +81,55 @@ let string_of_th_ext ext =
   | NIA -> "NIA"
   | FPA -> "FPA"
 
-let [@inline always] compare_algebraic s1 s2 f_same_constrs_with_args =
+let[@inline always] compare_algebraic s1 s2 f_same_constrs_with_args =
   let r1 = Obj.repr s1 in
   let r2 = Obj.repr s2 in
-  match Obj.is_int r1, Obj.is_int r2 with
+  match (Obj.is_int r1, Obj.is_int r2) with
   | true, true -> Stdlib.compare s1 s2 (* both constructors without args *)
   | true, false -> -1
   | false, true -> 1
   | false, false ->
-    let cmp_tags = Obj.tag r1 - Obj.tag r2 in
-    if cmp_tags <> 0 then cmp_tags else f_same_constrs_with_args (s1, s2)
+      let cmp_tags = Obj.tag r1 - Obj.tag r2 in
+      if cmp_tags <> 0 then cmp_tags else f_same_constrs_with_args (s1, s2)
 
-let [@inline always] cmp_lists l1 l2 cmp_elts =
+let[@inline always] cmp_lists l1 l2 cmp_elts =
   try
     List.iter2
       (fun a b ->
-         let c = cmp_elts a b in
-         if c <> 0 then raise (Cmp c)
-      )l1 l2;
+        let c = cmp_elts a b in
+        if c <> 0 then raise (Cmp c))
+      l1 l2;
     0
   with
   | Cmp n -> n
   | Invalid_argument _ -> List.length l1 - List.length l2
 
-type matching_env =
-  {
-    nb_triggers : int;
-    triggers_var : bool;
-    no_ematching: bool;
-    greedy : bool;
-    use_cs : bool;
-    backward : inst_kind
-  }
+type matching_env = {
+  nb_triggers : int;
+  triggers_var : bool;
+  no_ematching : bool;
+  greedy : bool;
+  use_cs : bool;
+  backward : inst_kind;
+}
 
-let loop
-    ~(f : int -> 'a -> 'b -> 'b)
-    ~(max : int)
-    ~(elt : 'a)
-    ~(init : 'b) : 'b
-  =
+let loop ~(f : int -> 'a -> 'b -> 'b) ~(max : int) ~(elt : 'a) ~(init : 'b) : 'b
+    =
   let rec loop_aux cpt acc =
-    if cpt >= max then acc
-    else
-      loop_aux (cpt+1) (f cpt elt acc)
+    if cpt >= max then acc else loop_aux (cpt + 1) (f cpt elt acc)
   in
   loop_aux 0 init
 
 let print_list ~sep ~pp fmt l =
   match l with
-    [] -> ()
+  | [] -> ()
   | e :: l ->
-    Format.fprintf fmt "%a" pp e;
-    List.iter (fun e -> Format.fprintf fmt "%s %a" sep pp e) l
-
+      Format.fprintf fmt "%a" pp e;
+      List.iter (fun e -> Format.fprintf fmt "%s %a" sep pp e) l
 
 let rec print_list_pp ~sep ~pp fmt = function
   | [] -> ()
-  | [x] -> pp fmt x
+  | [ x ] -> pp fmt x
   | x :: l ->
-    Format.fprintf fmt "%a %a" pp x sep ();
-    print_list_pp ~sep ~pp fmt l
-
+      Format.fprintf fmt "%a %a" pp x sep ();
+      print_list_pp ~sep ~pp fmt l

@@ -9,18 +9,17 @@
 (*                                                                            *)
 (******************************************************************************)
 
+module Structs = Alt_ergo_lib_structs
+
 exception Method_not_registered of string
 
 module type S = sig
-
   (* Parsing *)
 
   type parsed
 
   val parse_file : content:string -> format:string option -> parsed Seq.t
-
-  val parse_files :
-    filename:string -> preludes:string list -> parsed Seq.t
+  val parse_files : filename:string -> preludes:string list -> parsed Seq.t
 
   (* Typechecking *)
 
@@ -29,8 +28,7 @@ module type S = sig
   val empty_env : env
 
   val type_parsed :
-    env -> env Stack.t -> parsed -> int Typed.atdecl list * env
-
+    env -> env Stack.t -> parsed -> int Structs.Typed.atdecl list * env
 end
 
 let input_methods = ref []
@@ -41,4 +39,3 @@ let register name ((module M : S) as m) =
 let find name =
   try List.assoc name !input_methods
   with Not_found -> raise (Method_not_registered name)
-

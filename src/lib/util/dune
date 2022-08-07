@@ -1,0 +1,19 @@
+(executable
+ (name formatshims)
+ (modules formatshims)
+ (libraries dune.configurator))
+
+(rule
+ (targets format_shims.ml)
+ (deps ./formatshims.exe)
+ (action
+  (run ./formatshims.exe)))
+
+(library
+ (name alt_ergo_lib_util)
+ (public_name alt-ergo-lib.util)
+ (modules_without_implementation numbersInterface)
+ (modules Config Emap Gc_debug Hcons Hstring Iheap Lists Loc MyDynlink MyUnix
+   Numbers NumsNumbers NumbersInterface Options Timers Util Vec Version
+   ZarithNumbers Steps Printer Format_shims)
+ (libraries seq unix num str zarith dynlink ocplib-simplex stdlib-shims))

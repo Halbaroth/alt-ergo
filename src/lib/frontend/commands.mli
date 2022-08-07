@@ -26,23 +26,20 @@
 (*                                                                            *)
 (******************************************************************************)
 
-open Typed
-
+module Structs = Alt_ergo_lib_structs
+open Structs.Typed
 
 (* Sat entry *)
 
 type sat_decl_aux =
-  | Assume of string * Expr.t * bool
-  | PredDef of Expr.t * string (*name of the predicate*)
-  | RwtDef of (Expr.t rwt_rule) list
-  | Query of string *  Expr.t * goal_sort
-  | ThAssume of Expr.th_elt
+  | Assume of string * Structs.Expr.t * bool
+  | PredDef of Structs.Expr.t * string (*name of the predicate*)
+  | RwtDef of Structs.Expr.t rwt_rule list
+  | Query of string * Structs.Expr.t * goal_sort
+  | ThAssume of Structs.Expr.th_elt
   | Push of int
   | Pop of int
 
-type sat_tdecl = {
-  st_loc : Loc.t;
-  st_decl : sat_decl_aux
-}
+type sat_tdecl = { st_loc : Util.Loc.t; st_decl : sat_decl_aux }
 
 val print : Format.formatter -> sat_tdecl -> unit

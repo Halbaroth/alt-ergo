@@ -26,18 +26,14 @@
 (*                                                                            *)
 (******************************************************************************)
 
-type answer = (Explanation.t * Expr.Set.t list) option
+module Util = Alt_ergo_lib_util
+module Structs = Alt_ergo_lib_structs
 
-
-type theory =
-  | Th_arith
-  | Th_sum
-  | Th_adt
-  | Th_arrays
-  | Th_UF
+type answer = (Structs.Ex.t * Structs.Expr.Set.t list) option
+type theory = Th_arith | Th_sum | Th_adt | Th_arrays | Th_UF
 
 type lit_origin =
   | Subst
-  | CS of theory * Numbers.Q.t
-  | NCS of theory * Numbers.Q.t
+  | CS of theory * Util.Numbers.Q.t
+  | NCS of theory * Util.Numbers.Q.t
   | Other

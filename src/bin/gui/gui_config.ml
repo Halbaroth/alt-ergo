@@ -52,27 +52,19 @@ let wrap = ref false
 let load () =
   let ic = open_in filename in
   let rec read () =
-    try begin match String.split_on_char ':' (input_line ic) with
-      | [ "window_width"; value ] ->
-        window_width := int_of_string value
-      | [ "window_height"; value ] ->
-        window_height := int_of_string value
-      | [ "indent_size"; value ] ->
-        indent_size := int_of_string value
-      | [ "max_indent"; value ] ->
-        max_indent := int_of_string value
-      | [ "max_indents"; value ] ->
-        max_indents := int_of_string value
-      | [ "font_family"; value ] ->
-        font_family := value
-      | [ "font_size"; value ] ->
-        font_size := int_of_string value
-      | [ "style"; value ] ->
-        style := value
-      | [ "wrap"; value ] ->
-        wrap := bool_of_string value
-      | _ -> ()
-    end; read ()
+    try
+      (match String.split_on_char ':' (input_line ic) with
+      | [ "window_width"; value ] -> window_width := int_of_string value
+      | [ "window_height"; value ] -> window_height := int_of_string value
+      | [ "indent_size"; value ] -> indent_size := int_of_string value
+      | [ "max_indent"; value ] -> max_indent := int_of_string value
+      | [ "max_indents"; value ] -> max_indents := int_of_string value
+      | [ "font_family"; value ] -> font_family := value
+      | [ "font_size"; value ] -> font_size := int_of_string value
+      | [ "style"; value ] -> style := value
+      | [ "wrap"; value ] -> wrap := bool_of_string value
+      | _ -> ());
+      read ()
     with End_of_file -> ()
   in
   read ();
@@ -94,21 +86,11 @@ let write () =
 let update_window_size width height =
   window_width := width;
   window_height := height
- 
-let update_font_family family =
-  font_family := family
 
-let update_font_size size =
-  font_size := size
-
-let update_wrap b =
-  wrap := b
-
-let init () =
-  try
-    load ();
-  with Sys_error _ -> write ()
-
+let update_font_family family = font_family := family
+let update_font_size size = font_size := size
+let update_wrap b = wrap := b
+let init () = try load () with Sys_error _ -> write ()
 let window_width = !window_width
 let window_height = !window_height
 let indent_size = !indent_size
@@ -120,6 +102,5 @@ let style = !style
 let wrap = !wrap
 
 let not_supported msg =
-  AltErgoLib.Printer.print_err
-    "%S currently not supported by the GUI" msg;
+  AltErgoLib.Printer.print_err "%S currently not supported by the GUI" msg;
   assert false

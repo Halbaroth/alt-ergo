@@ -26,6 +26,8 @@
 (*                                                                            *)
 (******************************************************************************)
 
+module Util = Alt_ergo_lib_util
+
 (** {1 Errors module} *)
 
 (** This module aims to regroup all exception that can be raised
@@ -35,8 +37,8 @@
 
 (** Error that can be raised by the typechecker *)
 type typing_error =
-  | BitvExtract of int*int
-  | BitvExtractRange of int*int
+  | BitvExtract of int * int
+  | BitvExtractRange of int * int
   | ClashType of string
   | ClashLabel of string * string
   | ClashParam of string
@@ -60,12 +62,12 @@ type typing_error =
   | ShouldHaveTypeRecord of Ty.t
   | ShouldBeARecord
   | ShouldHaveLabel of string * string
-  | NoLabelInType of Hstring.t * Ty.t
+  | NoLabelInType of Util.Hstring.t * Ty.t
   | ShouldHaveTypeProp
-  | NoRecordType of Hstring.t
-  | DuplicateLabel of Hstring.t
+  | NoRecordType of Util.Hstring.t
+  | DuplicateLabel of Util.Hstring.t
   | DuplicatePattern of string
-  | WrongLabel of Hstring.t * Ty.t
+  | WrongLabel of Util.Hstring.t * Ty.t
   | WrongNumberOfLabels
   | Notrigger
   | CannotGeneralize
@@ -74,10 +76,10 @@ type typing_error =
   | ThSemTriggerError
   | WrongDeclInTheory
   | ShouldBeADT of Ty.t
-  | MatchNotExhaustive of Hstring.t list
-  | MatchUnusedCases of Hstring.t list
+  | MatchNotExhaustive of Util.Hstring.t list
+  | MatchUnusedCases of Util.Hstring.t list
   | NotAdtConstr of string * Ty.t
-  | BadPopCommand of {pushed : int; to_pop : int}
+  | BadPopCommand of { pushed : int; to_pop : int }
   | ShouldBePositive of int
 
 (** Errors that can be raised at solving*)
@@ -90,11 +92,11 @@ type run_error =
 
 (** All types of error that can be raised *)
 type error =
-  | Parser_error of string (** Error used at parser loading *)
-  | Lexical_error of Loc.t * string (** Error used by the lexer *)
-  | Syntax_error of Loc.t * string (** Error used by the parser*)
-  | Typing_error of Loc.t * typing_error (** Error used at typing *)
-  | Run_error of run_error (** Error used during solving *)
+  | Parser_error of string  (** Error used at parser loading *)
+  | Lexical_error of Util.Loc.t * string  (** Error used by the lexer *)
+  | Syntax_error of Util.Loc.t * string  (** Error used by the parser*)
+  | Typing_error of Util.Loc.t * typing_error  (** Error used at typing *)
+  | Run_error of run_error  (** Error used during solving *)
   | Warning_as_error
 
 (** {2 Exceptions } *)
@@ -103,21 +105,21 @@ exception Error of error
 
 (** {3 Raising exceptions functions } *)
 
-(** Raise the input error as {!Error} *)
 val error : error -> 'a
+(** Raise the input error as {!Error} *)
 
+val typing_error : typing_error -> Util.Loc.t -> 'a
 (** Raise the input {!typing_error} as {!Typing_error} *)
-val typing_error : typing_error -> Loc.t -> 'a
 
-(** Raise the input {!run_error} as {!Run_error} *)
 val run_error : run_error -> 'a
+(** Raise the input {!run_error} as {!Run_error} *)
 
+val warning_as_error : unit -> unit
 (** Raise [Warning_as_error] as {!Error}
     if the option warning-as-error is set
     This function can be use after warning *)
-val warning_as_error : unit -> unit
 
 (** {2 Printing } *)
 
-(** Print a message on the formatter corresponding to the error *)
 val report : Format.formatter -> error -> unit
+(** Print a message on the formatter corresponding to the error *)

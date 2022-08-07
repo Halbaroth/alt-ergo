@@ -26,5 +26,5 @@
 (*                                                                            *)
 (******************************************************************************)
 
-(** Main function solve the input problem *)
 val main : unit -> unit
+(** Main function solve the input problem *)

@@ -9,26 +9,19 @@
 (*                                                                            *)
 (******************************************************************************)
 
+module Util = Alt_ergo_lib_util
+
 type t
+type view = { hs : Util.Hstring.t; id : int }
 
-type view = {hs : Hstring.t ; id : int}
-
-val of_hstring : Hstring.t -> t
-val of_string  : string -> t
-
+val of_hstring : Util.Hstring.t -> t
+val of_string : string -> t
 val view : t -> view
-
 val compare : t -> t -> int
-
 val equal : t -> t -> bool
-
 val hash : t -> int
-
 val print : Format.formatter -> t -> unit
-
 val to_string : t -> string
 
 module Map : Map.S with type key = t
-
 module Set : Set.S with type elt = t
-

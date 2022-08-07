@@ -8,11 +8,10 @@
 (*                                                                            *)
 (******************************************************************************)
 
-open AltErgoLib
-open Options
+module Util = Alt_ergo_lib_util
+open Util.Options
 
 let load () =
   List.iter
-    (fun p ->
-       MyDynlink.load (get_verbose ()) p "parser"
-    )(Options.get_parsers())
+    (fun p -> Util.MyDynlink.load (get_verbose ()) p "parser")
+    (Util.Options.get_parsers ())

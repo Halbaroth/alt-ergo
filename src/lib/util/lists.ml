@@ -13,33 +13,29 @@ let apply f l =
   let res, same =
     List.fold_left
       (fun (acc, same) a ->
-         let b = f a in
-         b :: acc, same && a == b
-      )([], true) l
+        let b = f a in
+        (b :: acc, same && a == b))
+      ([], true) l
   in
-  (if same then l else List.rev res), same
+  ((if same then l else List.rev res), same)
 
 let apply_right f l =
   let res, same =
     List.fold_left
       (fun (acc, same) (v, a) ->
-         let b = f a in
-         (v, b) :: acc, same && a == b
-      )([], true) l
+        let b = f a in
+        ((v, b) :: acc, same && a == b))
+      ([], true) l
   in
-  (if same then l else List.rev res), same
+  ((if same then l else List.rev res), same)
 
 let rec find_opt pred l =
   match l with
   | [] -> None
-  | e :: r ->
-    if pred e then Some e
-    else find_opt pred r
+  | e :: r -> if pred e then Some e else find_opt pred r
 
 let to_seq l =
-  let rec aux l () = match l with
-    | [] -> Seq.Nil
-    | x :: tail -> Seq.Cons (x, aux tail)
+  let rec aux l () =
+    match l with [] -> Seq.Nil | x :: tail -> Seq.Cons (x, aux tail)
   in
   aux l
-

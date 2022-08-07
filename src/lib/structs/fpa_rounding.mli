@@ -9,8 +9,9 @@
 (*                                                                            *)
 (******************************************************************************)
 
-val is_rounding_mode : Expr.t -> bool
+module Util = Alt_ergo_lib_util
 
+val is_rounding_mode : Expr.t -> bool
 val fpa_rounding_mode : Ty.t
 
 (*  why3/standard rounding modes*)
@@ -50,18 +51,20 @@ val _Nd__rounding_mode : Expr.t
 val _Nu__rounding_mode : Expr.t
 (** nu in Gappa: to nearest, tie breaking toward plus infinity *)
 
-
-
+val integer_log_2 : Util.Numbers.Q.t -> int
 (** Integer part of binary logarithm for NON-ZERO POSITIVE number **)
-val integer_log_2 : Numbers.Q.t -> int
 
+val float_of_rational :
+  Expr.t ->
+  Expr.t ->
+  Expr.t ->
+  Util.Numbers.Q.t ->
+  Util.Numbers.Q.t * Util.Numbers.Z.t * int
 (** [float_of_rational prec exp mode x] float approx of a rational
     constant.  The function also returns the mantissa and the
     exponent. i.e. if [res, m, e = float_of_rational prec exp mode x],
     then [res = m * 2^e] **)
-val float_of_rational :
-  Expr.t -> Expr.t -> Expr.t -> Numbers.Q.t -> Numbers.Q.t * Numbers.Z.t * int
 
+val round_to_integer : Expr.t -> Util.Numbers.Q.t -> Util.Numbers.Q.t
 (** [round_to_integer mode x] rounds the rational [x] to an integer
     depending on the rounding mode [mode] *)
-val round_to_integer:  Expr.t -> Numbers.Q.t -> Numbers.Q.t

@@ -9,17 +9,17 @@
 (*                                                                            *)
 (******************************************************************************)
 
+module Util = Alt_ergo_lib_util
+module Structs = Alt_ergo_lib_structs
+
 let get_current () =
-  match Options.get_sat_solver () with
-  | Util.Tableaux | Util.Tableaux_CDCL ->
-    if Options.get_verbose () then
-      Printer.print_dbg
-        ~module_name:"Sat_solver"
-        "use Tableaux-like solver";
-    (module Fun_sat : Sat_solver_sig.SatContainer)
-  | Util.CDCL | Util.CDCL_Tableaux ->
-    if Options.get_verbose () then
-      Printer.print_dbg
-        ~module_name:"Sat_solver"
-        "use CDCL solver";
-    (module Satml_frontend : Sat_solver_sig.SatContainer)
+  match Util.Options.get_sat_solver () with
+  | Util.Util.Tableaux | Util.Util.Tableaux_CDCL ->
+      if Util.Options.get_verbose () then
+        Util.Printer.print_dbg ~module_name:"Sat_solver"
+          "use Tableaux-like solver";
+      (module Fun_sat : Sat_solver_sig.SatContainer)
+  | Util.Util.CDCL | Util.Util.CDCL_Tableaux ->
+      if Util.Options.get_verbose () then
+        Util.Printer.print_dbg ~module_name:"Sat_solver" "use CDCL solver";
+      (module Satml_frontend : Sat_solver_sig.SatContainer)
