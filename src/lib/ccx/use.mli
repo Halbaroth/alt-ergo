@@ -29,54 +29,17 @@
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
 
-module type S = sig
-  type t
-  type tbox
-  type instances = (Ast.Expr.gformula * Ast.Ex.t) list
+module SA : Set.S with type elt = Ast.Expr.t * Ast.Ex.t
 
-  val empty : t
-  val add_terms : t -> Ast.Expr.Set.t -> Ast.Expr.gformula -> t
-  val add_lemma : t -> Ast.Expr.gformula -> Ast.Ex.t -> t
+type t
+type r = Shostak.Combine.r
 
-  val add_predicate :
-    t ->
-    guard:Ast.Expr.t ->
-    name:string ->
-    Ast.Expr.gformula ->
-    Ast.Ex.t ->
-    t
-
-  (* the first returned expr is the guard (incremental mode),
-     the second one is the defn of the given predicate *)
-  val ground_pred_defn :
-    Ast.Expr.t ->
-    t ->
-    (Ast.Expr.t * Ast.Expr.t * Ast.Ex.t) option
-
-  val pop : t -> guard:Ast.Expr.t -> t
-
-  val m_lemmas :
-    Util.Util.matching_env ->
-    t ->
-    tbox ->
-    (Ast.Expr.t -> Ast.Expr.t -> bool) ->
-    int ->
-    instances * instances (* goal_directed, others *)
-
-  val m_predicates :
-    Util.Util.matching_env ->
-    t ->
-    tbox ->
-    (Ast.Expr.t -> Ast.Expr.t -> bool) ->
-    int ->
-    instances * instances (* goal_directed, others *)
-
-  val register_max_term_depth : t -> int -> t
-
-  val matching_terms_info :
-    t ->
-    Matching_types.info Ast.Expr.Map.t
-    * Ast.Expr.t list Ast.Expr.Map.t Ast.Sy.Map.t
-end
-
-module Make (X : Theory.S) : S with type tbox = X.t
+val empty : t
+val find : r -> t -> Ast.Expr.Set.t * SA.t
+val add : r -> Ast.Expr.Set.t * SA.t -> t -> t
+val mem : r -> t -> bool
+val print : t -> unit
+val up_add : t -> Ast.Expr.t -> r -> r list -> t
+val congr_add : t -> r list -> Ast.Expr.Set.t
+val up_close_up : t -> r -> r -> t
+val congr_close_up : t -> r -> r list -> Ast.Expr.Set.t * SA.t

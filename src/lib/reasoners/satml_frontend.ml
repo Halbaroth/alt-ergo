@@ -11,12 +11,13 @@
 
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
+module Ccx = Alt_ergo_lib_ccx
 
-module Make (Th : Theory.S) : Sat_solver_sig.S = struct
+module Make (Th : Ccx.Theory.S) : Sat_solver_sig.S = struct
   open Util.Options
   open Format
   module SAT = Satml.Make (Th)
-  module Inst = Instances.Make (Th)
+  module Inst = Ccx.Instances.Make (Th)
   module Atom = Ast.Satml_types.Atom
   module FF = Ast.Satml_types.Flat_Formula
 

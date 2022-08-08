@@ -1,0 +1,6 @@
+(library
+ (name alt_ergo_lib_ccx)
+ (public_name alt-ergo-lib.ccx)
+ (modules_without_implementation sig sig_rel)
+ (modules Ac Adt Adt_rel Arith Arrays Arrays_rel Bitv Bitv_rel Ccx Enum Enum_rel Inequalities IntervalCalculus Intervals Ite Ite_rel Polynome Records Records_rel Relation Shostak Sig Sig_rel Uf Use Theory Instances Matching)
+ (libraries alt_ergo_lib_util alt_ergo_lib_ast))

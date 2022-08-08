@@ -28,11 +28,13 @@
 
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
+module Ccx = Alt_ergo_lib_ccx
+           
 open Util.Options
 open Format
 
-module Make (Th : Theory.S) : Sat_solver_sig.S = struct
-  module Inst = Instances.Make (Th)
+module Make (Th : Ccx.Theory.S) : Sat_solver_sig.S = struct
+  module Inst = Ccx.Instances.Make (Th)
   module CDCL = Satml_frontend_hybrid.Make (Th)
 
   exception No_suitable_decision
@@ -165,7 +167,7 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
     nb_related_to_both : int;
     nb_unrelated : int;
     cdcl : CDCL.t ref;
-    tcp_cache : Th_util.answer Ast.Expr.Map.t;
+    tcp_cache : Ast.Th_util.answer Ast.Expr.Map.t;
     delta :
       (Ast.Expr.gformula * Ast.Expr.gformula * Ast.Ex.t * bool) list;
     decisions : int Ast.Expr.Map.t;
@@ -1259,8 +1261,8 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
           or to increase your timeout.@]"
      | Some env ->
        let cs_tbox = Th.get_case_split_env env.tbox in
-       let uf = Ccx.Main.get_union_find cs_tbox in
-       Uf.output_concrete_model uf);
+       let uf = Ccx.Ccx.Main.get_union_find cs_tbox in
+       Ccx.Uf.output_concrete_model uf);
     return_function ()
 
   let () =
@@ -1272,9 +1274,9 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
   let return_answer env orig return_function =
     update_all_models_option env;
     let env = compute_concrete_model env orig in
-    let uf = Ccx.Main.get_union_find (Th.get_case_split_env env.tbox) in
+    let uf = Ccx.Ccx.Main.get_union_find (Th.get_case_split_env env.tbox) in
     Util.Options.Time.unset_timeout ~is_gui:(Util.Options.get_is_gui ());
-    Uf.output_concrete_model uf;
+    Ccx.Uf.output_concrete_model uf;
     terminated_normally := true;
     return_function env
 

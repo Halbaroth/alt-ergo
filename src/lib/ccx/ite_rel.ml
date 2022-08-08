@@ -116,7 +116,7 @@ let extract_pending_deductions env =
            Util.Printer.print_dbg ~module_name:"Ite_rel" ~function_name:"assume"
              "deduce that %a with expl %a" Ast.Expr.print a Ast.Ex.print
              ex;
-         (Sig_rel.LTerm a, ex, Th_util.Other) :: acc)
+         (Sig_rel.LTerm a, ex, Ast.Th_util.Other) :: acc)
       env.pending_deds []
   in
   ({ env with pending_deds = ME2.empty }, l)

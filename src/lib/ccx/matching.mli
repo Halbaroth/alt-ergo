@@ -29,42 +29,48 @@
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
 
-type t
-type r = Shostak.Combine.r
+module type S = sig
+  type t
+  type theory
 
-module LX : Ast.Xliteral.S with type elt = r
+  open Ast.Matching_types
 
-val empty : unit -> t
-val add : t -> Ast.Expr.t -> t * Ast.Expr.t list
-val mem : t -> Ast.Expr.t -> bool
-val find : t -> Ast.Expr.t -> r * Ast.Ex.t
-val find_r : t -> r -> r * Ast.Ex.t
+  val empty : t
 
-val union :
-  t -> r -> r -> Ast.Ex.t -> t * (r * (r * r * Ast.Ex.t) list * r) list
+  val make :
+    max_t_depth:int ->
+    Ast.Matching_types.info Ast.Expr.Map.t ->
+    Ast.Expr.t list Ast.Expr.Map.t Ast.Sy.Map.t ->
+    Ast.Matching_types.trigger_info list ->
+    t
 
-val distinct : t -> r list -> Ast.Ex.t -> t
+  val add_term : Ast.Matching_types.term_info -> Ast.Expr.t -> t -> t
+  val max_term_depth : t -> int -> t
 
-val are_equal :
-  t -> Ast.Expr.t -> Ast.Expr.t -> added_terms:bool -> Th_util.answer
+  val add_triggers :
+    Util.Util.matching_env ->
+    t ->
+    (Ast.Expr.t * int * Ast.Ex.t) Ast.Expr.Map.t ->
+    t
 
-val are_distinct : t -> Ast.Expr.t -> Ast.Expr.t -> Th_util.answer
-val already_distinct : t -> r list -> bool
-val class_of : t -> Ast.Expr.t -> Ast.Expr.t list
-val rclass_of : t -> r -> Ast.Expr.Set.t
-val cl_extract : t -> Ast.Expr.Set.t list
+  val terms_info :
+    t ->
+    info Ast.Expr.Map.t
+    * Ast.Expr.t list Ast.Expr.Map.t Ast.Sy.Map.t
 
-val model :
-  t ->
-  (r * Ast.Expr.t list * (Ast.Expr.t * r) list) list
-  * Ast.Expr.t list list
+  val query :
+    Util.Util.matching_env -> t -> theory -> (Ast.Matching_types.trigger_info * gsubst list) list
+end
 
-val print : t -> unit
-val term_repr : t -> Ast.Expr.t -> Ast.Expr.t
-val make : t -> Ast.Expr.t -> r (* may raise Not_found *)
-val is_normalized : t -> r -> bool
+module type Arg = sig
+  type t
 
-val assign_next :
-  t -> (r Ast.Xliteral.view * bool * Th_util.lit_origin) list * t
+  val term_repr : t -> Ast.Expr.t -> init_term:bool -> Ast.Expr.t
 
-val output_concrete_model : t -> unit
+  val are_equal :
+    t -> Ast.Expr.t -> Ast.Expr.t -> init_terms:bool -> Ast.Th_util.answer
+
+  val class_of : t -> Ast.Expr.t -> Ast.Expr.t list
+end
+
+module Make (X : Arg) : S with type theory = X.t

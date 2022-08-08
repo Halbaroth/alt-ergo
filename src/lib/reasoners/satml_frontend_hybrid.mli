@@ -11,8 +11,9 @@
 
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
+module Ccx = Alt_ergo_lib_ccx
 
-module Make (Th : Theory.S) : sig
+module Make (Th : Ccx.Theory.S) : sig
   type t
 
   exception Bottom of Ast.Ex.t * Ast.Expr.Set.t list * t

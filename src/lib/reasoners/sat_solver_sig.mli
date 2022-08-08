@@ -28,6 +28,7 @@
 
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
+module Ccx = Alt_ergo_lib_ccx
 
 module type S = sig
   type t
@@ -78,5 +79,5 @@ module type S = sig
 end
 
 module type SatContainer = sig
-  module Make (Th : Theory.S) : S
+  module Make (Th : Ccx.Theory.S) : S
 end

@@ -26,42 +26,13 @@
 (*                                                                            *)
 (******************************************************************************)
 
-module Ast = Alt_ergo_lib_ast
+module Util = Alt_ergo_lib_util
 
-type gsubst = {
-  sbs : Ast.Expr.t Ast.Sy.Map.t;
-  sty : Ast.Ty.subst;
-  gen : int;
-  (* l'age d'une substitution est l'age du plus vieux
-     		     terme qu'elle contient *)
-  goal : bool;
-  (* vrai si la substitution contient un terme ayant un lien
-     		     avec le but de la PO *)
-  s_term_orig : Ast.Expr.t list;
-  s_lem_orig : Ast.Expr.t;
-}
+type answer = (Ex.t * Expr.Set.t list) option
+type theory = Th_arith | Th_sum | Th_adt | Th_arrays | Th_UF
 
-type trigger_info = {
-  trigger : Ast.Expr.trigger;
-  trigger_age : int; (* age d'un trigger *)
-  trigger_orig : Ast.Expr.t; (* lemme d'origine *)
-  trigger_formula : Ast.Expr.t; (* formule associee au trigger *)
-  trigger_dep : Ast.Ex.t;
-  trigger_increm_guard : Ast.Expr.t;
-  (* guard associated to push in incremental mode *)
-}
-
-type term_info = {
-  term_age : int; (* age du terme *)
-  term_from_goal : bool; (* vrai si le terme provient du but de la PO *)
-  term_from_formula : Ast.Expr.t option; (* lemme d'origine du terme *)
-  term_from_terms : Ast.Expr.t list;
-}
-
-type info = {
-  age : int; (* age du terme *)
-  lem_orig : Ast.Expr.t list;
-  (* lemme d'ou provient eventuellement le terme *)
-  t_orig : Ast.Expr.t list;
-  but : bool; (* le terme a-t-il un lien avec le but final de la PO *)
-}
+type lit_origin =
+  | Subst
+  | CS of theory * Util.Numbers.Q.t
+  | NCS of theory * Util.Numbers.Q.t
+  | Other

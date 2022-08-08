@@ -144,7 +144,7 @@ let case_split env uf ~for_model =
   List.sort
     (fun (_, _, sz1) (_, _, sz2) ->
        match (sz1, sz2) with
-       | Th_util.CS (_, sz1), Th_util.CS (_, sz2) ->
+       | Ast.Th_util.CS (_, sz1), Ast.Th_util.CS (_, sz2) ->
          Util.Numbers.Q.compare sz1 sz2
        | _ -> assert false)
     l

@@ -50,7 +50,7 @@ module type S = sig
     t ->
     t * Ast.Expr.Set.t * int
 
-  val query : Ast.Expr.t -> t -> Th_util.answer
+  val query : Ast.Expr.t -> t -> Ast.Th_util.answer
   val print_model : Format.formatter -> t -> unit
   val cl_extract : t -> Ast.Expr.Set.t list
   val extract_ground_terms : t -> Ast.Expr.Set.t
@@ -63,7 +63,7 @@ module type S = sig
 
   val theories_instances :
     do_syntactic_matching:bool ->
-    Matching_types.info Ast.Expr.Map.t
+    Ast.Matching_types.info Ast.Expr.Map.t
     * Ast.Expr.t list Ast.Expr.Map.t Ast.Sy.Map.t ->
     t ->
     (Ast.Expr.t -> Ast.Expr.t -> bool) ->
@@ -242,11 +242,11 @@ module Main_Default : S = struct
 
     let theory_of k =
       match k with
-      | Th_util.Th_arith -> "Th_arith "
-      | Th_util.Th_sum -> "Th_sum   "
-      | Th_util.Th_adt -> "Th_adt   "
-      | Th_util.Th_arrays -> "Th_arrays"
-      | Th_util.Th_UF -> "Th_UF"
+      | Ast.Th_util.Th_arith -> "Th_arith "
+      | Ast.Th_util.Th_sum -> "Th_sum   "
+      | Ast.Th_util.Th_adt -> "Th_adt   "
+      | Ast.Th_util.Th_arrays -> "Th_arrays"
+      | Ast.Th_util.Th_UF -> "Th_UF"
 
     let made_choices fmt choices =
       match choices with
@@ -256,10 +256,10 @@ module Main_Default : S = struct
         List.iter
           (fun (rx, lit_orig, _, ex) ->
              match lit_orig with
-             | Th_util.CS (k, _) ->
+             | Ast.Th_util.CS (k, _) ->
                fprintf fmt "  > %s  cs: %a (because %a)@ " (theory_of k)
                  LR.print (LR.make rx) Ast.Ex.print ex
-             | Th_util.NCS (k, _) ->
+             | Ast.Th_util.NCS (k, _) ->
                fprintf fmt "  > %s ncs: %a (because %a)@ " (theory_of k)
                  LR.print (LR.make rx) Ast.Ex.print ex
              | _ -> assert false)
@@ -319,7 +319,7 @@ module Main_Default : S = struct
     | CNeg (* The choice has been already negated *)
 
   type choice =
-    X.r Ast.Xliteral.view * Th_util.lit_origin * choice_sign * Ast.Ex.t
+    X.r Ast.Xliteral.view * Ast.Th_util.lit_origin * choice_sign * Ast.Ex.t
   (** the choice, the size, choice_sign,  the explication set,
         the explication for this choice. *)
 
@@ -389,7 +389,7 @@ module Main_Default : S = struct
                 let neg_c = LR.view (LR.neg (LR.make c)) in
                 let lit_orig =
                   match lit_orig with
-                  | Th_util.CS (k, sz) -> Th_util.NCS (k, sz)
+                  | Ast.Th_util.CS (k, sz) -> Ast.Th_util.NCS (k, sz)
                   | _ -> assert false
                 in
                 Debug.split_backtrack neg_c dep;
@@ -524,7 +524,7 @@ module Main_Default : S = struct
     let facts = CC_X.empty_facts () in
     List.iter
       (List.iter (fun (a, ex, _dlvl, _plvl) ->
-           CC_X.add_fact facts (LTerm a, ex, Th_util.Other)))
+           CC_X.add_fact facts (LTerm a, ex, Ast.Th_util.Other)))
       in_facts_l;
 
     let t, ch = try_it t facts ~for_model:false in
@@ -542,7 +542,7 @@ module Main_Default : S = struct
         (fun ((assumed, assumed_set, cpt) as accu) (a, ex, dlvl, plvl) ->
            if Ast.Expr.Set.mem a assumed_set then accu
            else (
-             CC_X.add_fact facts (LTerm a, ex, Th_util.Other);
+             CC_X.add_fact facts (LTerm a, ex, Ast.Th_util.Other);
              ( (a, dlvl, plvl) :: assumed,
                Ast.Expr.Set.add a assumed_set,
                cpt + 1 )))

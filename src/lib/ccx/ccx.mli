@@ -29,11 +29,67 @@
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
 
-type answer = (Ast.Ex.t * Ast.Expr.Set.t list) option
-type theory = Th_arith | Th_sum | Th_adt | Th_arrays | Th_UF
+[@@@ocaml.warning "-33"]
 
-type lit_origin =
-  | Subst
-  | CS of theory * Util.Numbers.Q.t
-  | NCS of theory * Util.Numbers.Q.t
-  | Other
+open Util.Options
+open Sig
+
+module type S = sig
+  type t
+  type r = Shostak.Combine.r
+
+  val empty : unit -> t
+  val empty_facts : unit -> r Sig_rel.facts
+  val add_fact : r Sig_rel.facts -> r Sig_rel.fact -> unit
+
+  val add_term :
+    t ->
+    r Sig_rel.facts ->
+    (* acc *)
+    Ast.Expr.t ->
+    Ast.Ex.t ->
+    t * r Sig_rel.facts
+
+  val add :
+    t ->
+    r Sig_rel.facts ->
+    (* acc *)
+    Ast.Expr.t ->
+    Ast.Ex.t ->
+    t * r Sig_rel.facts
+
+  val assume_literals :
+    t ->
+    (r Sig_rel.literal * Ast.Ex.t * Ast.Th_util.lit_origin) list ->
+    r Sig_rel.facts ->
+    t * (r Sig_rel.literal * Ast.Ex.t * Ast.Th_util.lit_origin) list
+
+  val case_split :
+    t ->
+    for_model:bool ->
+    (r Ast.Xliteral.view * bool * Ast.Th_util.lit_origin) list * t
+
+  val query : t -> Ast.Expr.t -> Ast.Th_util.answer
+  val new_terms : t -> Ast.Expr.Set.t
+  val class_of : t -> Ast.Expr.t -> Ast.Expr.t list
+
+  val are_equal :
+    t -> Ast.Expr.t -> Ast.Expr.t -> init_terms:bool -> Ast.Th_util.answer
+
+  val are_distinct : t -> Ast.Expr.t -> Ast.Expr.t -> Ast.Th_util.answer
+  val cl_extract : t -> Ast.Expr.Set.t list
+  val term_repr : t -> Ast.Expr.t -> init_term:bool -> Ast.Expr.t
+  val print_model : Format.formatter -> t -> unit
+  val get_union_find : t -> Uf.t
+  val assume_th_elt : t -> Ast.Expr.th_elt -> Ast.Ex.t -> t
+
+  val theories_instances :
+    do_syntactic_matching:bool ->
+    Ast.Matching_types.info Ast.Expr.Map.t
+    * Ast.Expr.t list Ast.Expr.Map.t Ast.Sy.Map.t ->
+    t ->
+    (Ast.Expr.t -> Ast.Expr.t -> bool) ->
+    t * Sig_rel.instances
+end
+
+module Main : S

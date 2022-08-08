@@ -37,8 +37,8 @@ exception No_finite_bound
 val undefined : Ast.Ty.t -> t
 val is_undefined : t -> bool
 val point : Util.Numbers.Q.t -> Ast.Ty.t -> Ast.Ex.t -> t
-val doesnt_contain_0 : t -> Th_util.answer
-val is_positive : t -> Th_util.answer
+val doesnt_contain_0 : t -> Ast.Th_util.answer
+val is_positive : t -> Ast.Th_util.answer
 val is_strict_smaller : t -> t -> bool
 val new_borne_sup : Ast.Ex.t -> Util.Numbers.Q.t -> is_le:bool -> t -> t
 val new_borne_inf : Ast.Ex.t -> Util.Numbers.Q.t -> is_le:bool -> t -> t

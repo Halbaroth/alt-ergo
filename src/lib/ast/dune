@@ -1,6 +1,7 @@
 (library
  (name alt_ergo_lib_ast)
  (public_name alt-ergo-lib.ast)
+ (modules_without_implementation matching_types) 
  (modules Errors Ex Fpa_rounding Parsed Profiling Satml_types Sy Expr Var Ty
-   Typed Xliteral)
+   Typed Xliteral Th_util Matching_types)
  (libraries alt_ergo_lib_util))

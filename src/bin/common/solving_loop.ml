@@ -30,6 +30,8 @@ module Frontend = Alt_ergo_lib_frontend
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
 module Reasoners = Alt_ergo_lib_reasoners
+module Ccx = Alt_ergo_lib_ccx
+           
 open Util.Options
 
 (* Internal state while iterating over input statements *)
@@ -45,11 +47,11 @@ let main () =
                          : Reasoners.Sat_solver_sig.SatContainer)
   in
   let module TH = (val if Util.Options.get_no_theory () then
-                      (module Reasoners.Theory.Main_Empty
-                        : Reasoners.Theory.S)
+                      (module Ccx.Theory.Main_Empty
+                        : Ccx.Theory.S)
                     else
-                      (module Reasoners.Theory.Main_Default
-                        : Reasoners.Theory.S) : Reasoners.Theory.S)
+                      (module Ccx.Theory.Main_Default
+                        : Ccx.Theory.S) : Ccx.Theory.S)
   in
   let module SAT = SatCont.Make (TH) in
   let module FE = Frontend.Frontend.Make (SAT) in

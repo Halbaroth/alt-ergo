@@ -29,48 +29,65 @@
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
 
-module type S = sig
-  type t
-  type theory
+type 'a literal = LTerm of Ast.Expr.t | LSem of 'a Ast.Xliteral.view
 
-  open Matching_types
+type instances =
+  (Ast.Expr.t list * Ast.Expr.gformula * Ast.Ex.t) list
 
-  val empty : t
+type 'a input =
+  'a Ast.Xliteral.view
+  * Ast.Expr.t option
+  * Ast.Ex.t
+  * Ast.Th_util.lit_origin
 
-  val make :
-    max_t_depth:int ->
-    Matching_types.info Ast.Expr.Map.t ->
-    Ast.Expr.t list Ast.Expr.Map.t Ast.Sy.Map.t ->
-    Matching_types.trigger_info list ->
-    t
+type 'a fact = 'a literal * Ast.Ex.t * Ast.Th_util.lit_origin
 
-  val add_term : term_info -> Ast.Expr.t -> t -> t
-  val max_term_depth : t -> int -> t
+type 'a facts = {
+  equas : 'a fact Queue.t;
+  diseqs : 'a fact Queue.t;
+  ineqs : 'a fact Queue.t;
+  mutable touched : 'a Util.Util.MI.t;
+}
 
-  val add_triggers :
-    Util.Util.matching_env ->
-    t ->
-    (Ast.Expr.t * int * Ast.Ex.t) Ast.Expr.Map.t ->
-    t
+type 'a result = { assume : 'a fact list; remove : Ast.Expr.t list }
 
-  val terms_info :
-    t ->
-    info Ast.Expr.Map.t
-    * Ast.Expr.t list Ast.Expr.Map.t Ast.Sy.Map.t
-
-  val query :
-    Util.Util.matching_env -> t -> theory -> (trigger_info * gsubst list) list
-end
-
-module type Arg = sig
+module type RELATION = sig
   type t
 
-  val term_repr : t -> Ast.Expr.t -> init_term:bool -> Ast.Expr.t
+  val empty : Ast.Expr.Set.t list -> t
 
-  val are_equal :
-    t -> Ast.Expr.t -> Ast.Expr.t -> init_terms:bool -> Th_util.answer
+  val assume :
+    t -> Uf.t -> Shostak.Combine.r input list -> t * Shostak.Combine.r result
 
-  val class_of : t -> Ast.Expr.t -> Ast.Expr.t list
+  val query : t -> Uf.t -> Shostak.Combine.r input -> Ast.Th_util.answer
+
+  val case_split :
+    t ->
+    Uf.t ->
+    for_model:bool ->
+    (Shostak.Combine.r Ast.Xliteral.view * bool * Ast.Th_util.lit_origin) list
+  (** case_split env returns a list of equalities *)
+
+  val add :
+    t ->
+    Uf.t ->
+    Shostak.Combine.r ->
+    Ast.Expr.t ->
+    t * (Shostak.Combine.r Ast.Xliteral.view * Ast.Ex.t) list
+  (** add a representant to take into account *)
+
+  val instantiate :
+    do_syntactic_matching:bool ->
+    Ast.Matching_types.info Ast.Expr.Map.t
+    * Ast.Expr.t list Ast.Expr.Map.t Ast.Sy.Map.t ->
+    t ->
+    Uf.t ->
+    (Ast.Expr.t -> Ast.Expr.t -> bool) ->
+    t * instances
+
+  val print_model :
+    Format.formatter -> t -> (Ast.Expr.t * Shostak.Combine.r) list -> unit
+
+  val new_terms : t -> Ast.Expr.Set.t
+  val assume_th_elt : t -> Ast.Expr.th_elt -> Ast.Ex.t -> t
 end
-
-module Make (X : Arg) : S with type theory = X.t

@@ -29,8 +29,9 @@
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
 open Format
+open Ast.Matching_types
 open Util.Options
-open Matching_types
+
 module SubstE = Ast.Sy.Map
 
 module type S = sig
@@ -41,12 +42,12 @@ module type S = sig
 
   val make :
     max_t_depth:int ->
-    Matching_types.info Ast.Expr.Map.t ->
+    Ast.Matching_types.info Ast.Expr.Map.t ->
     Ast.Expr.t list Ast.Expr.Map.t SubstE.t ->
-    Matching_types.trigger_info list ->
+    Ast.Matching_types.trigger_info list ->
     t
 
-  val add_term : term_info -> Ast.Expr.t -> t -> t
+  val add_term : Ast.Matching_types.term_info -> Ast.Expr.t -> t -> t
   val max_term_depth : t -> int -> t
 
   val add_triggers :
@@ -57,10 +58,10 @@ module type S = sig
 
   val terms_info :
     t ->
-    info Ast.Expr.Map.t * Ast.Expr.t list Ast.Expr.Map.t SubstE.t
+    Ast.Matching_types.info Ast.Expr.Map.t * Ast.Expr.t list Ast.Expr.Map.t SubstE.t
 
   val query :
-    Util.Util.matching_env -> t -> theory -> (trigger_info * gsubst list) list
+    Util.Util.matching_env -> t -> theory -> (Ast.Matching_types.trigger_info * Ast.Matching_types.gsubst list) list
 end
 
 module type Arg = sig
@@ -69,7 +70,7 @@ module type Arg = sig
   val term_repr : t -> Ast.Expr.t -> init_term:bool -> Ast.Expr.t
 
   val are_equal :
-    t -> Ast.Expr.t -> Ast.Expr.t -> init_terms:bool -> Th_util.answer
+    t -> Ast.Expr.t -> Ast.Expr.t -> init_terms:bool -> Ast.Th_util.answer
 
   val class_of : t -> Ast.Expr.t -> Ast.Expr.t list
 end
@@ -79,9 +80,9 @@ module Make (X : Arg) : S with type theory = X.t = struct
 
   type t = {
     fils : Ast.Expr.t list Ast.Expr.Map.t SubstE.t;
-    info : info Ast.Expr.Map.t;
+    info : Ast.Matching_types.info Ast.Expr.Map.t;
     max_t_depth : int;
-    pats : trigger_info list;
+    pats : Ast.Matching_types.trigger_info list;
   }
 
   exception Echec

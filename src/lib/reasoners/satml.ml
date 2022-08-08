@@ -11,6 +11,7 @@
 
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
+module Ccx = Alt_ergo_lib_ccx
 open Util.Options
 
 module Atom = Ast.Satml_types.Atom
@@ -89,7 +90,7 @@ end
 module MFF = FF.Map
 module SFF = FF.Set
 
-module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
+module Make (Th : Ccx.Theory.S) : SAT_ML with type th = Th.t = struct
 
   module Matoms = Atom.Map
 

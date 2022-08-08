@@ -29,65 +29,54 @@
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
 
-type 'a literal = LTerm of Ast.Expr.t | LSem of 'a Ast.Xliteral.view
-
-type instances =
-  (Ast.Expr.t list * Ast.Expr.gformula * Ast.Ex.t) list
-
-type 'a input =
-  'a Ast.Xliteral.view
-  * Ast.Expr.t option
-  * Ast.Ex.t
-  * Th_util.lit_origin
-
-type 'a fact = 'a literal * Ast.Ex.t * Th_util.lit_origin
-
-type 'a facts = {
-  equas : 'a fact Queue.t;
-  diseqs : 'a fact Queue.t;
-  ineqs : 'a fact Queue.t;
-  mutable touched : 'a Util.Util.MI.t;
-}
-
-type 'a result = { assume : 'a fact list; remove : Ast.Expr.t list }
-
-module type RELATION = sig
+module type S = sig
   type t
+  type tbox
+  type instances = (Ast.Expr.gformula * Ast.Ex.t) list
 
-  val empty : Ast.Expr.Set.t list -> t
+  val empty : t
+  val add_terms : t -> Ast.Expr.Set.t -> Ast.Expr.gformula -> t
+  val add_lemma : t -> Ast.Expr.gformula -> Ast.Ex.t -> t
 
-  val assume :
-    t -> Uf.t -> Shostak.Combine.r input list -> t * Shostak.Combine.r result
-
-  val query : t -> Uf.t -> Shostak.Combine.r input -> Th_util.answer
-
-  val case_split :
+  val add_predicate :
     t ->
-    Uf.t ->
-    for_model:bool ->
-    (Shostak.Combine.r Ast.Xliteral.view * bool * Th_util.lit_origin) list
-  (** case_split env returns a list of equalities *)
+    guard:Ast.Expr.t ->
+    name:string ->
+    Ast.Expr.gformula ->
+    Ast.Ex.t ->
+    t
 
-  val add :
-    t ->
-    Uf.t ->
-    Shostak.Combine.r ->
+  (* the first returned expr is the guard (incremental mode),
+     the second one is the defn of the given predicate *)
+  val ground_pred_defn :
     Ast.Expr.t ->
-    t * (Shostak.Combine.r Ast.Xliteral.view * Ast.Ex.t) list
-  (** add a representant to take into account *)
-
-  val instantiate :
-    do_syntactic_matching:bool ->
-    Matching_types.info Ast.Expr.Map.t
-    * Ast.Expr.t list Ast.Expr.Map.t Ast.Sy.Map.t ->
     t ->
-    Uf.t ->
+    (Ast.Expr.t * Ast.Expr.t * Ast.Ex.t) option
+
+  val pop : t -> guard:Ast.Expr.t -> t
+
+  val m_lemmas :
+    Util.Util.matching_env ->
+    t ->
+    tbox ->
     (Ast.Expr.t -> Ast.Expr.t -> bool) ->
-    t * instances
+    int ->
+    instances * instances (* goal_directed, others *)
 
-  val print_model :
-    Format.formatter -> t -> (Ast.Expr.t * Shostak.Combine.r) list -> unit
+  val m_predicates :
+    Util.Util.matching_env ->
+    t ->
+    tbox ->
+    (Ast.Expr.t -> Ast.Expr.t -> bool) ->
+    int ->
+    instances * instances (* goal_directed, others *)
 
-  val new_terms : t -> Ast.Expr.Set.t
-  val assume_th_elt : t -> Ast.Expr.th_elt -> Ast.Ex.t -> t
+  val register_max_term_depth : t -> int -> t
+
+  val matching_terms_info :
+    t ->
+    Ast.Matching_types.info Ast.Expr.Map.t
+    * Ast.Expr.t list Ast.Expr.Map.t Ast.Sy.Map.t
 end
+
+module Make (X : Theory.S) : S with type tbox = X.t

@@ -133,7 +133,7 @@ let add_diseq hss sm1 sm2 dep env eqs =
         ( env,
           ( Sig_rel.LSem (LR.mkv_eq r (is_mine (Cons (h', ty)))),
             ex,
-            Th_util.Other )
+            Ast.Th_util.Other )
           :: eqs )
       else (env, eqs)
   | Alien r1, Alien r2 ->
@@ -151,7 +151,7 @@ let add_diseq hss sm1 sm2 dep env eqs =
         let ty = X.type_info r1 in
         ( Sig_rel.LSem (LR.mkv_eq r1 (is_mine (Cons (h', ty)))),
           ex,
-          Th_util.Other )
+          Ast.Th_util.Other )
         :: eqs
       else eqs
     in
@@ -162,7 +162,7 @@ let add_diseq hss sm1 sm2 dep env eqs =
         let ty = X.type_info r2 in
         ( Sig_rel.LSem (LR.mkv_eq r2 (is_mine (Cons (h', ty)))),
           ex,
-          Th_util.Other )
+          Ast.Th_util.Other )
         :: eqs
       else eqs
     in
@@ -198,7 +198,7 @@ let add_eq hss sm1 sm2 dep env eqs =
       ( env,
         ( Sig_rel.LSem (LR.mkv_eq r1 (is_mine (Cons (h', ty)))),
           ex,
-          Th_util.Other )
+          Ast.Th_util.Other )
         :: eqs )
     else (env, eqs)
   | _ -> (env, eqs)
@@ -208,7 +208,7 @@ let count_splits env la =
     List.fold_left
       (fun nb (_, _, _, i) ->
          match i with
-         | Th_util.CS (Th_util.Th_sum, n) -> Util.Numbers.Q.mult nb n
+         | Ast.Th_util.CS (Ast.Th_util.Th_sum, n) -> Util.Numbers.Q.mult nb n
          | _ -> nb)
       env.size_splits la
   in
@@ -286,7 +286,7 @@ let case_split env uf ~for_model =
     then (
       let r' = is_mine (Cons (hs, X.type_info r)) in
       Debug.case_split r r';
-      [ (LR.mkv_eq r r', true, Th_util.CS (Th_util.Th_sum, n)) ])
+      [ (LR.mkv_eq r r', true, Ast.Th_util.CS (Ast.Th_util.Th_sum, n)) ])
     else []
   | None ->
     Debug.no_case_split ();

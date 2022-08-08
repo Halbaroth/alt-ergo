@@ -11,8 +11,9 @@
 
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
+module Ccx = Alt_ergo_lib_ccx
 
-module Make (Th : Theory.S) = struct
+module Make (Th : Ccx.Theory.S) = struct
   open Util.Options
   module Atom = Ast.Satml_types.Atom
   module MA = Atom.Map

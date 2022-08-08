@@ -74,7 +74,7 @@ module type S = sig
 
   val matching_terms_info :
     t ->
-    Matching_types.info Ast.Expr.Map.t
+    Ast.Matching_types.info Ast.Expr.Map.t
     * Ast.Expr.t list Ast.Expr.Map.t Ast.Sy.Map.t
 end
 
@@ -144,7 +144,7 @@ module Make (X : Theory.S) : S with type tbox = X.t = struct
   let add_terms env s gf =
     let infos =
       {
-        Matching_types.term_age = gf.Ast.Expr.age;
+        Ast.Matching_types.term_age = gf.Ast.Expr.age;
         term_from_goal = gf.Ast.Expr.gf;
         term_from_formula = gf.Ast.Expr.lem;
         term_from_terms = gf.Ast.Expr.from_terms;
@@ -301,7 +301,7 @@ module Make (X : Theory.S) : S with type tbox = X.t = struct
     List.fold_left
       (fun acc
         ( {
-          Matching_types.trigger_formula = f;
+          Ast.Matching_types.trigger_formula = f;
           trigger_age = age;
           trigger_dep = dep;
           trigger_orig = orig;
@@ -314,7 +314,7 @@ module Make (X : Theory.S) : S with type tbox = X.t = struct
         List.fold_left
           (fun acc
             {
-              Matching_types.sbs;
+              Ast.Matching_types.sbs;
               sty;
               gen = g;
               goal = b;

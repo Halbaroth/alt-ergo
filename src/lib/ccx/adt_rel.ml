@@ -36,7 +36,7 @@ type t = {
   selectors : (Ast.Expr.t * Ast.Ex.t) list Util.Hstring.Map.t MX.t;
   size_splits : Util.Numbers.Q.t;
   new_terms : Ast.Expr.Set.t;
-  pending_deds : (r Sig_rel.literal * Ast.Ex.t * Th_util.lit_origin) list;
+  pending_deds : (r Sig_rel.literal * Ast.Ex.t * Ast.Th_util.lit_origin) list;
 }
 
 let empty classes =
@@ -154,7 +154,7 @@ let deduce_is_constr uf r h eqs env ex =
               if get_debug_adt () then
                 Util.Printer.print_dbg ~module_name:"Adt_rel"
                   ~function_name:"deduce_is_constr" "%a" Ast.Expr.print is_c;
-              (Sig_rel.LTerm is_c, ex, Th_util.Other) :: eqs
+              (Sig_rel.LTerm is_c, ex, Ast.Th_util.Other) :: eqs
           in
           match Ast.Expr.term_view t with
           | Ast.Expr.Not_a_term _ -> assert false
@@ -193,7 +193,7 @@ let deduce_is_constr uf r h eqs env ex =
               Util.Printer.print_dbg ~module_name:"Adt_rel"
                 ~function_name:"deduce equal to constr" "%a"
                 Ast.Expr.print eq;
-            let eqs = (Sig_rel.LTerm eq, ex, Th_util.Other) :: eqs in
+            let eqs = (Sig_rel.LTerm eq, ex, Ast.Th_util.Other) :: eqs in
             (env, eqs)
           | _ -> (env, eqs))
       | _ ->
@@ -316,12 +316,12 @@ let add_guarded_destr env uf t hs e t_ty =
   if trivial_tester r_e c then
     {
       env with
-      pending_deds = (Sig_rel.LTerm eq, ex_e, Th_util.Other) :: env.pending_deds;
+      pending_deds = (Sig_rel.LTerm eq, ex_e, Ast.Th_util.Other) :: env.pending_deds;
     }
   else if seen_tester r_e c env then
     {
       env with
-      pending_deds = (Sig_rel.LTerm eq, ex_e, Th_util.Other) :: env.pending_deds;
+      pending_deds = (Sig_rel.LTerm eq, ex_e, Ast.Th_util.Other) :: env.pending_deds;
     }
   else
     let m_e =
@@ -377,7 +377,7 @@ let count_splits env la =
     List.fold_left
       (fun nb (_, _, _, i) ->
          match i with
-         | Th_util.CS (Th_util.Th_sum, n) -> Util.Numbers.Q.mult nb n
+         | Ast.Th_util.CS (Ast.Th_util.Th_sum, n) -> Util.Numbers.Q.mult nb n
          | _ -> nb)
       env.size_splits la
   in
@@ -454,7 +454,7 @@ let assume_is_constr uf hs r dep env eqs =
       let eqs =
         List.fold_left
           (fun eqs (ded, dep') ->
-             (Sig_rel.LTerm ded, Ast.Ex.union dep dep', Th_util.Other)
+             (Sig_rel.LTerm ded, Ast.Ex.union dep dep', Ast.Th_util.Other)
              :: eqs)
           eqs deds
       in
@@ -582,7 +582,7 @@ let update_cs_modulo_eq r1 r2 ex env eqs =
                  Util.Hstring.print hs;
              List.iter
                (fun (a, dep) ->
-                  eqs := (Sig_rel.LTerm a, dep, Th_util.Other) :: !eqs)
+                  eqs := (Sig_rel.LTerm a, dep, Ast.Th_util.Other) :: !eqs)
                l);
            let l =
              List.rev_map (fun (a, dep) -> (a, Ast.Ex.union ex dep)) l
@@ -630,7 +630,7 @@ let assume env uf la =
                 added with function add *)
              let env = add_rec (add_rec env r1) r2 in
              let env, eqs =
-               if orig == Th_util.Subst then
+               if orig == Ast.Th_util.Subst then
                  update_cs_modulo_eq r1 r2 ex env eqs
                else (env, eqs)
              in
@@ -690,7 +690,7 @@ let case_split env _ ~for_model =
           hs;
       (* cs on negative version would be better in general *)
       let cs = LR.mkv_builtin false (Ast.Sy.IsConstr hs) [ r ] in
-      [ (cs, true, Th_util.CS (Th_util.Th_adt, two)) ]
+      [ (cs, true, Ast.Th_util.CS (Ast.Th_util.Th_adt, two)) ]
     with Not_found ->
       Debug.no_case_split ();
       [])

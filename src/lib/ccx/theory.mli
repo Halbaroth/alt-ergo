@@ -26,70 +26,45 @@
 (*                                                                            *)
 (******************************************************************************)
 
-module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
-
-[@@@ocaml.warning "-33"]
-
-open Util.Options
-open Sig
 
 module type S = sig
   type t
-  type r = Shostak.Combine.r
 
   val empty : unit -> t
-  val empty_facts : unit -> r Sig_rel.facts
-  val add_fact : r Sig_rel.facts -> r Sig_rel.fact -> unit
 
-  val add_term :
+  (* the first int is the decision level (dlvl) and the second one is the
+     propagation level (plvl). The facts (first argument) are sorted in
+     decreasing order with respect to (dlvl, plvl) *)
+  val assume :
+    ?ordered:bool ->
+    (Ast.Expr.t * Ast.Ex.t * int * int) list ->
     t ->
-    r Sig_rel.facts ->
-    (* acc *)
-    Ast.Expr.t ->
-    Ast.Ex.t ->
-    t * r Sig_rel.facts
+    t * Ast.Expr.Set.t * int
 
-  val add :
-    t ->
-    r Sig_rel.facts ->
-    (* acc *)
-    Ast.Expr.t ->
-    Ast.Ex.t ->
-    t * r Sig_rel.facts
-
-  val assume_literals :
-    t ->
-    (r Sig_rel.literal * Ast.Ex.t * Th_util.lit_origin) list ->
-    r Sig_rel.facts ->
-    t * (r Sig_rel.literal * Ast.Ex.t * Th_util.lit_origin) list
-
-  val case_split :
-    t ->
-    for_model:bool ->
-    (r Ast.Xliteral.view * bool * Th_util.lit_origin) list * t
-
-  val query : t -> Ast.Expr.t -> Th_util.answer
-  val new_terms : t -> Ast.Expr.Set.t
-  val class_of : t -> Ast.Expr.t -> Ast.Expr.t list
-
-  val are_equal :
-    t -> Ast.Expr.t -> Ast.Expr.t -> init_terms:bool -> Th_util.answer
-
-  val are_distinct : t -> Ast.Expr.t -> Ast.Expr.t -> Th_util.answer
-  val cl_extract : t -> Ast.Expr.Set.t list
-  val term_repr : t -> Ast.Expr.t -> init_term:bool -> Ast.Expr.t
+  val query : Ast.Expr.t -> t -> Ast.Th_util.answer
   val print_model : Format.formatter -> t -> unit
-  val get_union_find : t -> Uf.t
+  val cl_extract : t -> Ast.Expr.Set.t list
+  val extract_ground_terms : t -> Ast.Expr.Set.t
+  val get_real_env : t -> Ccx.Main.t
+  val get_case_split_env : t -> Ccx.Main.t
+  val do_case_split : t -> t * Ast.Expr.Set.t
+  val add_term : t -> Ast.Expr.t -> add_in_cs:bool -> t
+  val compute_concrete_model : t -> t
   val assume_th_elt : t -> Ast.Expr.th_elt -> Ast.Ex.t -> t
 
   val theories_instances :
     do_syntactic_matching:bool ->
-    Matching_types.info Ast.Expr.Map.t
+    Ast.Matching_types.info Ast.Expr.Map.t
     * Ast.Expr.t list Ast.Expr.Map.t Ast.Sy.Map.t ->
     t ->
     (Ast.Expr.t -> Ast.Expr.t -> bool) ->
+    int ->
+    int ->
     t * Sig_rel.instances
+
+  val get_assumed : t -> Ast.Expr.Set.t
 end
 
-module Main : S
+module Main_Default : S
+module Main_Empty : S

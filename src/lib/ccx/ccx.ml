@@ -52,23 +52,23 @@ module type S = sig
 
   val assume_literals :
     t ->
-    (r literal * Ast.Ex.t * Th_util.lit_origin) list ->
+    (r literal * Ast.Ex.t * Ast.Th_util.lit_origin) list ->
     r facts ->
-    t * (r literal * Ast.Ex.t * Th_util.lit_origin) list
+    t * (r literal * Ast.Ex.t * Ast.Th_util.lit_origin) list
 
   val case_split :
     t ->
     for_model:bool ->
-    (r Ast.Xliteral.view * bool * Th_util.lit_origin) list * t
+    (r Ast.Xliteral.view * bool * Ast.Th_util.lit_origin) list * t
 
-  val query : t -> Ast.Expr.t -> Th_util.answer
+  val query : t -> Ast.Expr.t -> Ast.Th_util.answer
   val new_terms : t -> Ast.Expr.Set.t
   val class_of : t -> Ast.Expr.t -> Ast.Expr.t list
 
   val are_equal :
-    t -> Ast.Expr.t -> Ast.Expr.t -> init_terms:bool -> Th_util.answer
+    t -> Ast.Expr.t -> Ast.Expr.t -> init_terms:bool -> Ast.Th_util.answer
 
-  val are_distinct : t -> Ast.Expr.t -> Ast.Expr.t -> Th_util.answer
+  val are_distinct : t -> Ast.Expr.t -> Ast.Expr.t -> Ast.Th_util.answer
   val cl_extract : t -> Ast.Expr.Set.t list
   val term_repr : t -> Ast.Expr.t -> init_term:bool -> Ast.Expr.t
   val print_model : Format.formatter -> t -> unit
@@ -77,7 +77,7 @@ module type S = sig
 
   val theories_instances :
     do_syntactic_matching:bool ->
-    Matching_types.info Ast.Expr.Map.t
+    Ast.Matching_types.info Ast.Expr.Map.t
     * Ast.Expr.t list Ast.Expr.Map.t Ast.Sy.Map.t ->
     t ->
     (Ast.Expr.t -> Ast.Expr.t -> bool) ->
@@ -252,7 +252,7 @@ module Main : S = struct
           in
           let a = Ast.Expr.mk_eq ~iff:false t1 t2 in
           Debug.congruent a ex;
-          Q.push (LTerm a, ex, Th_util.Other) facts.equas
+          Q.push (LTerm a, ex, Ast.Th_util.Other) facts.equas
         with Exit -> ()
 
   let congruents env facts t1 s =
@@ -343,7 +343,7 @@ module Main : S = struct
                          Ast.Expr.mk_distinct ~iff:false [ x; y ]
                        in
                        Debug.contra_congruence a ex_r;
-                       Q.push (LTerm a, ex_r, Th_util.Other) facts.diseqs
+                       Q.push (LTerm a, ex_r, Ast.Th_util.Other) facts.diseqs
                      | None -> assert false)
                | _ -> ())
             (Uf.class_of env.uf bol)
@@ -410,12 +410,12 @@ module Main : S = struct
 
          (*CC of preds ?*)
          SetA.iter
-           (fun (a, ex) -> add_fact facts (LTerm a, ex, Th_util.Other))
+           (fun (a, ex) -> add_fact facts (LTerm a, ex, Ast.Th_util.Other))
            p_a;
 
          (*touched preds ?*)
          SetA.iter
-           (fun (a, ex) -> add_fact facts (LTerm a, ex, Th_util.Other))
+           (fun (a, ex) -> add_fact facts (LTerm a, ex, Ast.Th_util.Other))
            sa_others;
 
          env)
@@ -469,7 +469,7 @@ module Main : S = struct
       (* we update uf and use *)
       let nuf, ctx = Uf.add env.uf t in
       Debug.make_cst t ctx;
-      List.iter (fun a -> add_fact facts (LTerm a, ex, Th_util.Other)) ctx;
+      List.iter (fun a -> add_fact facts (LTerm a, ex, Ast.Th_util.Other)) ctx;
 
       (*or Ex.empty ?*)
       let rt, _ = Uf.find nuf t in
@@ -480,7 +480,7 @@ module Main : S = struct
       let rel, eqs = Rel.add env.relation nuf rt t in
       Debug.rel_add_cst t eqs;
       (* We add terms made from relations as fact *)
-      List.iter (fun (a, ex) -> add_fact facts (LSem a, ex, Th_util.Other)) eqs;
+      List.iter (fun (a, ex) -> add_fact facts (LSem a, ex, Ast.Th_util.Other)) eqs;
       Use.print nuse;
 
       (* we compute terms to consider for congruence *)
@@ -617,7 +617,7 @@ module Main : S = struct
         match e with
         (* for case-split, to be sure that CS is given
            back to relations *)
-        | LSem ra, ex, ((Th_util.CS _ | Th_util.NCS _) as orig) ->
+        | LSem ra, ex, ((Ast.Th_util.CS _ | Ast.Th_util.NCS _) as orig) ->
           (ra, None, ex, orig) :: ineqs
         | _ -> ineqs
       in
@@ -630,7 +630,7 @@ module Main : S = struct
            let y, ex = Uf.find_r uf x in
            (*use terms ? *)
            (* PB Here: LR.mkv_eq may swap x and y *)
-           ((*LR.mkv_eq x y*) A.Eq (x, y), None, ex, Th_util.Subst) :: acc)
+           ((*LR.mkv_eq x y*) A.Eq (x, y), None, ex, Ast.Th_util.Subst) :: acc)
         facts.touched acc
     in
     facts.touched <- Util.Util.MI.empty;
@@ -692,7 +692,7 @@ module Main : S = struct
 
   let query env a =
     let ra, ex_ra = term_canonical_view env a Ast.Ex.empty in
-    Rel.query env.relation env.uf (ra, Some a, ex_ra, Th_util.Other)
+    Rel.query env.relation env.uf (ra, Some a, ex_ra, Ast.Th_util.Other)
 
   let new_terms env = Rel.new_terms env.relation
   let class_of env t = Uf.class_of env.uf t

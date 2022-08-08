@@ -11,6 +11,7 @@
 
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
+module Ccx = Alt_ergo_lib_ccx
 open Ast.Satml_types
 
 exception Sat
@@ -86,4 +87,4 @@ module type SAT_ML = sig
   val pop : t -> unit
 end
 
-module Make (Th : Theory.S) : SAT_ML with type th = Th.t
+module Make (Th : Ccx.Theory.S) : SAT_ML with type th = Th.t

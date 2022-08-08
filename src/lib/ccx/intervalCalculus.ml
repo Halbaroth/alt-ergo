@@ -31,7 +31,7 @@ module Ast = Alt_ergo_lib_ast
 open Format
 open Util.Options
 open Sig
-open Matching_types
+open Ast.Matching_types
 
 module Z = Util.Numbers.Z
 module Q = Util.Numbers.Q
@@ -117,7 +117,7 @@ type t = {
   th_axioms : (Ast.Expr.th_elt * Ast.Ex.t) Ast.Expr.Map.t;
   linear_dep : Ast.Expr.Set.t Ast.Expr.Map.t;
   syntactic_matching :
-    (Matching_types.trigger_info * Matching_types.gsubst list) list list;
+    (Ast.Matching_types.trigger_info * Ast.Matching_types.gsubst list) list list;
 }
 
 module Sim_Wrap = struct
@@ -217,7 +217,7 @@ module Sim_Wrap = struct
       let ty = X.type_info x in
       let r1 = x in
       let r2 = alien_of (P.create [] n  ty) in
-      [LR.mkv_eq r1 r2, true, Th_util.CS (Th_util.Th_arith, s)]
+      [LR.mkv_eq r1 r2, true, Ast.Th_util.CS (Ast.Th_util.Th_arith, s)]
     in
     let aux_1 uf x (info,_) acc =
       assert (X.type_info x == Ast.Ty.Tint);
@@ -908,7 +908,7 @@ let find_one_eq x u =
   | Some (v, ex) when X.type_info x != Ast.Ty.Tint || Q.is_int v ->
     let eq =
       LR.mkv_eq x (alien_of (P.create [] v (X.type_info x))) in
-    Some (eq, None, ex, Th_util.Other)
+    Some (eq, None, ex, Ast.Th_util.Other)
   | _ -> None
 
 let find_eq eqs x u env =
@@ -966,7 +966,7 @@ let mk_equality p =
 let fm_equalities eqs { Oracle.dep; expl = ex; _ } =
   Util.Util.MI.fold
     (fun _ (_, p, _) eqs ->
-       (mk_equality p, None, ex, Th_util.Other) :: eqs
+       (mk_equality p, None, ex, Ast.Th_util.Other) :: eqs
     ) dep eqs
 
 
@@ -1445,7 +1445,7 @@ let equalities_from_polynomes env eqs =
            match I.is_point i with
            | Some (num, ex) ->
              let r2 = alien_of (P.create [] num (P.type_info p)) in
-             SX.add xp knw, (LR.mkv_eq xp r2, None, ex, Th_util.Other) :: eqs
+             SX.add xp knw, (LR.mkv_eq xp r2, None, ex, Ast.Th_util.Other) :: eqs
            | None -> knw, eqs
       ) env.polynomes  (env.known_eqs, eqs)
   in {env with known_eqs= known}, eqs
@@ -1461,7 +1461,7 @@ let equalities_from_monomes env eqs =
            match I.is_point i with
            | Some (num, ex) ->
              let r2 = alien_of (P.create [] num (X.type_info x)) in
-             SX.add x knw, (LR.mkv_eq x r2, None, ex, Th_util.Other) :: eqs
+             SX.add x knw, (LR.mkv_eq x r2, None, ex, Ast.Th_util.Other) :: eqs
            | None -> knw, eqs
       ) env.monomes  (env.known_eqs, eqs)
   in {env with known_eqs= known}, eqs
@@ -1475,7 +1475,7 @@ let count_splits env la =
     List.fold_left
       (fun nb (_,_,_,i) ->
          match i with
-         | Th_util.CS (Th_util.Th_arith, n) -> Util.Numbers.Q.mult nb n
+         | Ast.Th_util.CS (Ast.Th_util.Th_arith, n) -> Util.Numbers.Q.mult nb n
          | _ -> nb
       )env.size_splits la
   in
@@ -1493,8 +1493,8 @@ let tighten_eq_bounds env r1 r2 p1 p2 origin_eq expl =
   if P.is_const p1 != None || P.is_const p2 != None then env
   else
     match origin_eq with
-    | Th_util.CS _ | Th_util.NCS _ -> env
-    | Th_util.Subst | Th_util.Other ->
+    | Ast.Th_util.CS _ | Ast.Th_util.NCS _ -> env
+    | Ast.Th_util.Subst | Ast.Th_util.Other ->
       (* Subst is needed, but is Other needed ?? or is it subsumed ? *)
       Debug.tighten_interval_modulo_eq_begin p1 p2;
       let i1, us1, is_mon_1 = generic_find r1 env in
@@ -1550,7 +1550,7 @@ let calc_pow a b ty uf =
 (** Update and compute value of terms in relation with r1 if it is possible *)
 let update_used_by_pow env r1 p2 orig  eqs =
   try
-    if orig != Th_util.Subst then raise Exit;
+    if orig != Ast.Th_util.Subst then raise Exit;
     if P.is_const p2 == None then raise Exit;
     let s = (MX0.find r1 env.used_by).pow in
     Ast.Expr.Set.fold (fun t eqs ->
@@ -1562,7 +1562,7 @@ let update_used_by_pow env r1 p2 orig  eqs =
               None -> eqs
             | Some (y,ex) ->
               let eq = L.Eq (X.term_embed t,y) in
-              (eq, None, ex, Th_util.Other) :: eqs
+              (eq, None, ex, Ast.Th_util.Other) :: eqs
           end
         | _ -> assert false
       ) s eqs
@@ -1746,7 +1746,7 @@ let case_split_polynomes env =
     let r1 = alien_of p in
     let r2 = alien_of (P.create [] n  (P.type_info p)) in
     Debug.case_split r1 r2;
-    [LR.mkv_eq r1 r2, true, Th_util.CS (Th_util.Th_arith, s)], s
+    [LR.mkv_eq r1 r2, true, Ast.Th_util.CS (Ast.Th_util.Th_arith, s)], s
   | None ->
     Debug.no_case_split "polynomes";
     [], Q.zero
@@ -1772,7 +1772,7 @@ let case_split_monomes env =
     let r1 = x in
     let r2 = alien_of (P.create [] n  ty) in
     Debug.case_split r1 r2;
-    [LR.mkv_eq r1 r2, true, Th_util.CS (Th_util.Th_arith, s)], s
+    [LR.mkv_eq r1 r2, true, Ast.Th_util.CS (Ast.Th_util.Th_arith, s)], s
   | None ->
     Debug.no_case_split "monomes";
     [], Q.zero
@@ -1782,7 +1782,7 @@ let check_size for_model env res =
   else
     match res with
     | [] -> res
-    | [_, _, Th_util.CS (Th_util.Th_arith, s)] ->
+    | [_, _, Ast.Th_util.CS (Ast.Th_util.Th_arith, s)] ->
       if Util.Numbers.Q.compare (Q.mult s env.size_splits) (get_max_split ()) <= 0 ||
          Util.Numbers.Q.sign  (get_max_split ()) < 0 then res
       else []
@@ -1915,7 +1915,7 @@ let case_split_union_of_intervals =
         if Q.is_zero eps then L.LE else (assert (Q.is_m_one eps); L.LT)
       in
       [LR.mkv_builtin true pred [r1; r2], true,
-       Th_util.CS (Th_util.Th_arith, Q.one)]
+       Ast.Th_util.CS (Ast.Th_util.Th_arith, Q.one)]
 
 
 (*****)
@@ -2033,7 +2033,7 @@ let model_from_simplex sim is_int env uf =
 let model_from_unbounded_domains =
   let mk_cs acc (x, v, _ex) =
     ((LR.view (LR.mk_eq x v)), true,
-     Th_util.CS (Th_util.Th_arith, Q.from_int 2)) :: acc
+     Ast.Th_util.CS (Ast.Th_util.Th_arith, Q.from_int 2)) :: acc
   in
   fun env uf ->
     assert (env.int_sim.Sim.Core.status == Sim.Core.SAT);

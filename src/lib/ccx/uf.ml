@@ -1041,7 +1041,7 @@ let assign_next env =
           let env, _ = add env s in
           (* important for termination *)
           let eq = LX.view (LX.mk_eq rep (make env s)) in
-          ([ (eq, is_cs, Th_util.CS (Th_util.Th_UF, Util.Numbers.Q.one)) ], env))
+          ([ (eq, is_cs, Ast.Th_util.CS (Ast.Th_util.Th_UF, Util.Numbers.Q.one)) ], env))
   in
   Debug.check_invariants "assign_next" env;
   (res, env)

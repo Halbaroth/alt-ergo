@@ -26,20 +26,40 @@
 (*                                                                            *)
 (******************************************************************************)
 
-module Util = Alt_ergo_lib_util
-module Ast = Alt_ergo_lib_ast
-           
-module SA : Set.S with type elt = Ast.Expr.t * Ast.Ex.t
+type gsubst = {
+  sbs : Expr.t Sy.Map.t;
+  sty : Ty.subst;
+  gen : int;
+  (* l'age d'une substitution est l'age du plus vieux
+     		     terme qu'elle contient *)
+  goal : bool;
+  (* vrai si la substitution contient un terme ayant un lien
+     		     avec le but de la PO *)
+  s_term_orig : Expr.t list;
+  s_lem_orig : Expr.t;
+}
 
-type t
-type r = Shostak.Combine.r
+type trigger_info = {
+  trigger : Expr.trigger;
+  trigger_age : int; (* age d'un trigger *)
+  trigger_orig : Expr.t; (* lemme d'origine *)
+  trigger_formula : Expr.t; (* formule associee au trigger *)
+  trigger_dep : Ex.t;
+  trigger_increm_guard : Expr.t;
+  (* guard associated to push in incremental mode *)
+}
 
-val empty : t
-val find : r -> t -> Ast.Expr.Set.t * SA.t
-val add : r -> Ast.Expr.Set.t * SA.t -> t -> t
-val mem : r -> t -> bool
-val print : t -> unit
-val up_add : t -> Ast.Expr.t -> r -> r list -> t
-val congr_add : t -> r list -> Ast.Expr.Set.t
-val up_close_up : t -> r -> r -> t
-val congr_close_up : t -> r -> r list -> Ast.Expr.Set.t * SA.t
+type term_info = {
+  term_age : int; (* age du terme *)
+  term_from_goal : bool; (* vrai si le terme provient du but de la PO *)
+  term_from_formula : Expr.t option; (* lemme d'origine du terme *)
+  term_from_terms : Expr.t list;
+}
+
+type info = {
+  age : int; (* age du terme *)
+  lem_orig : Expr.t list;
+  (* lemme d'ou provient eventuellement le terme *)
+  t_orig : Expr.t list;
+  but : bool; (* le terme a-t-il un lien avec le but final de la PO *)
+}

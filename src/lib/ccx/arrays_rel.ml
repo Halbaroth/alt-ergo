@@ -433,7 +433,7 @@ let case_split env _ ~for_model:_ =
   try
     let a = LR.neg (LRset.choose env.split) in
     Debug.case_split a;
-    [ (LR.view a, true, Th_util.CS (Th_util.Th_arrays, two)) ]
+    [ (LR.view a, true, Ast.Th_util.CS (Ast.Th_util.Th_arrays, two)) ]
   with Not_found ->
     Debug.case_split_none ();
     []
@@ -443,7 +443,7 @@ let count_splits env la =
     List.fold_left
       (fun nb (_, _, _, i) ->
          match i with
-         | Th_util.CS (Th_util.Th_arrays, n) -> Util.Numbers.Q.mult nb n
+         | Ast.Th_util.CS (Ast.Th_util.Th_arrays, n) -> Util.Numbers.Q.mult nb n
          | _ -> nb)
       env.size_splits la
   in
@@ -464,7 +464,7 @@ let assume env uf la =
   Debug.new_equalities atoms;
   let l =
     Conseq.fold
-      (fun (a, ex) l -> (Sig_rel.LTerm a, ex, Th_util.Other) :: l)
+      (fun (a, ex) l -> (Sig_rel.LTerm a, ex, Ast.Th_util.Other) :: l)
       atoms []
   in
   (env, { Sig_rel.assume = l; remove = [] })
