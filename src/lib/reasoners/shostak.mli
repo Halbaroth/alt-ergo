@@ -27,7 +27,7 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 module Combine : Sig.X
 module Polynome : Polynome.T with type r = Combine.r
 module Arith : Sig.SHOSTAK with type r = Combine.r and type t = Polynome.t

@@ -27,7 +27,7 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 open Util.Options
 open Format
 
@@ -36,18 +36,18 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
   module CDCL = Satml_frontend_hybrid.Make (Th)
 
   exception No_suitable_decision
-  exception Propagate of Structs.Expr.gformula * Structs.Ex.t
+  exception Propagate of Ast.Expr.gformula * Ast.Ex.t
 
   let is_fact_in_CDCL cdcl f =
     match CDCL.is_true cdcl f with
     | None -> false
     | Some (ex, lvl) ->
-        assert (lvl <> 0 || Structs.Ex.has_no_bj (Lazy.force ex));
-        lvl = 0
+      assert (lvl <> 0 || Ast.Ex.has_no_bj (Lazy.force ex));
+      lvl = 0
 
   module Heuristics = struct
     type t = {
-      mp : float Structs.Expr.Map.t;
+      mp : float Ast.Expr.Map.t;
       (* valeur de l'increment pour l'activite des variables *)
       var_inc : float;
       (* inverse du facteur d'acitivte des vars, vaut 1/0.999 par defaut *)
@@ -55,27 +55,27 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
     }
 
     let empty () =
-      { mp = Structs.Expr.Map.empty; var_inc = 1.; var_decay = 1. /. 0.95 }
+      { mp = Ast.Expr.Map.empty; var_inc = 1.; var_decay = 1. /. 0.95 }
 
     let bump_activity ({ mp; var_inc; _ } as env) expl =
       let stable = ref true in
       let mp =
-        Structs.Expr.Set.fold
+        Ast.Expr.Set.fold
           (fun f mp ->
-            let w =
-              var_inc +. try Structs.Expr.Map.find f mp with Not_found -> 0.
-            in
-            stable := !stable && Stdlib.compare w 1e100 <= 0;
-            Structs.Expr.Map.add f w mp)
-          (Structs.Ex.bj_formulas_of expl)
+             let w =
+               var_inc +. try Ast.Expr.Map.find f mp with Not_found -> 0.
+             in
+             stable := !stable && Stdlib.compare w 1e100 <= 0;
+             Ast.Expr.Map.add f w mp)
+          (Ast.Ex.bj_formulas_of expl)
           mp
       in
       let mp =
         if !stable then mp
         else
-          Structs.Expr.Map.fold
-            (fun f w acc -> Structs.Expr.Map.add f (w *. 1e-100) acc)
-            mp Structs.Expr.Map.empty
+          Ast.Expr.Map.fold
+            (fun f w acc -> Ast.Expr.Map.add f (w *. 1e-100) acc)
+            mp Ast.Expr.Map.empty
       in
       { env with mp; var_inc = var_inc *. env.var_decay }
 
@@ -85,24 +85,24 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
         else
           List.partition
             (fun (a, _, _, _) ->
-              Util.Options.get_can_decide_on a.Structs.Expr.origin_name)
+               Util.Options.get_can_decide_on a.Ast.Expr.origin_name)
             delta
       in
       let dec =
         List.rev_map
           (fun ((a, b, _, _) as e) ->
-            if
-              Util.Options.get_tableaux_cdcl ()
-              && is_fact_in_CDCL cdcl a.Structs.Expr.ff
-            then raise (Propagate (a, Structs.Ex.empty));
-            if
-              Util.Options.get_tableaux_cdcl ()
-              && is_fact_in_CDCL cdcl b.Structs.Expr.ff
-            then raise (Propagate (b, Structs.Ex.empty));
-            ( e,
-              (try Structs.Expr.Map.find a.Structs.Expr.ff env.mp
-               with Not_found -> 0.),
-              a.Structs.Expr.gf ))
+             if
+               Util.Options.get_tableaux_cdcl ()
+               && is_fact_in_CDCL cdcl a.Ast.Expr.ff
+             then raise (Propagate (a, Ast.Ex.empty));
+             if
+               Util.Options.get_tableaux_cdcl ()
+               && is_fact_in_CDCL cdcl b.Ast.Expr.ff
+             then raise (Propagate (b, Ast.Ex.empty));
+             ( e,
+               (try Ast.Expr.Map.find a.Ast.Expr.ff env.mp
+                with Not_found -> 0.),
+               a.Ast.Expr.gf ))
           dec
       in
 
@@ -110,19 +110,19 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
         (* force propagate modulo satML *)
         List.iter
           (fun (a, b, _, _) ->
-            match CDCL.is_true cdcl a.Structs.Expr.ff with
-            | Some (ex, _lvl) -> raise (Propagate (a, Lazy.force ex))
-            | None -> (
-                match CDCL.is_true cdcl b.Structs.Expr.ff with
-                | Some (ex, _lvl) -> raise (Propagate (b, Lazy.force ex))
-                | None -> ()))
+             match CDCL.is_true cdcl a.Ast.Expr.ff with
+             | Some (ex, _lvl) -> raise (Propagate (a, Lazy.force ex))
+             | None -> (
+                 match CDCL.is_true cdcl b.Ast.Expr.ff with
+                 | Some (ex, _lvl) -> raise (Propagate (b, Lazy.force ex))
+                 | None -> ()))
           no_dec;
 
       let dec =
         List.fast_sort
           (fun (_, x1, b1) (_, x2, b2) ->
-            let c = Stdlib.compare b2 b1 in
-            if c <> 0 then c else Stdlib.compare x2 x1)
+             let c = Stdlib.compare b2 b1 in
+             if c <> 0 then c else Stdlib.compare x2 x1)
           dec
       in
       (*
@@ -132,20 +132,20 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
       match dec with
       | [] -> raise No_suitable_decision
       | (e, _, _) :: r ->
-          let delta =
-            List.fold_left (fun acc (e, _, _) -> e :: acc) no_dec (List.rev r)
-          in
-          (e, delta)
+        let delta =
+          List.fold_left (fun acc (e, _, _) -> e :: acc) no_dec (List.rev r)
+        in
+        (e, delta)
   end
 
   type refs = {
-    unit_facts : (Structs.Expr.gformula * Structs.Ex.t) Structs.Expr.Map.t;
+    unit_facts : (Ast.Expr.gformula * Ast.Ex.t) Ast.Expr.Map.t;
   }
 
   type guards = {
-    current_guard : Structs.Expr.t;
-    stack_elt : (Structs.Expr.t * refs) Stack.t;
-    guards : (Structs.Expr.gformula * Structs.Ex.t) Structs.Expr.Map.t;
+    current_guard : Ast.Expr.t;
+    stack_elt : (Ast.Expr.t * refs) Stack.t;
+    guards : (Ast.Expr.gformula * Ast.Ex.t) Ast.Expr.Map.t;
   }
 
   type t = {
@@ -159,16 +159,16 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
          It forms with dlvl a total ordering on the formulas in gamma.
     *)
     gamma :
-      (Structs.Expr.gformula * Structs.Ex.t * int * int) Structs.Expr.Map.t;
+      (Ast.Expr.gformula * Ast.Ex.t * int * int) Ast.Expr.Map.t;
     nb_related_to_goal : int;
     nb_related_to_hypo : int;
     nb_related_to_both : int;
     nb_unrelated : int;
     cdcl : CDCL.t ref;
-    tcp_cache : Th_util.answer Structs.Expr.Map.t;
+    tcp_cache : Th_util.answer Ast.Expr.Map.t;
     delta :
-      (Structs.Expr.gformula * Structs.Expr.gformula * Structs.Ex.t * bool) list;
-    decisions : int Structs.Expr.Map.t;
+      (Ast.Expr.gformula * Ast.Expr.gformula * Ast.Ex.t * bool) list;
+    decisions : int Ast.Expr.Map.t;
     dlevel : int;
     plevel : int;
     ilevel : int;
@@ -178,9 +178,9 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
     heuristics : Heuristics.t ref;
     model_gen_mode : bool ref;
     guards : guards;
-    add_inst : Structs.Expr.t -> bool;
+    add_inst : Ast.Expr.t -> bool;
     unit_facts_cache :
-      (Structs.Expr.gformula * Structs.Ex.t) Structs.Expr.Map.t ref;
+      (Ast.Expr.gformula * Ast.Ex.t) Ast.Expr.Map.t ref;
   }
 
   let all_models_sat_env = ref None
@@ -204,9 +204,9 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
     ({ env with unit_facts_cache = ref refs.unit_facts }, guard)
 
   exception Sat of t
-  exception Unsat of Structs.Ex.t
+  exception Unsat of Ast.Ex.t
   exception I_dont_know of t
-  exception IUnsat of Structs.Ex.t * Structs.Expr.Set.t list
+  exception IUnsat of Ast.Ex.t * Ast.Expr.Set.t list
 
   (*BISECT-IGNORE-BEGIN*)
   module Debug = struct
@@ -231,72 +231,72 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
 
     let is_it_unsat gf =
       let s =
-        match Structs.Expr.form_view gf.Structs.Expr.ff with
-        | Structs.Expr.Not_a_form -> assert false
-        | Structs.Expr.Lemma _ -> "lemma"
-        | Structs.Expr.Clause _ -> "clause"
-        | Structs.Expr.Unit _ -> "conjunction"
-        | Structs.Expr.Skolem _ -> "skolem"
-        | Structs.Expr.Literal _ -> "literal"
-        | Structs.Expr.Iff _ -> "iff"
-        | Structs.Expr.Xor _ -> "xor"
-        | Structs.Expr.Let _ -> "let"
+        match Ast.Expr.form_view gf.Ast.Expr.ff with
+        | Ast.Expr.Not_a_form -> assert false
+        | Ast.Expr.Lemma _ -> "lemma"
+        | Ast.Expr.Clause _ -> "clause"
+        | Ast.Expr.Unit _ -> "conjunction"
+        | Ast.Expr.Skolem _ -> "skolem"
+        | Ast.Expr.Literal _ -> "literal"
+        | Ast.Expr.Iff _ -> "iff"
+        | Ast.Expr.Xor _ -> "xor"
+        | Ast.Expr.Let _ -> "let"
       in
       if get_verbose () && get_debug_sat () then
         print_dbg ~module_name:"Fun_sat" ~function_name:"is_it_unsat"
-          "the following %s is unsat ? :@ %a" s Structs.Expr.print
-          gf.Structs.Expr.ff
+          "the following %s is unsat ? :@ %a" s Ast.Expr.print
+          gf.Ast.Expr.ff
 
     let pred_def f =
       if get_debug_sat () then
         print_dbg ~module_name:"Fun_sat" ~function_name:"pred_def"
-          "I assume a predicate: %a" Structs.Expr.print f
+          "I assume a predicate: %a" Ast.Expr.print f
 
     let unsat_rec dep =
       if get_debug_sat () then
         print_dbg ~module_name:"Fun_sat" ~function_name:"unsat_rec"
-          "unsat_rec : %a" Structs.Ex.print dep
+          "unsat_rec : %a" Ast.Ex.print dep
 
     let assume gf dep env =
       if get_debug_sat () then (
-        let { Structs.Expr.ff = f; lem; from_terms = terms; _ } = gf in
+        let { Ast.Expr.ff = f; lem; from_terms = terms; _ } = gf in
         print_dbg ~flushed:false ~module_name:"Fun_sat" ~function_name:"assume"
           "at level (%d, %d) I assume a @ " env.dlevel env.plevel;
-        (match Structs.Expr.form_view f with
-        | Structs.Expr.Not_a_form -> assert false
-        | Structs.Expr.Literal a ->
-            let n =
-              match lem with
-              | None -> ""
-              | Some ff -> (
-                  match Structs.Expr.form_view ff with
-                  | Structs.Expr.Lemma xx -> xx.Structs.Expr.name
-                  | Structs.Expr.Unit _ | Structs.Expr.Clause _
-                  | Structs.Expr.Literal _ | Structs.Expr.Skolem _
-                  | Structs.Expr.Let _ | Structs.Expr.Iff _ | Structs.Expr.Xor _
-                    ->
-                      ""
-                  | Structs.Expr.Not_a_form -> assert false)
-            in
-            print_dbg ~header:false "LITERAL (%s : %a) %a@ " n
-              Structs.Expr.print_list terms Structs.Expr.print a
-        | Structs.Expr.Unit _ -> print_dbg ~header:false "conjunction"
-        | Structs.Expr.Clause _ ->
-            print_dbg ~header:false "clause %a" Structs.Expr.print f
-        | Structs.Expr.Lemma _ ->
-            print_dbg ~header:false "%d-atom lemma \"%a\"" (Structs.Expr.size f)
-              Structs.Expr.print f
-        | Structs.Expr.Skolem _ ->
-            print_dbg ~header:false "skolem %a" Structs.Expr.print f
-        | Structs.Expr.Let _ ->
-            print_dbg ~header:false "let-in %a" Structs.Expr.print f
-        | Structs.Expr.Iff _ ->
-            print_dbg ~header:false "equivalence %a" Structs.Expr.print f
-        | Structs.Expr.Xor _ ->
-            print_dbg ~header:false "neg-equivalence/xor %a" Structs.Expr.print
-              f);
+        (match Ast.Expr.form_view f with
+         | Ast.Expr.Not_a_form -> assert false
+         | Ast.Expr.Literal a ->
+           let n =
+             match lem with
+             | None -> ""
+             | Some ff -> (
+                 match Ast.Expr.form_view ff with
+                 | Ast.Expr.Lemma xx -> xx.Ast.Expr.name
+                 | Ast.Expr.Unit _ | Ast.Expr.Clause _
+                 | Ast.Expr.Literal _ | Ast.Expr.Skolem _
+                 | Ast.Expr.Let _ | Ast.Expr.Iff _ | Ast.Expr.Xor _
+                   ->
+                   ""
+                 | Ast.Expr.Not_a_form -> assert false)
+           in
+           print_dbg ~header:false "LITERAL (%s : %a) %a@ " n
+             Ast.Expr.print_list terms Ast.Expr.print a
+         | Ast.Expr.Unit _ -> print_dbg ~header:false "conjunction"
+         | Ast.Expr.Clause _ ->
+           print_dbg ~header:false "clause %a" Ast.Expr.print f
+         | Ast.Expr.Lemma _ ->
+           print_dbg ~header:false "%d-atom lemma \"%a\"" (Ast.Expr.size f)
+             Ast.Expr.print f
+         | Ast.Expr.Skolem _ ->
+           print_dbg ~header:false "skolem %a" Ast.Expr.print f
+         | Ast.Expr.Let _ ->
+           print_dbg ~header:false "let-in %a" Ast.Expr.print f
+         | Ast.Expr.Iff _ ->
+           print_dbg ~header:false "equivalence %a" Ast.Expr.print f
+         | Ast.Expr.Xor _ ->
+           print_dbg ~header:false "neg-equivalence/xor %a" Ast.Expr.print
+             f);
         if get_verbose () then
-          print_dbg ~header:false "with explanations : %a" Structs.Ex.print dep)
+          print_dbg ~header:false "with explanations : %a" Ast.Ex.print dep)
 
     let unsat () =
       if get_debug_sat () then
@@ -306,7 +306,7 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
       if get_debug_sat () then
         print_dbg ~module_name:"Fun_sat" ~function_name:"decide"
           "I decide: at level (%d, %d), on %a" env.dlevel env.plevel
-          Structs.Expr.print f
+          Ast.Expr.print f
 
     let instantiate env =
       if get_debug_sat () then
@@ -318,13 +318,13 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
       if get_debug_sat () then
         print_dbg ~module_name:"Fun_sat" ~function_name:"backtracking"
           "backtrack: at level (%d, %d), and assume not %a" env.dlevel
-          env.plevel Structs.Expr.print f
+          env.plevel Ast.Expr.print f
 
     let backjumping f env =
       if get_debug_sat () then
         print_dbg ~module_name:"Fun_sat" ~function_name:"backjumping"
           "backjump: at level (%d, %d), I ignore the case %a" env.dlevel
-          env.plevel Structs.Expr.print f
+          env.plevel Ast.Expr.print f
 
     let elim _ _ =
       if get_debug_sat () && get_verbose () then
@@ -340,7 +340,7 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
        List.iter (fun (f1, f2, ex) ->
          print_dbg ~debug:(get_verbose () || get_debug_sat ())
            "(%a or %a), %a"
-           Structs.Expr.print f1.Structs.Expr.ff Structs.Expr.print f2.Structs.Expr.ff Structs.Ex.print ex) d;
+           Ast.Expr.print f1.Ast.Expr.ff Ast.Expr.print f2.Ast.Expr.ff Ast.Ex.print ex) d;
          print_dbg ~debug:(get_verbose () || get_debug_sat ())
            "[sat] --------------------- Delta -" *)
 
@@ -348,22 +348,22 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
       if get_debug_sat () && get_verbose () then (
         print_dbg ~module_name:"Fun_sat" ~function_name:"gamma"
           "@[<v 0>--- GAMMA ---------------------@ ";
-        Structs.Expr.Map.iter
+        Ast.Expr.Map.iter
           (fun f (_, ex, dlvl, plvl) ->
-            print_dbg ~header:false "(%d, %d) %a \t->\t%a@ " dlvl plvl
-              Structs.Expr.print f Structs.Ex.print ex)
+             print_dbg ~header:false "(%d, %d) %a \t->\t%a@ " dlvl plvl
+               Ast.Expr.print f Ast.Ex.print ex)
           g;
         print_dbg ~header:false " - / GAMMA ---------------------@]")
 
     let bottom classes =
       if get_bottom_classes () then
-        print_dbg "bottom:%a@?" Structs.Expr.print_tagged_classes classes
+        print_dbg "bottom:%a@?" Ast.Expr.print_tagged_classes classes
 
     let inconsistent expl env =
       if get_debug_sat () then
         print_dbg ~module_name:"Fun_sat" ~function_name:"inconsistent"
           "inconsistent at level (%d, %d), reason : %a" env.dlevel env.plevel
-          Structs.Ex.print expl
+          Ast.Ex.print expl
 
     let in_mk_theories_instances () =
       if Util.Options.get_debug_fpa () > 0 || get_debug_sat () then
@@ -376,38 +376,38 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
         print_dbg ~module_name:"Fun_sat"
           ~function_name:"out_mk_theories_instances"
           (if normal_exit then "normal exit of mk_theories_instances."
-          else "exit mk_theories_instances with Inconsist.")
+           else "exit mk_theories_instances with Inconsist.")
 
     let print_f_conj fmt hyp =
       match hyp with
       | [] -> fprintf fmt "True"
       | e :: l ->
-          fprintf fmt "%a" Structs.Expr.print e;
-          List.iter (fun f -> fprintf fmt " /\\  %a" Structs.Expr.print f) l
+        fprintf fmt "%a" Ast.Expr.print e;
+        List.iter (fun f -> fprintf fmt " /\\  %a" Ast.Expr.print f) l
 
     let print_theory_instance hyp gf =
       if Util.Options.get_debug_fpa () > 1 || Util.Options.get_debug_sat () then
         print_dbg ~module_name:"Fun_sat" ~function_name:"print_theory_instances"
           "@[<v 2>@ %s >@ hypotheses: %a@ conclusion: %a@]"
-          (Structs.Expr.name_of_lemma_opt gf.Structs.Expr.lem)
-          print_f_conj hyp Structs.Expr.print gf.Structs.Expr.ff
+          (Ast.Expr.name_of_lemma_opt gf.Ast.Expr.lem)
+          print_f_conj hyp Ast.Expr.print gf.Ast.Expr.ff
   end
   (*BISECT-IGNORE-END*)
 
   let selector env f orig =
-    (not (Structs.Expr.Map.mem f env.gamma))
+    (not (Ast.Expr.Map.mem f env.gamma))
     &&
-    match Structs.Expr.form_view orig with
-    | Structs.Expr.Lemma _ -> env.add_inst orig
-    | Structs.Expr.Unit _ | Structs.Expr.Clause _ | Structs.Expr.Literal _
-    | Structs.Expr.Skolem _ | Structs.Expr.Let _ | Structs.Expr.Iff _
-    | Structs.Expr.Xor _ ->
-        true
-    | Structs.Expr.Not_a_form -> assert false
+    match Ast.Expr.form_view orig with
+    | Ast.Expr.Lemma _ -> env.add_inst orig
+    | Ast.Expr.Unit _ | Ast.Expr.Clause _ | Ast.Expr.Literal _
+    | Ast.Expr.Skolem _ | Ast.Expr.Let _ | Ast.Expr.Iff _
+    | Ast.Expr.Xor _ ->
+      true
+    | Ast.Expr.Not_a_form -> assert false
 
   let inst_predicates mconf env inst tbox selector ilvl =
     try Inst.m_predicates mconf inst tbox selector ilvl
-    with Structs.Ex.Inconsistent (expl, classes) ->
+    with Ast.Ex.Inconsistent (expl, classes) ->
       Debug.inconsistent expl env;
       Util.Options.tool_req 2 "TR-Sat-Conflict-2";
       env.heuristics := Heuristics.bump_activity !(env.heuristics) expl;
@@ -415,38 +415,38 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
 
   let inst_lemmas mconf env inst tbox selector ilvl =
     try Inst.m_lemmas mconf inst tbox selector ilvl
-    with Structs.Ex.Inconsistent (expl, classes) ->
+    with Ast.Ex.Inconsistent (expl, classes) ->
       Debug.inconsistent expl env;
       Util.Options.tool_req 2 "TR-Sat-Conflict-2";
       env.heuristics := Heuristics.bump_activity !(env.heuristics) expl;
       raise (IUnsat (expl, classes))
 
   let is_literal f =
-    match Structs.Expr.form_view f with
-    | Structs.Expr.Literal _ -> true
-    | Structs.Expr.Unit _ | Structs.Expr.Clause _ | Structs.Expr.Lemma _
-    | Structs.Expr.Skolem _ | Structs.Expr.Let _ | Structs.Expr.Iff _
-    | Structs.Expr.Xor _ ->
-        false
-    | Structs.Expr.Not_a_form -> assert false
+    match Ast.Expr.form_view f with
+    | Ast.Expr.Literal _ -> true
+    | Ast.Expr.Unit _ | Ast.Expr.Clause _ | Ast.Expr.Lemma _
+    | Ast.Expr.Skolem _ | Ast.Expr.Let _ | Ast.Expr.Iff _
+    | Ast.Expr.Xor _ ->
+      false
+    | Ast.Expr.Not_a_form -> assert false
 
   let extract_prop_model t =
-    let s = ref Structs.Expr.Set.empty in
-    Structs.Expr.Map.iter
+    let s = ref Ast.Expr.Set.empty in
+    Ast.Expr.Map.iter
       (fun f _ ->
-        if (get_complete_model () && is_literal f) || Structs.Expr.is_in_model f
-        then s := Structs.Expr.Set.add f !s)
+         if (get_complete_model () && is_literal f) || Ast.Expr.is_in_model f
+         then s := Ast.Expr.Set.add f !s)
       t.gamma;
     !s
 
   let print_prop_model fmt s =
-    Structs.Expr.Set.iter (fprintf fmt "\n %a" Structs.Expr.print) s
+    Ast.Expr.Set.iter (fprintf fmt "\n %a" Ast.Expr.print) s
 
   let print_model ~header fmt t =
     Format.print_flush ();
     if header then fprintf fmt "\nModel\n";
     let pm = extract_prop_model t in
-    if not (Structs.Expr.Set.is_empty pm) then (
+    if not (Ast.Expr.Set.is_empty pm) then (
       fprintf fmt "Propositional:";
       print_prop_model fmt pm;
       fprintf fmt "\n");
@@ -457,16 +457,16 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
       try
         let alrm =
           if Util.Options.get_is_gui () then Sys.sigalrm
-            (* troubles with GUI+VTARLM *)
+          (* troubles with GUI+VTARLM *)
           else Sys.sigvtalrm
         in
         Sys.set_signal alrm
           (Sys.Signal_handle
              (fun _ ->
-               Util.Printer.print_fmt
-                 (Util.Options.get_fmt_mdl ())
-                 "%a" (print_model ~header:true) t;
-               Util.Options.exec_timeout ()))
+                Util.Printer.print_fmt
+                  (Util.Options.get_fmt_mdl ())
+                  "%a" (print_model ~header:true) t;
+                Util.Options.exec_timeout ()))
       with Invalid_argument _ -> ()
     else fun _ -> ()
 
@@ -474,7 +474,7 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
 
   let mk_gf f name mf gf =
     {
-      Structs.Expr.ff = f;
+      Ast.Expr.ff = f;
       origin_name = name;
       gdist = -1;
       hdist = -1;
@@ -496,19 +496,19 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
         "@[<v 0>-----------------------------------------------------@ >> %s@ \
          decisions in DfsSAT are:@ "
         msg;
-      let l = Structs.Expr.Map.bindings env.decisions in
+      let l = Ast.Expr.Map.bindings env.decisions in
       let l = List.fast_sort (fun (_, i) (_, j) -> j - i) l in
       List.iter
         (fun (f, i) ->
-          Util.Printer.print_dbg ~flushed:false ~header:false "%d  -> %a@ " i
-            Structs.Expr.print f)
+           Util.Printer.print_dbg ~flushed:false ~header:false "%d  -> %a@ " i
+             Ast.Expr.print f)
         l;
       Util.Printer.print_dbg ~flushed:false ~header:false
         "decisions in satML are:@ ";
       List.iter
         (fun (i, f) ->
-          Util.Printer.print_dbg ~flushed:false ~header:false "%d  -> %a@ " i
-            Structs.Expr.print f)
+           Util.Printer.print_dbg ~flushed:false ~header:false "%d  -> %a@ " i
+             Ast.Expr.print f)
         (CDCL.get_decisions !(env.cdcl));
       Util.Printer.print_dbg ~header:false
         "-----------------------------------------------------@]")
@@ -520,55 +520,55 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
       let decs =
         List.fold_left
           (fun decs (i, d) ->
-            try
-              let j = Structs.Expr.Map.find d decs in
-              assert (i = j);
-              Structs.Expr.Map.remove d decs
-            with Not_found ->
-              ok := false;
-              Util.Printer.print_err
-                "Ouch! Decision %a is only in satML!@,\
-                 nb decisions in DfsSAT: %dnb decisions in satML:  %d"
-                Structs.Expr.print d
-                (Structs.Expr.Map.cardinal env.decisions)
-                (List.length cdcl_decs);
-              decs)
+             try
+               let j = Ast.Expr.Map.find d decs in
+               assert (i = j);
+               Ast.Expr.Map.remove d decs
+             with Not_found ->
+               ok := false;
+               Util.Printer.print_err
+                 "Ouch! Decision %a is only in satML!@,\
+                  nb decisions in DfsSAT: %dnb decisions in satML:  %d"
+                 Ast.Expr.print d
+                 (Ast.Expr.Map.cardinal env.decisions)
+                 (List.length cdcl_decs);
+               decs)
           env.decisions cdcl_decs
       in
-      if decs != Structs.Expr.Map.empty then (
+      if decs != Ast.Expr.Map.empty then (
         Util.Printer.print_err "Ouch! Some decisions are only in DfsSAT";
         ok := false);
       !ok)
     else true
 
   let cdcl_known_decisions ex env =
-    Structs.Ex.fold_atoms
+    Ast.Ex.fold_atoms
       (fun e b ->
-        match e with
-        | Structs.Ex.Bj f -> b && Structs.Expr.Map.mem f env.decisions
-        | _ -> b)
+         match e with
+         | Ast.Ex.Bj f -> b && Ast.Expr.Map.mem f env.decisions
+         | _ -> b)
       ex true
 
   let shift gamma ex acc0 =
     let l =
-      Structs.Ex.fold_atoms
+      Ast.Ex.fold_atoms
         (fun e acc ->
-          match e with
-          | Structs.Ex.Bj f ->
-              let dec =
-                try
-                  let _, _, dec, _ = Structs.Expr.Map.find f gamma in
-                  dec
-                with Not_found -> max_int
-              in
-              (f, dec) :: acc
-          | _ -> acc)
+           match e with
+           | Ast.Ex.Bj f ->
+             let dec =
+               try
+                 let _, _, dec, _ = Ast.Expr.Map.find f gamma in
+                 dec
+               with Not_found -> max_int
+             in
+             (f, dec) :: acc
+           | _ -> acc)
         ex []
     in
     (* try to keep the decision ordering *)
     let l = List.fast_sort (fun (_, i) (_, j) -> j - i) l in
     List.fold_left
-      (fun acc (f, _) -> Structs.Expr.mk_imp f acc (Structs.Expr.id f))
+      (fun acc (f, _) -> Ast.Expr.mk_imp f acc (Ast.Expr.id f))
       acc0 l
 
   let cdcl_assume delay env l =
@@ -580,10 +580,10 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
       let l =
         List.rev_map
           (fun ((gf, ex) as e) ->
-            if Structs.Ex.has_no_bj ex then e
-            else
-              ( { gf with Structs.Expr.ff = shift gamma ex gf.Structs.Expr.ff },
-                Structs.Ex.empty ))
+             if Ast.Ex.has_no_bj ex then e
+             else
+               ( { gf with Ast.Expr.ff = shift gamma ex gf.Ast.Expr.ff },
+                 Ast.Ex.empty ))
           (List.rev l)
       in
       env.cdcl := CDCL.assume delay !(env.cdcl) l
@@ -601,15 +601,15 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
         "";
     try env.cdcl := CDCL.decide !(env.cdcl) f dlvl with
     | CDCL.Bottom (ex, l, _cdcl) ->
-        if get_debug_sat () && get_verbose () then
-          Util.Printer.print_dbg ~module_name:"Fun_sat"
-            ~function_name:"cdcl_decide" "conflict";
-        assert (cdcl_known_decisions ex env);
-        (* no need to save cdcl here *)
-        raise (IUnsat (ex, l))
+      if get_debug_sat () && get_verbose () then
+        Util.Printer.print_dbg ~module_name:"Fun_sat"
+          ~function_name:"cdcl_decide" "conflict";
+      assert (cdcl_known_decisions ex env);
+      (* no need to save cdcl here *)
+      raise (IUnsat (ex, l))
     | e ->
-        Util.Printer.print_err "%s" (Printexc.to_string e);
-        assert false
+      Util.Printer.print_err "%s" (Printexc.to_string e);
+      assert false
 
   let cdcl_forget_decision env f lvl =
     try env.cdcl := CDCL.forget_decision !(env.cdcl) f lvl
@@ -621,21 +621,21 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
   let cdcl_learn_clause delay env ex acc0 =
     let f = shift env.gamma ex acc0 in
     let ff = mk_gf f "<cdcl_learn_clause>" true true in
-    cdcl_assume delay env [ (ff, Structs.Ex.empty) ]
+    cdcl_assume delay env [ (ff, Ast.Ex.empty) ]
 
   let profile_conflicting_instances exp =
     if Util.Options.get_profiling () then
-      Structs.Expr.Set.iter
+      Ast.Expr.Set.iter
         (fun f ->
-          match Structs.Expr.form_view f with
-          | Structs.Expr.Lemma { Structs.Expr.name; loc; _ } ->
-              Structs.Profiling.conflicting_instance name loc
-          | Structs.Expr.Unit _ | Structs.Expr.Clause _ | Structs.Expr.Literal _
-          | Structs.Expr.Skolem _ | Structs.Expr.Let _ | Structs.Expr.Iff _
-          | Structs.Expr.Xor _ ->
-              ()
-          | Structs.Expr.Not_a_form -> assert false)
-        (Structs.Ex.formulas_of exp)
+           match Ast.Expr.form_view f with
+           | Ast.Expr.Lemma { Ast.Expr.name; loc; _ } ->
+             Ast.Profiling.conflicting_instance name loc
+           | Ast.Expr.Unit _ | Ast.Expr.Clause _ | Ast.Expr.Literal _
+           | Ast.Expr.Skolem _ | Ast.Expr.Let _ | Ast.Expr.Iff _
+           | Ast.Expr.Xor _ ->
+             ()
+           | Ast.Expr.Not_a_form -> assert false)
+        (Ast.Ex.formulas_of exp)
 
   let do_case_split env origin =
     if Util.Options.get_case_split_policy () == origin then (
@@ -646,10 +646,10 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
         let tbox, new_terms = Th.do_case_split env.tbox in
         let inst =
           Inst.add_terms env.inst new_terms
-            (mk_gf Structs.Expr.vrai "" false false)
+            (mk_gf Ast.Expr.vrai "" false false)
         in
         { env with tbox; inst }
-      with Structs.Ex.Inconsistent (expl, classes) ->
+      with Ast.Ex.Inconsistent (expl, classes) ->
         Debug.inconsistent expl env;
         Util.Options.tool_req 2 "TR-Sat-Conflict-2";
         env.heuristics := Heuristics.bump_activity !(env.heuristics) expl;
@@ -658,103 +658,103 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
 
   let b_elim f env =
     try
-      let _ = Structs.Expr.Map.find f env.gamma in
+      let _ = Ast.Expr.Map.find f env.gamma in
       Util.Options.tool_req 2 "TR-Sat-Bcp-Elim-1";
-      if Util.Options.get_profiling () then Structs.Profiling.elim true;
+      if Util.Options.get_profiling () then Ast.Profiling.elim true;
       true
     with Not_found -> false
 
   let update_unit_facts env ff dep =
-    let f = ff.Structs.Expr.ff in
+    let f = ff.Ast.Expr.ff in
     if
       get_sat_learning ()
-      && not (Structs.Expr.Map.mem f !(env.unit_facts_cache))
+      && not (Ast.Expr.Map.mem f !(env.unit_facts_cache))
     then (
-      assert (Structs.Ex.has_no_bj dep);
+      assert (Ast.Ex.has_no_bj dep);
       env.unit_facts_cache :=
-        Structs.Expr.Map.add f (ff, dep) !(env.unit_facts_cache))
+        Ast.Expr.Map.add f (ff, dep) !(env.unit_facts_cache))
 
   let learn_clause ({ gamma; _ } as env) ff0 dep =
     if get_sat_learning () then
       let fl, dep =
-        Structs.Ex.fold_atoms
+        Ast.Ex.fold_atoms
           (fun e (l, ex) ->
-            match e with
-            | Structs.Ex.Bj f ->
-                let d =
-                  try
-                    let _, _, d, _ = Structs.Expr.Map.find f gamma in
-                    d
-                  with Not_found -> max_int
-                in
-                ((Structs.Expr.neg f, d) :: l, ex)
-            | _ -> (l, Structs.Ex.add_fresh e ex))
-          dep ([], Structs.Ex.empty)
+             match e with
+             | Ast.Ex.Bj f ->
+               let d =
+                 try
+                   let _, _, d, _ = Ast.Expr.Map.find f gamma in
+                   d
+                 with Not_found -> max_int
+               in
+               ((Ast.Expr.neg f, d) :: l, ex)
+             | _ -> (l, Ast.Ex.add_fresh e ex))
+          dep ([], Ast.Ex.empty)
       in
       let fl = List.fast_sort (fun (_, d1) (_, d2) -> d1 - d2) fl in
       let f =
         List.fold_left
-          (fun acc (f, _) -> Structs.Expr.mk_or f acc false (Structs.Expr.id f))
-          ff0.Structs.Expr.ff fl
+          (fun acc (f, _) -> Ast.Expr.mk_or f acc false (Ast.Expr.id f))
+          ff0.Ast.Expr.ff fl
       in
-      update_unit_facts env { ff0 with Structs.Expr.ff = f } dep
+      update_unit_facts env { ff0 with Ast.Expr.ff = f } dep
 
   let query_of tcp_cache tmp_cache ff a env =
-    try Structs.Expr.Map.find a !tcp_cache
+    try Ast.Expr.Map.find a !tcp_cache
     with Not_found -> (
-      try Structs.Expr.Map.find a !tmp_cache
-      with Not_found -> (
-        assert (Structs.Expr.is_ground a);
-        match Th.query a env.tbox with
-        | None ->
-            tmp_cache := Structs.Expr.Map.add a None !tmp_cache;
-            None
-        | Some (ex, _) as y ->
-            if Util.Options.get_tableaux_cdcl () then
-              cdcl_learn_clause true env ex ff.Structs.Expr.ff;
-            learn_clause env ff ex;
-            tcp_cache := Structs.Expr.Map.add a y !tcp_cache;
-            y))
+        try Ast.Expr.Map.find a !tmp_cache
+        with Not_found -> (
+            assert (Ast.Expr.is_ground a);
+            match Th.query a env.tbox with
+            | None ->
+              tmp_cache := Ast.Expr.Map.add a None !tmp_cache;
+              None
+            | Some (ex, _) as y ->
+              if Util.Options.get_tableaux_cdcl () then
+                cdcl_learn_clause true env ex ff.Ast.Expr.ff;
+              learn_clause env ff ex;
+              tcp_cache := Ast.Expr.Map.add a y !tcp_cache;
+              y))
 
   let th_elim tcp_cache tmp_cache ff env =
-    match Structs.Expr.form_view ff.Structs.Expr.ff with
-    | Structs.Expr.Literal a ->
-        let ans = query_of tcp_cache tmp_cache ff a env in
-        if ans != None then (
-          Util.Options.tool_req 2 "TR-Sat-Bcp-Elim-2";
-          if Util.Options.get_profiling () then Structs.Profiling.elim false);
-        ans
-    | Structs.Expr.Unit _ | Structs.Expr.Clause _ | Structs.Expr.Lemma _
-    | Structs.Expr.Skolem _ | Structs.Expr.Let _ | Structs.Expr.Iff _
-    | Structs.Expr.Xor _ ->
-        None
-    | Structs.Expr.Not_a_form -> assert false
+    match Ast.Expr.form_view ff.Ast.Expr.ff with
+    | Ast.Expr.Literal a ->
+      let ans = query_of tcp_cache tmp_cache ff a env in
+      if ans != None then (
+        Util.Options.tool_req 2 "TR-Sat-Bcp-Elim-2";
+        if Util.Options.get_profiling () then Ast.Profiling.elim false);
+      ans
+    | Ast.Expr.Unit _ | Ast.Expr.Clause _ | Ast.Expr.Lemma _
+    | Ast.Expr.Skolem _ | Ast.Expr.Let _ | Ast.Expr.Iff _
+    | Ast.Expr.Xor _ ->
+      None
+    | Ast.Expr.Not_a_form -> assert false
 
   let red tcp_cache tmp_cache ff env tcp =
-    let nf = Structs.Expr.neg ff.Structs.Expr.ff in
-    let nff = { ff with Structs.Expr.ff = nf } in
+    let nf = Ast.Expr.neg ff.Ast.Expr.ff in
+    let nff = { ff with Ast.Expr.ff = nf } in
     try
-      let _, ex = Structs.Expr.Map.find nf !(env.unit_facts_cache) in
+      let _, ex = Ast.Expr.Map.find nf !(env.unit_facts_cache) in
       (Some (ex, []), true)
     with Not_found -> (
-      try
-        let _, ex, _, _ = Structs.Expr.Map.find nf env.gamma in
-        let r = Some (ex, Th.cl_extract env.tbox) in
-        Util.Options.tool_req 2 "TR-Sat-Bcp-Red-1";
-        (r, true)
-      with Not_found -> (
-        if not tcp then (None, false)
-        else
-          match Structs.Expr.form_view nf with
-          | Structs.Expr.Literal a ->
-              let ans = query_of tcp_cache tmp_cache nff a env in
-              if ans != None then Util.Options.tool_req 2 "TR-Sat-Bcp-Red-2";
-              (ans, false)
-          | Structs.Expr.Unit _ | Structs.Expr.Clause _ | Structs.Expr.Lemma _
-          | Structs.Expr.Skolem _ | Structs.Expr.Let _ | Structs.Expr.Iff _
-          | Structs.Expr.Xor _ ->
-              (None, false)
-          | Structs.Expr.Not_a_form -> assert false))
+        try
+          let _, ex, _, _ = Ast.Expr.Map.find nf env.gamma in
+          let r = Some (ex, Th.cl_extract env.tbox) in
+          Util.Options.tool_req 2 "TR-Sat-Bcp-Red-1";
+          (r, true)
+        with Not_found -> (
+            if not tcp then (None, false)
+            else
+              match Ast.Expr.form_view nf with
+              | Ast.Expr.Literal a ->
+                let ans = query_of tcp_cache tmp_cache nff a env in
+                if ans != None then Util.Options.tool_req 2 "TR-Sat-Bcp-Red-2";
+                (ans, false)
+              | Ast.Expr.Unit _ | Ast.Expr.Clause _ | Ast.Expr.Lemma _
+              | Ast.Expr.Skolem _ | Ast.Expr.Let _ | Ast.Expr.Iff _
+              | Ast.Expr.Xor _ ->
+                (None, false)
+              | Ast.Expr.Not_a_form -> assert false))
 
   let red tcp_cache tmp_cache ff env tcp =
     match red tcp_cache tmp_cache ff env tcp with
@@ -763,129 +763,129 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
         if not (Util.Options.get_tableaux_cdcl ()) then (None, b)
         else
           match
-            CDCL.is_true !(env.cdcl) (Structs.Expr.neg ff.Structs.Expr.ff)
+            CDCL.is_true !(env.cdcl) (Ast.Expr.neg ff.Ast.Expr.ff)
           with
           | Some (ex, _lvl) ->
-              let ex = Lazy.force ex in
-              if get_debug_sat () && get_verbose () then
-                Util.Printer.print_dbg "red thanks to satML";
-              assert (cdcl_known_decisions ex env);
-              (Some (ex, []), true)
+            let ex = Lazy.force ex in
+            if get_debug_sat () && get_verbose () then
+              Util.Printer.print_dbg "red thanks to satML";
+            assert (cdcl_known_decisions ex env);
+            (Some (ex, []), true)
           | None -> (None, b))
 
   let add_dep f dep =
-    match Structs.Expr.form_view f with
-    | Structs.Expr.Literal _ ->
-        if (not (get_unsat_core ())) || Structs.Ex.mem (Structs.Ex.Bj f) dep
-        then dep
-        else Structs.Ex.union (Structs.Ex.singleton (Structs.Ex.Dep f)) dep
-    | Structs.Expr.Clause _ ->
-        if get_unsat_core () then
-          Structs.Ex.union (Structs.Ex.singleton (Structs.Ex.Dep f)) dep
-        else dep
-    | Structs.Expr.Unit _ | Structs.Expr.Lemma _ | Structs.Expr.Skolem _
-    | Structs.Expr.Let _ | Structs.Expr.Iff _ | Structs.Expr.Xor _ ->
-        dep
-    | Structs.Expr.Not_a_form -> assert false
+    match Ast.Expr.form_view f with
+    | Ast.Expr.Literal _ ->
+      if (not (get_unsat_core ())) || Ast.Ex.mem (Ast.Ex.Bj f) dep
+      then dep
+      else Ast.Ex.union (Ast.Ex.singleton (Ast.Ex.Dep f)) dep
+    | Ast.Expr.Clause _ ->
+      if get_unsat_core () then
+        Ast.Ex.union (Ast.Ex.singleton (Ast.Ex.Dep f)) dep
+      else dep
+    | Ast.Expr.Unit _ | Ast.Expr.Lemma _ | Ast.Expr.Skolem _
+    | Ast.Expr.Let _ | Ast.Expr.Iff _ | Ast.Expr.Xor _ ->
+      dep
+    | Ast.Expr.Not_a_form -> assert false
 
   let rec add_dep_of_formula f dep =
     let dep = add_dep f dep in
-    match Structs.Expr.form_view f with
-    | Structs.Expr.Unit (f1, f2) ->
-        if not (get_unsat_core ()) then dep
-        else add_dep_of_formula f2 (add_dep_of_formula f1 dep)
-    | Structs.Expr.Lemma _ | Structs.Expr.Clause _ | Structs.Expr.Literal _
-    | Structs.Expr.Skolem _ | Structs.Expr.Let _ | Structs.Expr.Iff _
-    | Structs.Expr.Xor _ ->
-        dep
-    | Structs.Expr.Not_a_form -> assert false
+    match Ast.Expr.form_view f with
+    | Ast.Expr.Unit (f1, f2) ->
+      if not (get_unsat_core ()) then dep
+      else add_dep_of_formula f2 (add_dep_of_formula f1 dep)
+    | Ast.Expr.Lemma _ | Ast.Expr.Clause _ | Ast.Expr.Literal _
+    | Ast.Expr.Skolem _ | Ast.Expr.Let _ | Ast.Expr.Iff _
+    | Ast.Expr.Xor _ ->
+      dep
+    | Ast.Expr.Not_a_form -> assert false
 
   (* currently:
      => this is not done modulo theories
      => unit_facts_cache not taken into account *)
   let update_distances =
     let aux gf ff =
-      let gdist = max ff.Structs.Expr.gdist gf.Structs.Expr.gdist in
-      let hdist = max ff.Structs.Expr.hdist gf.Structs.Expr.hdist in
+      let gdist = max ff.Ast.Expr.gdist gf.Ast.Expr.gdist in
+      let hdist = max ff.Ast.Expr.hdist gf.Ast.Expr.hdist in
       let gdist = if gdist < 0 then gdist else gdist + 1 in
       let hdist = if hdist < 0 then hdist else hdist + 1 in
-      { gf with Structs.Expr.gdist; hdist }
+      { gf with Ast.Expr.gdist; hdist }
     in
     fun env gf red ->
-      let nf = Structs.Expr.neg red in
+      let nf = Ast.Expr.neg red in
       try
-        let ff, _ = Structs.Expr.Map.find nf !(env.unit_facts_cache) in
+        let ff, _ = Ast.Expr.Map.find nf !(env.unit_facts_cache) in
         aux gf ff
       with Not_found -> (
-        try
-          let ff, _, _, _ = Structs.Expr.Map.find nf env.gamma in
-          aux gf ff
-        with Not_found -> gf)
+          try
+            let ff, _, _, _ = Ast.Expr.Map.find nf env.gamma in
+            aux gf ff
+          with Not_found -> gf)
 
   let do_bcp env tcp tcp_cache tmp_cache delta acc =
     let tcp = tcp && not (Util.Options.get_no_tcp ()) in
     List.fold_left
       (fun (cl, u)
-           (( ({ Structs.Expr.ff = f1; _ } as gf1),
-              ({ Structs.Expr.ff = f2; _ } as gf2),
-              d,
-              _ ) as fd) ->
+        (( ({ Ast.Expr.ff = f1; _ } as gf1),
+           ({ Ast.Expr.ff = f2; _ } as gf2),
+           d,
+           _ ) as fd) ->
         Debug.elim gf1 gf2;
         if b_elim f1 env || b_elim f2 env then (cl, u)
         else
           try
             if not tcp then raise Exit;
-            assert (gf1.Structs.Expr.theory_elim == gf2.Structs.Expr.theory_elim);
+            assert (gf1.Ast.Expr.theory_elim == gf2.Ast.Expr.theory_elim);
             let u =
               match
                 ( th_elim tcp_cache tmp_cache gf1 env,
                   th_elim tcp_cache tmp_cache gf2 env )
               with
               | None, None -> raise Exit
-              | (Some _, _ | _, Some _) when gf1.Structs.Expr.theory_elim -> u
+              | (Some _, _ | _, Some _) when gf1.Ast.Expr.theory_elim -> u
               | Some _, Some _ ->
-                  u
-                  (* eliminate if both are true ? why ? *)
-                  (*(gf1, Ex.union d d1) :: (gf2, Ex.union d d2) :: u*)
-              | Some (d1, _), _ -> (gf1, Structs.Ex.union d d1) :: u
-              | _, Some (d2, _) -> (gf2, Structs.Ex.union d d2) :: u
+                u
+              (* eliminate if both are true ? why ? *)
+              (*(gf1, Ex.union d d1) :: (gf2, Ex.union d d2) :: u*)
+              | Some (d1, _), _ -> (gf1, Ast.Ex.union d d1) :: u
+              | _, Some (d2, _) -> (gf2, Ast.Ex.union d d2) :: u
             in
             (cl, u)
           with Exit -> (
-            Debug.red gf1 gf2;
-            match
-              ( red tcp_cache tmp_cache gf1 env tcp,
-                red tcp_cache tmp_cache gf2 env tcp )
-            with
-            | (Some (d1, c1), b1), (Some (d2, c2), b2) ->
+              Debug.red gf1 gf2;
+              match
+                ( red tcp_cache tmp_cache gf1 env tcp,
+                  red tcp_cache tmp_cache gf2 env tcp )
+              with
+              | (Some (d1, c1), b1), (Some (d2, c2), b2) ->
                 if Util.Options.get_profiling () then
-                  Structs.Profiling.bcp_conflict b1 b2;
-                let expl = Structs.Ex.union (Structs.Ex.union d d1) d2 in
+                  Ast.Profiling.bcp_conflict b1 b2;
+                let expl = Ast.Ex.union (Ast.Ex.union d d1) d2 in
                 let c = List.rev_append c1 c2 in
-                raise (Structs.Ex.Inconsistent (expl, c))
-            | (Some (d1, _), b), (None, _) ->
-                if Util.Options.get_profiling () then Structs.Profiling.red b;
+                raise (Ast.Ex.Inconsistent (expl, c))
+              | (Some (d1, _), b), (None, _) ->
+                if Util.Options.get_profiling () then Ast.Profiling.red b;
                 let gf2 =
                   {
                     gf2 with
-                    Structs.Expr.nb_reductions =
-                      gf2.Structs.Expr.nb_reductions + 1;
+                    Ast.Expr.nb_reductions =
+                      gf2.Ast.Expr.nb_reductions + 1;
                   }
                 in
                 let gf2 = update_distances env gf2 f1 in
-                (cl, (gf2, Structs.Ex.union d d1) :: u)
-            | (None, _), (Some (d2, _), b) ->
-                if Util.Options.get_profiling () then Structs.Profiling.red b;
+                (cl, (gf2, Ast.Ex.union d d1) :: u)
+              | (None, _), (Some (d2, _), b) ->
+                if Util.Options.get_profiling () then Ast.Profiling.red b;
                 let gf1 =
                   {
                     gf1 with
-                    Structs.Expr.nb_reductions =
-                      gf1.Structs.Expr.nb_reductions + 1;
+                    Ast.Expr.nb_reductions =
+                      gf1.Ast.Expr.nb_reductions + 1;
                   }
                 in
                 let gf1 = update_distances env gf1 f2 in
-                (cl, (gf1, Structs.Ex.union d d2) :: u)
-            | (None, _), (None, _) -> (fd :: cl, u)))
+                (cl, (gf1, Ast.Ex.union d d2) :: u)
+              | (None, _), (None, _) -> (fd :: cl, u)))
       acc delta
 
   let theory_assume env facts =
@@ -895,27 +895,27 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
       let facts, ufacts, inst, mf, gf =
         List.fold_left
           (fun (facts, ufacts, inst, mf, gf) (a, ff, ex, dlvl, plvl) ->
-            if not (Structs.Expr.is_ground a) then (
-              Util.Printer.print_err "%a is not ground" Structs.Expr.print a;
-              assert false);
-            let facts = (a, ex, dlvl, plvl) :: facts in
-            let ufacts =
-              if Structs.Ex.has_no_bj ex then (a, ex, dlvl, plvl) :: ufacts
-              else ufacts
-            in
-            if not ff.Structs.Expr.mf then (
-              Util.Printer.print_err "%a" Structs.Expr.print ff.Structs.Expr.ff;
-              assert false);
-            let inst =
-              if ff.Structs.Expr.mf then
-                Inst.add_terms inst (Structs.Expr.max_terms_of_lit a) ff
-              else inst
-            in
-            ( facts,
-              ufacts,
-              inst,
-              mf || ff.Structs.Expr.mf,
-              gf || ff.Structs.Expr.gf ))
+             if not (Ast.Expr.is_ground a) then (
+               Util.Printer.print_err "%a is not ground" Ast.Expr.print a;
+               assert false);
+             let facts = (a, ex, dlvl, plvl) :: facts in
+             let ufacts =
+               if Ast.Ex.has_no_bj ex then (a, ex, dlvl, plvl) :: ufacts
+               else ufacts
+             in
+             if not ff.Ast.Expr.mf then (
+               Util.Printer.print_err "%a" Ast.Expr.print ff.Ast.Expr.ff;
+               assert false);
+             let inst =
+               if ff.Ast.Expr.mf then
+                 Inst.add_terms inst (Ast.Expr.max_terms_of_lit a) ff
+               else inst
+             in
+             ( facts,
+               ufacts,
+               inst,
+               mf || ff.Ast.Expr.mf,
+               gf || ff.Ast.Expr.gf ))
           ([], [], env.inst, false, false)
           facts
       in
@@ -923,26 +923,26 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
         (* assume unit facts in the theory *)
         if ufacts != [] && env.dlevel > 0 then (
           try Th.assume ~ordered:false ufacts env.unit_tbox
-          with Structs.Ex.Inconsistent (reason, _) as e ->
-            assert (Structs.Ex.has_no_bj reason);
+          with Ast.Ex.Inconsistent (reason, _) as e ->
+            assert (Ast.Ex.has_no_bj reason);
             if Util.Options.get_profiling () then
-              Structs.Profiling.theory_conflict ();
+              Ast.Profiling.theory_conflict ();
             if get_debug_sat () then
               Util.Printer.print_dbg ~module_name:"Fun_sat"
                 ~function_name:"theory_assume" "solved by unit_tbox";
             raise e)
-        else (env.unit_tbox, Structs.Expr.Set.empty, 0)
+        else (env.unit_tbox, Ast.Expr.Set.empty, 0)
       in
       let tbox, new_terms, cpt =
         try Th.assume facts env.tbox
-        with Structs.Ex.Inconsistent _ as e ->
+        with Ast.Ex.Inconsistent _ as e ->
           if Util.Options.get_profiling () then
-            Structs.Profiling.theory_conflict ();
+            Ast.Profiling.theory_conflict ();
           raise e
       in
       let utbox = if env.dlevel = 0 then tbox else utbox in
       let inst =
-        Inst.add_terms inst new_terms (mk_gf Structs.Expr.vrai "" mf gf)
+        Inst.add_terms inst new_terms (mk_gf Ast.Expr.vrai "" mf gf)
       in
       Util.Steps.incr (Th_assumed cpt);
       { env with tbox; unit_tbox = utbox; inst }
@@ -952,7 +952,7 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
     let env = do_case_split env Util.Util.AfterTheoryAssume in
     Debug.propagations result;
     let tcp_cache = ref env.tcp_cache in
-    let tmp_cache = ref Structs.Expr.Map.empty in
+    let tmp_cache = ref Ast.Expr.Map.empty in
     let acc =
       if bcp then do_bcp env tcp tcp_cache tmp_cache env.delta ([], [])
       else (env.delta, [] (* no even bcp for old clauses *))
@@ -962,58 +962,58 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
     ({ env with delta; tcp_cache = !tcp_cache }, unit)
 
   let update_nb_related t ff =
-    let gdist = ff.Structs.Expr.gdist in
-    let hdist = ff.Structs.Expr.hdist in
+    let gdist = ff.Ast.Expr.gdist in
+    let hdist = ff.Ast.Expr.hdist in
     match (gdist >= 0, hdist >= 0) with
     | true, false -> { t with nb_related_to_goal = t.nb_related_to_goal + 1 }
     | false, true -> { t with nb_related_to_hypo = t.nb_related_to_hypo + 1 }
     | false, false -> { t with nb_unrelated = t.nb_unrelated + 1 }
     | true, true ->
-        (* update these three counter to simplify comparaisons
-           in the rest of the module: both+1 imples goal+1 *)
-        {
-          t with
-          nb_related_to_both = t.nb_related_to_both + 1;
-          nb_related_to_goal = t.nb_related_to_goal + 1;
-          nb_related_to_hypo = t.nb_related_to_hypo + 1;
-        }
+      (* update these three counter to simplify comparaisons
+         in the rest of the module: both+1 imples goal+1 *)
+      {
+        t with
+        nb_related_to_both = t.nb_related_to_both + 1;
+        nb_related_to_goal = t.nb_related_to_goal + 1;
+        nb_related_to_hypo = t.nb_related_to_hypo + 1;
+      }
 
   let rec asm_aux acc list =
     List.fold_left
       (fun ((env, _bcp, tcp, ap_delta, lits) as acc)
-           (({ Structs.Expr.ff = f; _ } as ff), dep) ->
+        (({ Ast.Expr.ff = f; _ } as ff), dep) ->
         refresh_model_handler env;
         Util.Options.exec_thread_yield ();
         let dep = add_dep f dep in
         let dep_gamma = add_dep_of_formula f dep in
         (* propagate all unit facts to cache *)
-        if get_sat_learning () && Structs.Ex.has_no_bj dep_gamma then
+        if get_sat_learning () && Ast.Ex.has_no_bj dep_gamma then
           update_unit_facts env ff dep_gamma;
         Debug.gamma env.gamma;
         (try
            let _, ex_nf, _, _ =
-             Structs.Expr.Map.find (Structs.Expr.neg f) env.gamma
+             Ast.Expr.Map.find (Ast.Expr.neg f) env.gamma
            in
            Util.Options.tool_req 2 "TR-Sat-Conflict-1";
            if Util.Options.get_profiling () then
-             Structs.Profiling.bool_conflict ();
-           let exx = Structs.Ex.union dep_gamma ex_nf in
+             Ast.Profiling.bool_conflict ();
+           let exx = Ast.Ex.union dep_gamma ex_nf in
            (*
            missing VSID, but we have regressions when it is activated
            env.heuristics := Heuristics.bump_activity !(env.heuristics) exx;*)
            raise (IUnsat (exx, Th.cl_extract env.tbox))
          with Not_found -> ());
-        if Structs.Expr.Map.mem f env.gamma then (
+        if Ast.Expr.Map.mem f env.gamma then (
           Util.Options.tool_req 2 "TR-Sat-Remove";
           acc)
         else
           let env =
-            if ff.Structs.Expr.mf && get_greedy () then
+            if ff.Ast.Expr.mf && get_greedy () then
               {
                 env with
                 inst =
                   Inst.add_terms env.inst
-                    (Structs.Expr.max_ground_terms_rec_of_form f)
+                    (Ast.Expr.max_ground_terms_rec_of_form f)
                     ff;
               }
             else env
@@ -1023,116 +1023,116 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
             {
               env with
               gamma =
-                Structs.Expr.Map.add f
+                Ast.Expr.Map.add f
                   (ff, dep_gamma, env.dlevel, env.plevel)
                   env.gamma;
               plevel = env.plevel + 1;
             }
           in
           let env = update_nb_related env ff in
-          match Structs.Expr.form_view f with
-          | Structs.Expr.Not_a_form -> assert false
-          | Structs.Expr.Iff (f1, f2) ->
-              let id = Structs.Expr.id f in
-              let g = Structs.Expr.elim_iff f1 f2 id ~with_conj:true in
-              (if Util.Options.get_tableaux_cdcl () then
-               let f_imp_g = Structs.Expr.mk_imp f g id in
+          match Ast.Expr.form_view f with
+          | Ast.Expr.Not_a_form -> assert false
+          | Ast.Expr.Iff (f1, f2) ->
+            let id = Ast.Expr.id f in
+            let g = Ast.Expr.elim_iff f1 f2 id ~with_conj:true in
+            (if Util.Options.get_tableaux_cdcl () then
+               let f_imp_g = Ast.Expr.mk_imp f g id in
                (* correct to put <-> ?*)
                cdcl_assume false env
-                 [ ({ ff with Structs.Expr.ff = f_imp_g }, Structs.Ex.empty) ]);
-              asm_aux
-                (env, true, tcp, ap_delta, lits)
-                [ ({ ff with Structs.Expr.ff = g }, dep) ]
-          | Structs.Expr.Xor (f1, f2) ->
-              let id = Structs.Expr.id f in
-              let g =
-                Structs.Expr.elim_iff f1 f2 id ~with_conj:false
-                |> Structs.Expr.neg
-              in
-              (if Util.Options.get_tableaux_cdcl () then
-               let f_imp_g = Structs.Expr.mk_imp f g id in
+                 [ ({ ff with Ast.Expr.ff = f_imp_g }, Ast.Ex.empty) ]);
+            asm_aux
+              (env, true, tcp, ap_delta, lits)
+              [ ({ ff with Ast.Expr.ff = g }, dep) ]
+          | Ast.Expr.Xor (f1, f2) ->
+            let id = Ast.Expr.id f in
+            let g =
+              Ast.Expr.elim_iff f1 f2 id ~with_conj:false
+              |> Ast.Expr.neg
+            in
+            (if Util.Options.get_tableaux_cdcl () then
+               let f_imp_g = Ast.Expr.mk_imp f g id in
                (* should do something similar for Let ? *)
                cdcl_assume false env
-                 [ ({ ff with Structs.Expr.ff = f_imp_g }, Structs.Ex.empty) ]);
-              asm_aux
-                (env, true, tcp, ap_delta, lits)
-                [ ({ ff with Structs.Expr.ff = g }, dep) ]
-          | Structs.Expr.Unit (f1, f2) ->
-              Util.Options.tool_req 2 "TR-Sat-Assume-U";
-              let lst =
-                [
-                  ({ ff with Structs.Expr.ff = f1 }, dep);
-                  ({ ff with Structs.Expr.ff = f2 }, dep);
-                ]
-              in
-              asm_aux (env, true, tcp, ap_delta, lits) lst
-          | Structs.Expr.Clause (f1, f2, is_impl) ->
-              Util.Options.tool_req 2 "TR-Sat-Assume-C";
-              let p1 = { ff with Structs.Expr.ff = f1 } in
-              let p2 = { ff with Structs.Expr.ff = f2 } in
-              let p1, p2 =
-                if is_impl || Structs.Expr.size f1 <= Structs.Expr.size f2 then
-                  (p1, p2)
-                else (p2, p1)
-              in
-              (env, true, tcp, (p1, p2, dep, is_impl) :: ap_delta, lits)
-          | Structs.Expr.Lemma _ ->
-              Util.Options.tool_req 2 "TR-Sat-Assume-Ax";
-              let inst_env = Inst.add_lemma env.inst ff dep in
-              if Util.Options.get_tableaux_cdcl () then
-                cdcl_assume false env [ (ff, dep) ];
-              ({ env with inst = inst_env }, true, tcp, ap_delta, lits)
-          | Structs.Expr.Literal a -> (
+                 [ ({ ff with Ast.Expr.ff = f_imp_g }, Ast.Ex.empty) ]);
+            asm_aux
+              (env, true, tcp, ap_delta, lits)
+              [ ({ ff with Ast.Expr.ff = g }, dep) ]
+          | Ast.Expr.Unit (f1, f2) ->
+            Util.Options.tool_req 2 "TR-Sat-Assume-U";
+            let lst =
+              [
+                ({ ff with Ast.Expr.ff = f1 }, dep);
+                ({ ff with Ast.Expr.ff = f2 }, dep);
+              ]
+            in
+            asm_aux (env, true, tcp, ap_delta, lits) lst
+          | Ast.Expr.Clause (f1, f2, is_impl) ->
+            Util.Options.tool_req 2 "TR-Sat-Assume-C";
+            let p1 = { ff with Ast.Expr.ff = f1 } in
+            let p2 = { ff with Ast.Expr.ff = f2 } in
+            let p1, p2 =
+              if is_impl || Ast.Expr.size f1 <= Ast.Expr.size f2 then
+                (p1, p2)
+              else (p2, p1)
+            in
+            (env, true, tcp, (p1, p2, dep, is_impl) :: ap_delta, lits)
+          | Ast.Expr.Lemma _ ->
+            Util.Options.tool_req 2 "TR-Sat-Assume-Ax";
+            let inst_env = Inst.add_lemma env.inst ff dep in
+            if Util.Options.get_tableaux_cdcl () then
+              cdcl_assume false env [ (ff, dep) ];
+            ({ env with inst = inst_env }, true, tcp, ap_delta, lits)
+          | Ast.Expr.Literal a -> (
               let lits = (a, ff, dep, env.dlevel, env.plevel) :: lits in
               let acc = (env, true, true, ap_delta, lits) in
               (* ground preds bahave like proxies of lazy CNF *)
               match Inst.ground_pred_defn a env.inst with
               | Some (guard, af, adep) ->
-                  (* in fun-SAT, guards are either forced to TRUE, or
-                     Inst.ground_preds is cleaned when the guard is
-                     propagated to FALSE *)
-                  assert (Structs.Expr.Map.mem guard env.gamma);
-                  if Util.Options.get_tableaux_cdcl () then
-                    cdcl_assume false env
-                      [
-                        ( {
-                            ff with
-                            Structs.Expr.ff =
-                              Structs.Expr.mk_imp f af (Structs.Expr.id f);
-                          },
-                          adep );
-                      ];
-                  asm_aux acc
+                (* in fun-SAT, guards are either forced to TRUE, or
+                   Inst.ground_preds is cleaned when the guard is
+                   propagated to FALSE *)
+                assert (Ast.Expr.Map.mem guard env.gamma);
+                if Util.Options.get_tableaux_cdcl () then
+                  cdcl_assume false env
                     [
-                      ( { ff with Structs.Expr.ff = af },
-                        Structs.Ex.union dep adep );
-                    ]
+                      ( {
+                        ff with
+                        Ast.Expr.ff =
+                          Ast.Expr.mk_imp f af (Ast.Expr.id f);
+                      },
+                        adep );
+                    ];
+                asm_aux acc
+                  [
+                    ( { ff with Ast.Expr.ff = af },
+                      Ast.Ex.union dep adep );
+                  ]
               | None -> acc)
-          | Structs.Expr.Skolem quantif ->
-              Util.Options.tool_req 2 "TR-Sat-Assume-Sko";
-              let f' = Structs.Expr.skolemize quantif in
-              (if Util.Options.get_tableaux_cdcl () then
-               let f_imp_f' = Structs.Expr.mk_imp f f' (Structs.Expr.id f) in
+          | Ast.Expr.Skolem quantif ->
+            Util.Options.tool_req 2 "TR-Sat-Assume-Sko";
+            let f' = Ast.Expr.skolemize quantif in
+            (if Util.Options.get_tableaux_cdcl () then
+               let f_imp_f' = Ast.Expr.mk_imp f f' (Ast.Expr.id f) in
                (* correct to put <-> ?*)
                (* should do something similar for Let ? *)
                cdcl_assume false env
-                 [ ({ ff with Structs.Expr.ff = f_imp_f' }, Structs.Ex.empty) ]);
-              asm_aux
-                (env, true, tcp, ap_delta, lits)
-                [ ({ ff with Structs.Expr.ff = f' }, dep) ]
-          | Structs.Expr.Let letin ->
-              Util.Options.tool_req 2 "TR-Sat-Assume-Let";
-              let elim_let = Structs.Expr.elim_let ~recursive:true letin in
-              let ff = { ff with Structs.Expr.ff = elim_let } in
-              (if Util.Options.get_tableaux_cdcl () then
+                 [ ({ ff with Ast.Expr.ff = f_imp_f' }, Ast.Ex.empty) ]);
+            asm_aux
+              (env, true, tcp, ap_delta, lits)
+              [ ({ ff with Ast.Expr.ff = f' }, dep) ]
+          | Ast.Expr.Let letin ->
+            Util.Options.tool_req 2 "TR-Sat-Assume-Let";
+            let elim_let = Ast.Expr.elim_let ~recursive:true letin in
+            let ff = { ff with Ast.Expr.ff = elim_let } in
+            (if Util.Options.get_tableaux_cdcl () then
                let f_imp_f' =
-                 Structs.Expr.mk_imp f elim_let (Structs.Expr.id f)
+                 Ast.Expr.mk_imp f elim_let (Ast.Expr.id f)
                in
                (* correct to put <-> ?*)
                (* should do something similar for Let ? *)
                cdcl_assume false env
-                 [ ({ ff with Structs.Expr.ff = f_imp_f' }, Structs.Ex.empty) ]);
-              asm_aux (env, true, tcp, ap_delta, lits) [ (ff, dep) ])
+                 [ ({ ff with Ast.Expr.ff = f_imp_f' }, Ast.Ex.empty) ]);
+            asm_aux (env, true, tcp, ap_delta, lits) [ (ff, dep) ])
       acc list
 
   let rec assume env list =
@@ -1145,7 +1145,7 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
         let result = asm_aux (env, false, false, [], []) list in
         let env, list = propagations result in
         assume env list
-      with Structs.Ex.Inconsistent (expl, classes) ->
+      with Ast.Ex.Inconsistent (expl, classes) ->
         Debug.inconsistent expl env;
         Util.Options.tool_req 2 "TR-Sat-Conflict-2";
         env.heuristics := Heuristics.bump_activity !(env.heuristics) expl;
@@ -1155,7 +1155,7 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
     let new_ilevel = env.ilevel + 1 in
     let env = { env with ilevel = new_ilevel } in
     if Util.Options.get_profiling () then
-      Structs.Profiling.instantiation new_ilevel;
+      Ast.Profiling.instantiation new_ilevel;
     Debug.instantiate env;
     env
 
@@ -1171,9 +1171,9 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
       match l_opt with
       | None -> Some !last_cache (* Get *)
       | Some l ->
-          (* Set or reset if l = [] *)
-          last_cache := List.filter (fun (_, e) -> Structs.Ex.has_no_bj e) l;
-          None
+        (* Set or reset if l = [] *)
+        last_cache := List.filter (fun (_, e) -> Ast.Ex.has_no_bj e) l;
+        None
 
   (* returns the (new) env and true if some new instances are made *)
   let inst_and_assume mconf env inst_function inst_env =
@@ -1188,45 +1188,45 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
     if get_sat_learning () then
       List.iter
         (fun (gf, dep) ->
-          if Structs.Ex.has_no_bj dep then update_unit_facts env gf dep)
+           if Ast.Ex.has_no_bj dep then update_unit_facts env gf dep)
         l;
     if Util.Options.get_tableaux_cdcl () then cdcl_assume false env l;
 
-    if Util.Options.get_profiling () then Structs.Profiling.instances l;
+    if Util.Options.get_profiling () then Ast.Profiling.instances l;
     match l with
     | [] -> (env, false)
     | _ ->
-        (* Put new generated instances in cache *)
-        ignore (update_instances_cache (Some l));
-        if Util.Options.get_tableaux_cdcl () then cdcl_assume false env l;
-        let env = assume env l in
-        (* No conflict by direct assume, empty cache *)
-        ignore (update_instances_cache (Some []));
-        (env, true)
+      (* Put new generated instances in cache *)
+      ignore (update_instances_cache (Some l));
+      if Util.Options.get_tableaux_cdcl () then cdcl_assume false env l;
+      let env = assume env l in
+      (* No conflict by direct assume, empty cache *)
+      ignore (update_instances_cache (Some []));
+      (env, true)
 
   let update_all_models_option env =
     if get_all_models () then (
       (* should be used when all_models () is activated only *)
       if !all_models_sat_env == None then all_models_sat_env := Some env;
       let m =
-        Structs.Expr.Map.fold
-          (fun f _ s -> if is_literal f then Structs.Expr.Set.add f s else s)
-          env.gamma Structs.Expr.Set.empty
+        Ast.Expr.Map.fold
+          (fun f _ s -> if is_literal f then Ast.Expr.Set.add f s else s)
+          env.gamma Ast.Expr.Set.empty
       in
       Util.Printer.print_fmt
         (Util.Options.get_fmt_mdl ())
         "@[<v 0>--- SAT model found ---@ %a@ --- / SAT model  ---@]"
         print_prop_model m;
-      raise (IUnsat (Structs.Ex.make_deps m, [])))
+      raise (IUnsat (Ast.Ex.make_deps m, [])))
 
   let get_all_models_answer () =
     if get_all_models () then
       match !all_models_sat_env with
       | Some env -> raise (I_dont_know env)
       | None ->
-          Util.Printer.print_fmt
-            (Util.Options.get_fmt_mdl ())
-            "[all-models] No SAT models found"
+        Util.Printer.print_fmt
+          (Util.Options.get_fmt_mdl ())
+          "[all-models] No SAT models found"
 
   let compute_concrete_model env origin =
     if abs (get_interpretation ()) <> origin then env
@@ -1237,7 +1237,7 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
         let env = { env with tbox = Th.compute_concrete_model env.tbox } in
         latest_saved_env := Some env;
         env
-      with Structs.Ex.Inconsistent (expl, classes) ->
+      with Ast.Ex.Inconsistent (expl, classes) ->
         Debug.inconsistent expl env;
         Util.Options.tool_req 2 "TR-Sat-Conflict-2";
         env.heuristics := Heuristics.bump_activity !(env.heuristics) expl;
@@ -1250,17 +1250,17 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
     terminated_normally := true;
     (* to avoid loops *)
     (match !latest_saved_env with
-    | None ->
-        Util.Printer.print_fmt
-          (Util.Options.get_fmt_mdl ())
-          "@[<v 0>[FunSat]@,\
-          \ It seems that no model has been computed so far.@,\
-           You may need to change your model generation strategy@,\
-           or to increase your timeout.@]"
-    | Some env ->
-        let cs_tbox = Th.get_case_split_env env.tbox in
-        let uf = Ccx.Main.get_union_find cs_tbox in
-        Uf.output_concrete_model uf);
+     | None ->
+       Util.Printer.print_fmt
+         (Util.Options.get_fmt_mdl ())
+         "@[<v 0>[FunSat]@,\
+         \ It seems that no model has been computed so far.@,\
+          You may need to change your model generation strategy@,\
+          or to increase your timeout.@]"
+     | Some env ->
+       let cs_tbox = Th.get_case_split_env env.tbox in
+       let uf = Ccx.Main.get_union_find cs_tbox in
+       Uf.output_concrete_model uf);
     return_function ()
 
   let () =
@@ -1305,54 +1305,54 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
     let dep, acc =
       List.fold_left
         (fun (dep, acc) f ->
-          try
-            let _, ex, _, _ = Structs.Expr.Map.find f env.gamma in
-            (Structs.Ex.union dep ex, acc)
-          with Not_found -> (
-            try
-              (*if no_sat_learning() then raise Not_found;*)
-              let _, ex = Structs.Expr.Map.find f !(env.unit_facts_cache) in
-              ( Structs.Ex.union dep ex,
-                ({ gf with Structs.Expr.ff = f }, ex) :: acc )
-            with Not_found -> (
-              match Structs.Expr.form_view f with
-              | Structs.Expr.Literal a -> (
-                  match
-                    query_of tcp_cache tmp_cache
-                      { gf with Structs.Expr.ff = f }
-                      a env
-                  with
-                  | Some (ex, _) ->
-                      ( Structs.Ex.union dep ex,
-                        ({ gf with Structs.Expr.ff = f }, ex) :: acc )
-                  | None ->
-                      Util.Printer.print_err "Bad inst! Hyp %a is not true!"
-                        Structs.Expr.print f;
-                      assert false)
-              | Structs.Expr.Unit _ | Structs.Expr.Clause _
-              | Structs.Expr.Lemma _ | Structs.Expr.Skolem _
-              | Structs.Expr.Let _ | Structs.Expr.Iff _ | Structs.Expr.Xor _ ->
-                  Util.Printer.print_err
-                    "Currently, arbitrary formulas in Hyps\n\
-                    \                are not Th-reduced";
-                  assert false
-              | Structs.Expr.Not_a_form -> assert false)))
+           try
+             let _, ex, _, _ = Ast.Expr.Map.find f env.gamma in
+             (Ast.Ex.union dep ex, acc)
+           with Not_found -> (
+               try
+                 (*if no_sat_learning() then raise Not_found;*)
+                 let _, ex = Ast.Expr.Map.find f !(env.unit_facts_cache) in
+                 ( Ast.Ex.union dep ex,
+                   ({ gf with Ast.Expr.ff = f }, ex) :: acc )
+               with Not_found -> (
+                   match Ast.Expr.form_view f with
+                   | Ast.Expr.Literal a -> (
+                       match
+                         query_of tcp_cache tmp_cache
+                           { gf with Ast.Expr.ff = f }
+                           a env
+                       with
+                       | Some (ex, _) ->
+                         ( Ast.Ex.union dep ex,
+                           ({ gf with Ast.Expr.ff = f }, ex) :: acc )
+                       | None ->
+                         Util.Printer.print_err "Bad inst! Hyp %a is not true!"
+                           Ast.Expr.print f;
+                         assert false)
+                   | Ast.Expr.Unit _ | Ast.Expr.Clause _
+                   | Ast.Expr.Lemma _ | Ast.Expr.Skolem _
+                   | Ast.Expr.Let _ | Ast.Expr.Iff _ | Ast.Expr.Xor _ ->
+                     Util.Printer.print_err
+                       "Currently, arbitrary formulas in Hyps\n\
+                       \                are not Th-reduced";
+                     assert false
+                   | Ast.Expr.Not_a_form -> assert false)))
         (dep, acc) hyp
     in
     (gf, dep) :: acc
 
   let does_not_contain_a_disjunction =
     let rec aux f =
-      match Structs.Expr.form_view f with
-      | Structs.Expr.Not_a_form -> assert false
-      | Structs.Expr.Literal _ -> true
-      | Structs.Expr.Unit (f1, f2) -> aux f1 && aux f2
-      | Structs.Expr.Clause _ | Structs.Expr.Iff _ | Structs.Expr.Xor _ -> false
-      | Structs.Expr.Lemma _ | Structs.Expr.Skolem _ | Structs.Expr.Let _ ->
-          (*failwith "Not in current theory axioms"*)
-          false
+      match Ast.Expr.form_view f with
+      | Ast.Expr.Not_a_form -> assert false
+      | Ast.Expr.Literal _ -> true
+      | Ast.Expr.Unit (f1, f2) -> aux f1 && aux f2
+      | Ast.Expr.Clause _ | Ast.Expr.Iff _ | Ast.Expr.Xor _ -> false
+      | Ast.Expr.Lemma _ | Ast.Expr.Skolem _ | Ast.Expr.Let _ ->
+        (*failwith "Not in current theory axioms"*)
+        false
     in
-    fun (gf, _) -> aux gf.Structs.Expr.ff
+    fun (gf, _) -> aux gf.Ast.Expr.ff
 
   let mk_theories_instances ~do_syntactic_matching ~rm_clauses env inst =
     let { tbox; _ } = env in
@@ -1367,24 +1367,24 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
       match l with
       | [] -> (env, false)
       | _ ->
-          let tcp_cache = ref env.tcp_cache in
-          let tmp_cache = ref Structs.Expr.Map.empty in
-          let rl =
-            List.fold_left (reduce_hypotheses tcp_cache tmp_cache env) [] l
-          in
-          let l = List.rev rl in
-          let l =
-            if not rm_clauses then l
-            else List.filter does_not_contain_a_disjunction l
-          in
-          let env = { env with tcp_cache = !tcp_cache } in
-          ignore (update_instances_cache (Some l));
-          if Util.Options.get_tableaux_cdcl () then cdcl_assume false env l;
-          let env = assume env l in
-          ignore (update_instances_cache (Some []));
-          Debug.out_mk_theories_instances true;
-          (env, l != [])
-    with Structs.Ex.Inconsistent (expl, classes) ->
+        let tcp_cache = ref env.tcp_cache in
+        let tmp_cache = ref Ast.Expr.Map.empty in
+        let rl =
+          List.fold_left (reduce_hypotheses tcp_cache tmp_cache env) [] l
+        in
+        let l = List.rev rl in
+        let l =
+          if not rm_clauses then l
+          else List.filter does_not_contain_a_disjunction l
+        in
+        let env = { env with tcp_cache = !tcp_cache } in
+        ignore (update_instances_cache (Some l));
+        if Util.Options.get_tableaux_cdcl () then cdcl_assume false env l;
+        let env = assume env l in
+        ignore (update_instances_cache (Some []));
+        Debug.out_mk_theories_instances true;
+        (env, l != [])
+    with Ast.Ex.Inconsistent (expl, classes) ->
       Debug.out_mk_theories_instances false;
       Debug.inconsistent expl env;
       Util.Options.tool_req 2 "TR-Sat-Conflict-2";
@@ -1411,34 +1411,34 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
     match get_instantiation_heuristic () with
     | INormal -> return_answer env 1 (fun e -> raise (I_dont_know e))
     | IAuto | IGreedy ->
-        let gre_inst =
-          Structs.Expr.Map.fold
-            (fun f (gf, _, _, _) inst ->
-              Inst.add_terms inst
-                (Structs.Expr.max_ground_terms_rec_of_form f)
-                gf)
-            env.gamma env.inst
-        in
-        let env = new_inst_level env in
-        let mconf =
-          {
-            Util.Util.nb_triggers = max 10 (get_nb_triggers () * 10);
-            no_ematching = false;
-            triggers_var = true;
-            use_cs = true;
-            backward = Util.Util.Normal;
-            greedy = true;
-          }
-        in
-        let env, ok1 = inst_and_assume mconf env inst_predicates gre_inst in
-        let env, ok2 = inst_and_assume mconf env inst_lemmas gre_inst in
-        let env, ok3 = syntactic_th_inst env gre_inst ~rm_clauses:false in
-        let env, ok4 =
-          semantic_th_inst env gre_inst ~rm_clauses:false ~loop:4
-        in
-        let env = do_case_split env Util.Util.AfterMatching in
-        if ok1 || ok2 || ok3 || ok4 then env
-        else return_answer env 1 (fun e -> raise (I_dont_know e))
+      let gre_inst =
+        Ast.Expr.Map.fold
+          (fun f (gf, _, _, _) inst ->
+             Inst.add_terms inst
+               (Ast.Expr.max_ground_terms_rec_of_form f)
+               gf)
+          env.gamma env.inst
+      in
+      let env = new_inst_level env in
+      let mconf =
+        {
+          Util.Util.nb_triggers = max 10 (get_nb_triggers () * 10);
+          no_ematching = false;
+          triggers_var = true;
+          use_cs = true;
+          backward = Util.Util.Normal;
+          greedy = true;
+        }
+      in
+      let env, ok1 = inst_and_assume mconf env inst_predicates gre_inst in
+      let env, ok2 = inst_and_assume mconf env inst_lemmas gre_inst in
+      let env, ok3 = syntactic_th_inst env gre_inst ~rm_clauses:false in
+      let env, ok4 =
+        semantic_th_inst env gre_inst ~rm_clauses:false ~loop:4
+      in
+      let env = do_case_split env Util.Util.AfterMatching in
+      if ok1 || ok2 || ok3 || ok4 then env
+      else return_answer env 1 (fun e -> raise (I_dont_know e))
 
   let normal_instantiation env try_greedy =
     Debug.print_nb_related env;
@@ -1471,53 +1471,53 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
     else
       let cache = !(env.unit_facts_cache) in
       let in_cache f =
-        try Some (snd (Structs.Expr.Map.find f cache)) with Not_found -> None
+        try Some (snd (Ast.Expr.Map.find f cache)) with Not_found -> None
       in
       let prop, delt =
         List.fold_left
           (fun (prop, new_delta) ((gf1, gf2, d, _) as e) ->
-            let { Structs.Expr.ff = f1; _ } = gf1 in
-            let { Structs.Expr.ff = f2; _ } = gf2 in
-            let nf1 = Structs.Expr.neg f1 in
-            let nf2 = Structs.Expr.neg f2 in
-            match (in_cache nf1, in_cache nf2) with
-            | Some d1, Some d2 ->
-                if Util.Options.get_profiling () then
-                  Structs.Profiling.bcp_conflict true true;
-                let expl = Structs.Ex.union (Structs.Ex.union d d1) d2 in
-                raise (IUnsat (expl, []))
-            | Some d1, _ ->
-                (* a is false, so b should be true *)
-                if Util.Options.get_profiling () then Structs.Profiling.red true;
-                let not_gf1 = { gf1 with Structs.Expr.ff = nf1 } in
-                let gf2 =
-                  {
-                    gf2 with
-                    Structs.Expr.nb_reductions =
-                      gf2.Structs.Expr.nb_reductions + 1;
-                  }
-                in
-                let gf2 = update_distances env gf2 f1 in
-                ( (gf2, Structs.Ex.union d d1) :: (not_gf1, d1) :: prop,
-                  new_delta )
-            | _, Some d2 ->
-                (* b is false, so a should be true *)
-                let not_gf2 = { gf2 with Structs.Expr.ff = nf2 } in
-                let gf1 =
-                  {
-                    gf1 with
-                    Structs.Expr.nb_reductions =
-                      gf1.Structs.Expr.nb_reductions + 1;
-                  }
-                in
-                let gf1 = update_distances env gf1 f2 in
-                ( (gf1, Structs.Ex.union d d2) :: (not_gf2, d2) :: prop,
-                  new_delta )
-            | None, None -> (
-                match (in_cache f1, in_cache f2) with
-                | None, None -> (prop, e :: new_delta)
-                | Some d1, _ -> ((gf1, d1) :: prop, new_delta)
-                | None, Some d2 -> ((gf2, d2) :: prop, new_delta)))
+             let { Ast.Expr.ff = f1; _ } = gf1 in
+             let { Ast.Expr.ff = f2; _ } = gf2 in
+             let nf1 = Ast.Expr.neg f1 in
+             let nf2 = Ast.Expr.neg f2 in
+             match (in_cache nf1, in_cache nf2) with
+             | Some d1, Some d2 ->
+               if Util.Options.get_profiling () then
+                 Ast.Profiling.bcp_conflict true true;
+               let expl = Ast.Ex.union (Ast.Ex.union d d1) d2 in
+               raise (IUnsat (expl, []))
+             | Some d1, _ ->
+               (* a is false, so b should be true *)
+               if Util.Options.get_profiling () then Ast.Profiling.red true;
+               let not_gf1 = { gf1 with Ast.Expr.ff = nf1 } in
+               let gf2 =
+                 {
+                   gf2 with
+                   Ast.Expr.nb_reductions =
+                     gf2.Ast.Expr.nb_reductions + 1;
+                 }
+               in
+               let gf2 = update_distances env gf2 f1 in
+               ( (gf2, Ast.Ex.union d d1) :: (not_gf1, d1) :: prop,
+                 new_delta )
+             | _, Some d2 ->
+               (* b is false, so a should be true *)
+               let not_gf2 = { gf2 with Ast.Expr.ff = nf2 } in
+               let gf1 =
+                 {
+                   gf1 with
+                   Ast.Expr.nb_reductions =
+                     gf1.Ast.Expr.nb_reductions + 1;
+                 }
+               in
+               let gf1 = update_distances env gf1 f2 in
+               ( (gf1, Ast.Ex.union d d2) :: (not_gf2, d2) :: prop,
+                 new_delta )
+             | None, None -> (
+                 match (in_cache f1, in_cache f2) with
+                 | None, None -> (prop, e :: new_delta)
+                 | Some d1, _ -> ((gf1, d1) :: prop, new_delta)
+                 | None, Some d2 -> ((gf2, d2) :: prop, new_delta)))
           ([], []) env.delta
       in
       match prop with [] -> None | _ -> Some (prop, delt)
@@ -1525,10 +1525,10 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
   let rec unsat_rec env fg is_decision =
     try
       (if is_decision then
-       let f = (fst fg).Structs.Expr.ff in
-       if Util.Options.get_tableaux_cdcl () then
-         try cdcl_decide env f (Structs.Expr.Map.find f env.decisions)
-         with Not_found -> assert false);
+         let f = (fst fg).Ast.Expr.ff in
+         if Util.Options.get_tableaux_cdcl () then
+           try cdcl_decide env f (Ast.Expr.Map.find f env.decisions)
+           with Not_found -> assert false);
       let env = assume env [ fg ] in
       let env =
         if is_decision || not (Util.Options.get_instantiate_after_backjump ())
@@ -1550,8 +1550,8 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
       else
         match propagate_unit_facts_in_cache env with
         | Some (propag, new_delta_rev) ->
-            let env = { env with delta = List.rev new_delta_rev } in
-            back_tracking (assume env propag)
+          let env = { env with delta = List.rev new_delta_rev } in
+          back_tracking (assume env propag)
         | None -> (
             try make_one_decision env
             with No_suitable_decision ->
@@ -1561,12 +1561,12 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
 
   and make_one_decision env =
     try
-      let (({ Structs.Expr.ff = f; _ } as a), b, d, _is_impl), l =
+      let (({ Ast.Expr.ff = f; _ } as a), b, d, _is_impl), l =
         Heuristics.choose env.delta !(env.heuristics) !(env.cdcl)
       in
       let new_level = env.dlevel + 1 in
       if Util.Options.get_profiling () then
-        Structs.Profiling.decision new_level a.Structs.Expr.origin_name;
+        Ast.Profiling.decision new_level a.Ast.Expr.origin_name;
       (*fprintf fmt "@.BEFORE DECIDING %a@." E.print f;*)
       assert (cdcl_same_decisions env);
       let env_a =
@@ -1575,66 +1575,66 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
           delta = l;
           dlevel = new_level;
           plevel = 0;
-          decisions = Structs.Expr.Map.add f new_level env.decisions;
+          decisions = Ast.Expr.Map.add f new_level env.decisions;
         }
       in
       if Util.Options.get_tableaux_cdcl () then (
         assert (not (is_fact_in_CDCL !(env.cdcl) f));
-        assert (not (is_fact_in_CDCL !(env.cdcl) (Structs.Expr.neg f))));
+        assert (not (is_fact_in_CDCL !(env.cdcl) (Ast.Expr.neg f))));
       Debug.decide f env_a;
       let dep =
-        unsat_rec env_a (a, Structs.Ex.singleton (Structs.Ex.Bj f)) true
+        unsat_rec env_a (a, Ast.Ex.singleton (Ast.Ex.Bj f)) true
       in
       if Util.Options.get_tableaux_cdcl () then
         cdcl_forget_decision env f new_level;
       Debug.unsat_rec dep;
       try
         let dep' =
-          try Structs.Ex.remove (Structs.Ex.Bj f) dep
+          try Ast.Ex.remove (Ast.Ex.Bj f) dep
           with Not_found when Util.Options.get_no_backjumping () -> dep
         in
         Debug.backtracking f env;
         Util.Options.tool_req 2 "TR-Sat-Decide";
         if Util.Options.get_profiling () then (
-          Structs.Profiling.reset_dlevel env.dlevel;
-          Structs.Profiling.reset_ilevel env.ilevel);
-        let not_a = { a with Structs.Expr.ff = Structs.Expr.neg f } in
+          Ast.Profiling.reset_dlevel env.dlevel;
+          Ast.Profiling.reset_ilevel env.ilevel);
+        let not_a = { a with Ast.Expr.ff = Ast.Expr.neg f } in
         if get_sat_learning () then learn_clause env not_a dep';
         let env = { env with delta = l } in
         (* in the section below, we try to backjump further with latest
            generated instances if any *)
         (match update_instances_cache None with
-        | None -> assert false
-        | Some [] -> ()
-        | Some l ->
-            (* backtrack further if Unsat is raised by the assume below *)
-            ignore (assume env l);
-            (*No backtrack, reset cache*)
-            ignore (update_instances_cache (Some [])));
+         | None -> assert false
+         | Some [] -> ()
+         | Some l ->
+           (* backtrack further if Unsat is raised by the assume below *)
+           ignore (assume env l);
+           (*No backtrack, reset cache*)
+           ignore (update_instances_cache (Some [])));
         assert (cdcl_same_decisions env);
         if Util.Options.get_tableaux_cdcl () then
-          cdcl_learn_clause false env dep' (Structs.Expr.neg f);
+          cdcl_learn_clause false env dep' (Ast.Expr.neg f);
         print_decisions_in_the_sats "make_one_decision:backtrack" env;
         assert (cdcl_same_decisions env);
         if not (Util.Options.get_tableaux_cdcl ()) then
           unsat_rec
-            (assume env [ (b, Structs.Ex.union d dep') ])
+            (assume env [ (b, Ast.Ex.union d dep') ])
             (not_a, dep') false
         else
-          match CDCL.is_true !(env.cdcl) a.Structs.Expr.ff with
+          match CDCL.is_true !(env.cdcl) a.Ast.Expr.ff with
           | Some (ex, _lvl) ->
-              (* it is a propagation in satML *)
-              if get_verbose () then
-                Util.Printer.print_dbg "Better backjump thanks to satML";
-              let ex = Lazy.force ex in
-              assert (not (Structs.Ex.mem (Structs.Ex.Bj f) ex));
-              Structs.Ex.union dep' ex
+            (* it is a propagation in satML *)
+            if get_verbose () then
+              Util.Printer.print_dbg "Better backjump thanks to satML";
+            let ex = Lazy.force ex in
+            assert (not (Ast.Ex.mem (Ast.Ex.Bj f) ex));
+            Ast.Ex.union dep' ex
           | None ->
-              unsat_rec
-                (assume env [ (b, Structs.Ex.union d dep') ])
-                (not_a, dep') false
+            unsat_rec
+              (assume env [ (b, Ast.Ex.union d dep') ])
+              (not_a, dep') false
       with Not_found ->
-        Debug.backjumping (Structs.Expr.neg f) env;
+        Debug.backjumping (Ast.Expr.neg f) env;
         Util.Options.tool_req 2 "TR-Sat-Backjumping";
         dep
     with Propagate (ff, ex) ->
@@ -1642,8 +1642,8 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
       back_tracking (assume env [ (ff, ex) ])
 
   let max_term_depth_in_sat env =
-    let aux mx f = max mx (Structs.Expr.depth f) in
-    Structs.Expr.Map.fold (fun f _ mx -> aux mx f) env.gamma 0
+    let aux mx f = max mx (Ast.Expr.depth f) in
+    Ast.Expr.Map.fold (fun f _ mx -> aux mx f) env.gamma 0
 
   let rec backward_instantiation_rec env rnd max_rnd =
     Debug.print_nb_related env;
@@ -1708,22 +1708,22 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
       Util.Options.set_max_split max_split;
 
       let l =
-        Structs.Expr.Map.fold
+        Ast.Expr.Map.fold
           (fun _ (ff, ex, _dlvl, plvl) acc ->
-            if ff.Structs.Expr.gdist >= 0 then (ff, ex, plvl) :: acc else acc)
+             if ff.Ast.Expr.gdist >= 0 then (ff, ex, plvl) :: acc else acc)
           modified_env.gamma []
       in
       let l =
         List.fast_sort
           (fun (ff1, _, plvl1) (ff2, _, plvl2) ->
-            let c = ff2.Structs.Expr.gdist - ff1.Structs.Expr.gdist in
-            if c <> 0 then c else plvl2 - plvl1)
+             let c = ff2.Ast.Expr.gdist - ff1.Ast.Expr.gdist in
+             if c <> 0 then c else plvl2 - plvl1)
           l
       in
       let l = List.rev_map (fun (ff, ex, _) -> (ff, ex)) l in
       let print fmt (ff, _ex) =
-        fprintf fmt "%2d : %a@," ff.Structs.Expr.gdist Structs.Expr.print
-          ff.Structs.Expr.ff
+        fprintf fmt "%2d : %a@," ff.Ast.Expr.gdist Ast.Expr.print
+          ff.Ast.Expr.ff
       in
       if get_verbose () || get_debug_sat () then
         Util.Printer.print_dbg ~module_name:"Fun_sat"
@@ -1745,76 +1745,76 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
 
   let push env to_push =
     if Util.Options.get_tableaux_cdcl () then
-      Structs.Errors.run_error
-        (Structs.Errors.Unsupported_feature
+      Ast.Errors.run_error
+        (Ast.Errors.Unsupported_feature
            "Incremental commands are not implemented in Tableaux(CDCL) solver \
             ! Please use the Tableaux or CDLC SAT solvers instead");
     Util.Util.loop
       ~f:(fun _n () acc ->
-        let new_guard = Structs.Expr.fresh_name Structs.Ty.Tbool in
-        save_guard_and_refs acc new_guard;
-        let guards =
-          Structs.Expr.Map.add new_guard
-            (mk_gf new_guard "" true true, Structs.Ex.empty)
-            acc.guards.guards
-        in
-        {
-          acc with
-          guards = { acc.guards with current_guard = new_guard; guards };
-        })
+          let new_guard = Ast.Expr.fresh_name Ast.Ty.Tbool in
+          save_guard_and_refs acc new_guard;
+          let guards =
+            Ast.Expr.Map.add new_guard
+              (mk_gf new_guard "" true true, Ast.Ex.empty)
+              acc.guards.guards
+          in
+          {
+            acc with
+            guards = { acc.guards with current_guard = new_guard; guards };
+          })
       ~max:to_push ~elt:() ~init:env
 
   let pop env to_pop =
     if Util.Options.get_tableaux_cdcl () then
-      Structs.Errors.run_error
-        (Structs.Errors.Unsupported_feature
+      Ast.Errors.run_error
+        (Ast.Errors.Unsupported_feature
            "Incremental commands are not implemented in Tableaux(CDCL) solver \
             ! Please use the Tableaux or CDLC SAT solvers instead");
     Util.Util.loop
       ~f:(fun _n () acc ->
-        let acc, guard_to_neg = restore_guards_and_refs acc in
-        let inst = Inst.pop ~guard:guard_to_neg env.inst in
-        assert (not (Stack.is_empty acc.guards.stack_elt));
-        let new_current_guard, _ = Stack.top acc.guards.stack_elt in
-        let guards =
-          Structs.Expr.Map.add guard_to_neg
-            ( mk_gf (Structs.Expr.neg guard_to_neg) "" true true,
-              Structs.Ex.empty )
-            acc.guards.guards
-        in
-        acc.model_gen_mode := false;
-        all_models_sat_env := None;
-        latest_saved_env := None;
-        terminated_normally := false;
-        {
-          acc with
-          inst;
-          guards = { acc.guards with current_guard = new_current_guard; guards };
-        })
+          let acc, guard_to_neg = restore_guards_and_refs acc in
+          let inst = Inst.pop ~guard:guard_to_neg env.inst in
+          assert (not (Stack.is_empty acc.guards.stack_elt));
+          let new_current_guard, _ = Stack.top acc.guards.stack_elt in
+          let guards =
+            Ast.Expr.Map.add guard_to_neg
+              ( mk_gf (Ast.Expr.neg guard_to_neg) "" true true,
+                Ast.Ex.empty )
+              acc.guards.guards
+          in
+          acc.model_gen_mode := false;
+          all_models_sat_env := None;
+          latest_saved_env := None;
+          terminated_normally := false;
+          {
+            acc with
+            inst;
+            guards = { acc.guards with current_guard = new_current_guard; guards };
+          })
       ~max:to_pop ~elt:() ~init:env
 
   let unsat env gf =
     Debug.is_it_unsat gf;
     try
       let guards_to_assume =
-        Structs.Expr.Map.fold
+        Ast.Expr.Map.fold
           (fun _g gf_guard_with_ex acc -> gf_guard_with_ex :: acc)
           env.guards.guards []
       in
 
       if Util.Options.get_tableaux_cdcl () then (
         cdcl_assume false env guards_to_assume;
-        cdcl_assume false env [ (gf, Structs.Ex.empty) ]);
+        cdcl_assume false env [ (gf, Ast.Ex.empty) ]);
 
       let env = assume env guards_to_assume in
-      let env = assume env [ (gf, Structs.Ex.empty) ] in
+      let env = assume env [ (gf, Ast.Ex.empty) ] in
       let env =
         {
           env with
           inst =
             (* add all the terms of the goal to matching env *)
             Inst.add_terms env.inst
-              (Structs.Expr.max_ground_terms_rec_of_form gf.Structs.Expr.ff)
+              (Ast.Expr.max_ground_terms_rec_of_form gf.Ast.Expr.ff)
               gf;
         }
       in
@@ -1853,33 +1853,33 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
         inst_lemmas mconf env env.inst env.tbox (selector env) env.ilevel
       in
       if Util.Options.get_tableaux_cdcl () then cdcl_assume false env gd;
-      if Util.Options.get_profiling () then Structs.Profiling.instances gd;
+      if Util.Options.get_profiling () then Ast.Profiling.instances gd;
       let env = assume env gd in
 
       let env, _ = syntactic_th_inst env env.inst ~rm_clauses:true in
       let env, _ = semantic_th_inst env env.inst ~rm_clauses:true ~loop:4 in
 
       let d = back_tracking env in
-      assert (Structs.Ex.has_no_bj d);
+      assert (Ast.Ex.has_no_bj d);
       get_all_models_answer ();
       terminated_normally := true;
       d
     with
     | IUnsat (dep, classes) ->
-        Debug.bottom classes;
-        Debug.unsat ();
-        get_all_models_answer ();
-        terminated_normally := true;
-        assert (Structs.Ex.has_no_bj dep);
-        dep
+      Debug.bottom classes;
+      Debug.unsat ();
+      get_all_models_answer ();
+      terminated_normally := true;
+      assert (Ast.Ex.has_no_bj dep);
+      dep
     | Util.Util.Timeout when switch_to_model_gen env ->
-        do_switch_to_model_gen env
+      do_switch_to_model_gen env
 
   let add_guard env gf =
     let current_guard = env.guards.current_guard in
     {
       gf with
-      Structs.Expr.ff = Structs.Expr.mk_imp current_guard gf.Structs.Expr.ff 1;
+      Ast.Expr.ff = Ast.Expr.mk_imp current_guard gf.Ast.Expr.ff 1;
     }
 
   let assume env fg dep =
@@ -1889,11 +1889,11 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
       assume env [ (add_guard env fg, dep) ]
     with
     | IUnsat (d, classes) ->
-        terminated_normally := true;
-        Debug.bottom classes;
-        raise (Unsat d)
+      terminated_normally := true;
+      Debug.bottom classes;
+      raise (Unsat d)
     | Util.Util.Timeout when switch_to_model_gen env ->
-        do_switch_to_model_gen env
+      do_switch_to_model_gen env
 
   let pred_def env f name dep _loc =
     Debug.pred_def f;
@@ -1927,44 +1927,44 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
 
   let empty_guards () =
     {
-      current_guard = Structs.Expr.vrai;
+      current_guard = Ast.Expr.vrai;
       stack_elt = Stack.create ();
-      guards = Structs.Expr.Map.empty;
+      guards = Ast.Expr.Map.empty;
     }
 
   let init_guards () =
     let guards = empty_guards () in
     Stack.push
-      (Structs.Expr.vrai, { unit_facts = Structs.Expr.Map.empty })
+      (Ast.Expr.vrai, { unit_facts = Ast.Expr.Map.empty })
       guards.stack_elt;
     guards
 
   let empty () =
     (* initialize some structures in SAT.empty. Otherwise, E.faux is never
-       added as it is replaced with (not Structs.Expr.vrai) *)
+       added as it is replaced with (not Ast.Expr.vrai) *)
     reset_refs ();
-    let gf_true = mk_gf Structs.Expr.vrai "" true true in
+    let gf_true = mk_gf Ast.Expr.vrai "" true true in
     let inst = Inst.empty in
     let tbox = Th.empty () in
     let inst =
-      Inst.add_terms inst (Structs.Expr.Set.singleton Structs.Expr.vrai) gf_true
+      Inst.add_terms inst (Ast.Expr.Set.singleton Ast.Expr.vrai) gf_true
     in
     let inst =
-      Inst.add_terms inst (Structs.Expr.Set.singleton Structs.Expr.faux) gf_true
+      Inst.add_terms inst (Ast.Expr.Set.singleton Ast.Expr.faux) gf_true
     in
-    let tbox = Th.add_term tbox Structs.Expr.vrai ~add_in_cs:true in
-    let tbox = Th.add_term tbox Structs.Expr.faux ~add_in_cs:true in
+    let tbox = Th.add_term tbox Ast.Expr.vrai ~add_in_cs:true in
+    let tbox = Th.add_term tbox Ast.Expr.faux ~add_in_cs:true in
     let env =
       {
-        gamma = Structs.Expr.Map.empty;
+        gamma = Ast.Expr.Map.empty;
         nb_related_to_goal = 0;
         nb_related_to_hypo = 0;
         nb_related_to_both = 0;
         nb_unrelated = 0;
         cdcl = ref (CDCL.empty ());
-        tcp_cache = Structs.Expr.Map.empty;
+        tcp_cache = Ast.Expr.Map.empty;
         delta = [];
-        decisions = Structs.Expr.Map.empty;
+        decisions = Ast.Expr.Map.empty;
         dlevel = 0;
         plevel = 0;
         ilevel = 0;
@@ -1973,12 +1973,12 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
         inst;
         heuristics = ref (Heuristics.empty ());
         model_gen_mode = ref false;
-        unit_facts_cache = ref Structs.Expr.Map.empty;
+        unit_facts_cache = ref Ast.Expr.Map.empty;
         guards = init_guards ();
         add_inst = (fun _ -> true);
       }
     in
-    assume env gf_true Structs.Ex.empty
+    assume env gf_true Ast.Ex.empty
   (*maybe usefull when -no-theory is on*)
 
   let empty_with_inst add_inst = { (empty ()) with add_inst }

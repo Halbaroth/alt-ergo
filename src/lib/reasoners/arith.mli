@@ -27,17 +27,17 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 
 val calc_power :
-  Util.Numbers.Q.t -> Util.Numbers.Q.t -> Structs.Ty.t -> Util.Numbers.Q.t
+  Util.Numbers.Q.t -> Util.Numbers.Q.t -> Ast.Ty.t -> Util.Numbers.Q.t
 (** [calc_power x y t] Compute x^y. Raise Exit if y is not an Int
     (castable in Int). *)
 
 val calc_power_opt :
   Util.Numbers.Q.t ->
   Util.Numbers.Q.t ->
-  Structs.Ty.t ->
+  Ast.Ty.t ->
   Util.Numbers.Q.t option
 (** Same as calc_power but return an option.
     Return None if the exception Exit is raised by calc_power *)

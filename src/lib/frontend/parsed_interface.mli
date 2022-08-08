@@ -10,14 +10,14 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
-open Structs.Parsed
+module Ast = Alt_ergo_lib_ast
+open Ast.Parsed
 
 (** Declaration of types  **)
 
 val mk_abstract_type_decl :
   (Util.Loc.t -> string list -> string -> decl
-  [@ocaml.ppwarning "TODO: add documentation for every function in this file"])
+   [@ocaml.ppwarning "TODO: add documentation for every function in this file"])
 
 val mk_enum_type_decl :
   Util.Loc.t -> string list -> string -> string list -> decl
@@ -43,7 +43,7 @@ val mk_rec_type_decl : type_decl list -> decl
 
 val mk_logic :
   Util.Loc.t ->
-  Structs.Sy.name_kind ->
+  Ast.Sy.name_kind ->
   (string * string) list ->
   plogic_type ->
   decl

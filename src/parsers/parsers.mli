@@ -26,20 +26,20 @@
 (*                                                                            *)
 (******************************************************************************)
 
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 
 (** The interface that should be provided by every lexer/parser of an
     input language *)
 module type PARSER_INTERFACE = sig
-  val file : Lexing.lexbuf -> Structs.Parsed.file
-  val expr : Lexing.lexbuf -> Structs.Parsed.lexpr
-  val trigger : Lexing.lexbuf -> Structs.Parsed.lexpr list * bool
+  val file : Lexing.lexbuf -> Ast.Parsed.file
+  val expr : Lexing.lexbuf -> Ast.Parsed.lexpr
+  val trigger : Lexing.lexbuf -> Ast.Parsed.lexpr list * bool
 end
 
 val register_parser : lang:string -> (module PARSER_INTERFACE) -> unit
 (** Registers a new 'parser' for the given extension/language *)
 
-val parse_file : ?lang:string -> Lexing.lexbuf -> Structs.Parsed.file
+val parse_file : ?lang:string -> Lexing.lexbuf -> Ast.Parsed.file
 (** Parses the given file (lexbuf) using the appropriate 'parser'
     depending on the given language (set from extension) or
     the format set with the --input option.
@@ -48,28 +48,28 @@ val parse_file : ?lang:string -> Lexing.lexbuf -> Structs.Parsed.file
     results will be printed according this input format.
     @raise Errors.Parser_error *)
 
-val parse_expr : ?lang:string -> Lexing.lexbuf -> Structs.Parsed.lexpr
+val parse_expr : ?lang:string -> Lexing.lexbuf -> Ast.Parsed.lexpr
 (** Parses the given expression (lexbuf) using the appropriate 'parser'
     depending on the given language. If no language is given, the
     default one is used.
     @raise Errors.Parser_error *)
 
 val parse_trigger :
-  ?lang:string -> Lexing.lexbuf -> Structs.Parsed.lexpr list * bool
+  ?lang:string -> Lexing.lexbuf -> Ast.Parsed.lexpr list * bool
 (** Parses the given trigger (lexbuf) using the appropriate 'parser'
     depending on the given language. If no language is given, the
     default one is used.
     @raise Errors.Parser_error *)
 
 val parse_problem :
-  filename:string -> preludes:string list -> Structs.Parsed.file
+  filename:string -> preludes:string list -> Ast.Parsed.file
 (** Parses the given input file and eventual preludes. Parsers are
     chosen depending on the extension of different files.
     @raise Errors.Error
     @raise Parsing.Parse_Error *)
 
 val parse_problem_as_string :
-  content:string -> format:string option -> Structs.Parsed.file
+  content:string -> format:string option -> Ast.Parsed.file
 (** Parses the given input file as a string.
     Parser is chosen depending on the given format or the input_format set.
     @raise Errors.Error

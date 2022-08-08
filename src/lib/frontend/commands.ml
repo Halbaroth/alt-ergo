@@ -27,17 +27,17 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
-open Structs.Typed
+module Ast = Alt_ergo_lib_ast
+open Ast.Typed
 
 (* Sat entry *)
 
 type sat_decl_aux =
-  | Assume of string * Structs.Expr.t * bool
-  | PredDef of Structs.Expr.t * string (*name of the predicate*)
-  | RwtDef of Structs.Expr.t rwt_rule list
-  | Query of string * Structs.Expr.t * goal_sort
-  | ThAssume of Structs.Expr.th_elt
+  | Assume of string * Ast.Expr.t * bool
+  | PredDef of Ast.Expr.t * string (*name of the predicate*)
+  | RwtDef of Ast.Expr.t rwt_rule list
+  | Query of string * Ast.Expr.t * goal_sort
+  | ThAssume of Ast.Expr.th_elt
   | Push of int
   | Pop of int
 
@@ -45,19 +45,19 @@ type sat_tdecl = { st_loc : Util.Loc.t; st_decl : sat_decl_aux }
 
 let print_aux fmt = function
   | Assume (name, e, b) ->
-      Format.fprintf fmt "assume %s(%b): @[<hov>%a@]" name b Structs.Expr.print
-        e
+    Format.fprintf fmt "assume %s(%b): @[<hov>%a@]" name b Ast.Expr.print
+      e
   | PredDef (e, name) ->
-      Format.fprintf fmt "pred-def %s: @[<hov>%a@]" name Structs.Expr.print e
+    Format.fprintf fmt "pred-def %s: @[<hov>%a@]" name Ast.Expr.print e
   | RwtDef l ->
-      Format.fprintf fmt "rwrts: @[<v>%a@]"
-        (Util.Util.print_list_pp ~sep:Format.pp_print_space
-           ~pp:(print_rwt Structs.Expr.print))
-        l
+    Format.fprintf fmt "rwrts: @[<v>%a@]"
+      (Util.Util.print_list_pp ~sep:Format.pp_print_space
+         ~pp:(print_rwt Ast.Expr.print))
+      l
   | Query (name, e, sort) ->
-      Format.fprintf fmt "query %s(%a): @[<hov>%a@]" name print_goal_sort sort
-        Structs.Expr.print e
-  | ThAssume t -> Format.fprintf fmt "th assume %a" Structs.Expr.print_th_elt t
+    Format.fprintf fmt "query %s(%a): @[<hov>%a@]" name print_goal_sort sort
+      Ast.Expr.print e
+  | ThAssume t -> Format.fprintf fmt "th assume %a" Ast.Expr.print_th_elt t
   | Push n -> Format.fprintf fmt "Push %d" n
   | Pop n -> Format.fprintf fmt "Pop %d" n
 

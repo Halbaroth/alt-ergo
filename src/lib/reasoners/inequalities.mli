@@ -27,7 +27,7 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 
 module type S = sig
   module P : Polynome.T with type r = Shostak.Combine.r
@@ -37,7 +37,7 @@ module type S = sig
     ple0 : P.t;
     is_le : bool;
     dep : (Util.Numbers.Q.t * P.t * bool) Util.Util.MI.t;
-    expl : Structs.Ex.t;
+    expl : Ast.Ex.t;
     age : Util.Numbers.Z.t;
   }
 
@@ -58,7 +58,7 @@ module type S = sig
   val incr_age : unit -> unit
 
   val create_ineq :
-    P.t -> P.t -> bool -> Structs.Expr.t option -> Structs.Ex.t -> t
+    P.t -> P.t -> bool -> Ast.Expr.t option -> Ast.Ex.t -> t
 
   val print_inequation : Format.formatter -> t -> unit
 

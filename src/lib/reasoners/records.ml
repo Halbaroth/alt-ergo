@@ -27,15 +27,15 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 open Format
 open Util.Options
 open Sig
 
 type 'a abstract =
-  | Record of (Util.Hstring.t * 'a abstract) list * Structs.Ty.t
-  | Access of Util.Hstring.t * 'a abstract * Structs.Ty.t
-  | Other of 'a * Structs.Ty.t
+  | Record of (Util.Hstring.t * 'a abstract) list * Ast.Ty.t
+  | Access of Util.Hstring.t * 'a abstract * Ast.Ty.t
+  | Other of 'a * Ast.Ty.t
 
 module type ALIEN = sig
   include Sig.X
@@ -46,10 +46,10 @@ end
 
 module Shostak (X : ALIEN) = struct
   module XS = Set.Make (struct
-    type t = X.r
+      type t = X.r
 
-    let compare = X.hash_cmp
-  end)
+      let compare = X.hash_cmp
+    end)
 
   let name = "records"
 
@@ -60,17 +60,17 @@ module Shostak (X : ALIEN) = struct
   module Debug = struct
     let rec print fmt = function
       | Record (lbs, _) ->
-          fprintf fmt "{";
-          let _ =
-            List.fold_left
-              (fun first (lb, e) ->
-                fprintf fmt "%s%s = %a"
-                  (if first then "" else "; ")
-                  (Util.Hstring.view lb) print e;
-                false)
-              true lbs
-          in
-          fprintf fmt "}"
+        fprintf fmt "{";
+        let _ =
+          List.fold_left
+            (fun first (lb, e) ->
+               fprintf fmt "%s%s = %a"
+                 (if first then "" else "; ")
+                 (Util.Hstring.view lb) print e;
+               false)
+            true lbs
+        in
+        fprintf fmt "}"
       | Access (a, e, _) -> fprintf fmt "%a.%s" print e (Util.Hstring.view a)
       | Other (t, _) -> X.print fmt t
   end
@@ -81,21 +81,21 @@ module Shostak (X : ALIEN) = struct
   let rec raw_compare r1 r2 =
     match (r1, r2) with
     | Other (u1, ty1), Other (u2, ty2) ->
-        let c = Structs.Ty.compare ty1 ty2 in
-        if c <> 0 then c else X.str_cmp u1 u2
+      let c = Ast.Ty.compare ty1 ty2 in
+      if c <> 0 then c else X.str_cmp u1 u2
     | Other _, _ -> -1
     | _, Other _ -> 1
     | Access (s1, u1, ty1), Access (s2, u2, ty2) ->
-        let c = Structs.Ty.compare ty1 ty2 in
-        if c <> 0 then c
-        else
-          let c = Util.Hstring.compare s1 s2 in
-          if c <> 0 then c else raw_compare u1 u2
+      let c = Ast.Ty.compare ty1 ty2 in
+      if c <> 0 then c
+      else
+        let c = Util.Hstring.compare s1 s2 in
+        if c <> 0 then c else raw_compare u1 u2
     | Access _, _ -> -1
     | _, Access _ -> 1
     | Record (lbs1, ty1), Record (lbs2, ty2) ->
-        let c = Structs.Ty.compare ty1 ty2 in
-        if c <> 0 then c else raw_compare_list lbs1 lbs2
+      let c = Ast.Ty.compare ty1 ty2 in
+      if c <> 0 then c else raw_compare_list lbs1 lbs2
 
   and raw_compare_list l1 l2 =
     match (l1, l2) with
@@ -103,8 +103,8 @@ module Shostak (X : ALIEN) = struct
     | [], _ -> 1
     | _, [] -> -1
     | (_, x1) :: l1, (_, x2) :: l2 ->
-        let c = raw_compare x1 x2 in
-        if c <> 0 then c else raw_compare_list l1 l2
+      let c = raw_compare x1 x2 in
+      if c <> 0 then c else raw_compare_list l1 l2
 
   let rec normalize v =
     match v with
@@ -112,15 +112,15 @@ module Shostak (X : ALIEN) = struct
         let lbs_n = List.map (fun (lb, x) -> (lb, normalize x)) lbs in
         match lbs_n with
         | (lb1, Access (lb2, x, _)) :: l when Util.Hstring.equal lb1 lb2 ->
-            if
-              List.for_all
-                (function
-                  | lb1, Access (lb2, y, _) ->
-                      Util.Hstring.equal lb1 lb2 && raw_compare x y = 0
-                  | _ -> false)
-                l
-            then x
-            else Record (lbs_n, ty)
+          if
+            List.for_all
+              (function
+                | lb1, Access (lb2, y, _) ->
+                  Util.Hstring.equal lb1 lb2 && raw_compare x y = 0
+                | _ -> false)
+              l
+          then x
+          else Record (lbs_n, ty)
         | _ -> Record (lbs_n, ty))
     | Access (a, x, ty) -> (
         match normalize x with
@@ -137,11 +137,11 @@ module Shostak (X : ALIEN) = struct
   let rec equal r1 r2 =
     match (r1, r2) with
     | Other (u1, ty1), Other (u2, ty2) ->
-        Structs.Ty.equal ty1 ty2 && X.equal u1 u2
+      Ast.Ty.equal ty1 ty2 && X.equal u1 u2
     | Access (s1, u1, ty1), Access (s2, u2, ty2) ->
-        Util.Hstring.equal s1 s2 && Structs.Ty.equal ty1 ty2 && equal u1 u2
+      Util.Hstring.equal s1 s2 && Ast.Ty.equal ty1 ty2 && equal u1 u2
     | Record (lbs1, ty1), Record (lbs2, ty2) ->
-        Structs.Ty.equal ty1 ty2 && equal_list lbs1 lbs2
+      Ast.Ty.equal ty1 ty2 && equal_list lbs1 lbs2
     | Other _, _ | _, Other _ | Access _, _ | _, Access _ -> false
 
   and equal_list l1 l2 =
@@ -155,38 +155,38 @@ module Shostak (X : ALIEN) = struct
 
   let make t =
     let rec make_rec t ctx =
-      let { Structs.Expr.f; xs; ty; _ } =
-        match Structs.Expr.term_view t with
-        | Structs.Expr.Not_a_term _ -> assert false
-        | Structs.Expr.Term tt -> tt
+      let { Ast.Expr.f; xs; ty; _ } =
+        match Ast.Expr.term_view t with
+        | Ast.Expr.Not_a_term _ -> assert false
+        | Ast.Expr.Term tt -> tt
       in
       match (f, ty) with
-      | ( Structs.Sy.Op Structs.Sy.Record,
-          Structs.Ty.Trecord { Structs.Ty.lbs; _ } ) ->
-          assert (List.length xs = List.length lbs);
-          let l, ctx =
-            List.fold_right2
-              (fun x (lb, _) (l, ctx) ->
-                let r, ctx = make_rec x ctx in
-                let tyr = type_info r in
-                let dlb =
-                  Structs.Expr.mk_term (Structs.Sy.Op (Structs.Sy.Access lb))
-                    [ t ] tyr
-                in
-                let c = Structs.Expr.mk_eq ~iff:false dlb x in
-                ((lb, r) :: l, c :: ctx))
-              xs lbs ([], ctx)
-          in
-          (Record (l, ty), ctx)
-      | Structs.Sy.Op (Structs.Sy.Access a), _ -> (
+      | ( Ast.Sy.Op Ast.Sy.Record,
+          Ast.Ty.Trecord { Ast.Ty.lbs; _ } ) ->
+        assert (List.length xs = List.length lbs);
+        let l, ctx =
+          List.fold_right2
+            (fun x (lb, _) (l, ctx) ->
+               let r, ctx = make_rec x ctx in
+               let tyr = type_info r in
+               let dlb =
+                 Ast.Expr.mk_term (Ast.Sy.Op (Ast.Sy.Access lb))
+                   [ t ] tyr
+               in
+               let c = Ast.Expr.mk_eq ~iff:false dlb x in
+               ((lb, r) :: l, c :: ctx))
+            xs lbs ([], ctx)
+        in
+        (Record (l, ty), ctx)
+      | Ast.Sy.Op (Ast.Sy.Access a), _ -> (
           match xs with
           | [ x ] ->
-              let r, ctx = make_rec x ctx in
-              (Access (a, r, ty), ctx)
+            let r, ctx = make_rec x ctx in
+            (Access (a, r, ty), ctx)
           | _ -> assert false)
       | _, _ ->
-          let r, ctx' = X.make t in
-          (Other (r, ty), ctx' @ ctx)
+        let r, ctx' = X.make t in
+        (Other (r, ty), ctx' @ ctx)
     in
     let r, ctx = make_rec t [] in
     let is_m = is_mine r in
@@ -203,7 +203,7 @@ module Shostak (X : ALIEN) = struct
     let rec leaves t =
       match normalize t with
       | Record (lbs, _) ->
-          List.fold_left (fun s (_, x) -> XS.union (leaves x) s) XS.empty lbs
+        List.fold_left (fun s (_, x) -> XS.union (leaves x) s) XS.empty lbs
       | Access (_, x, _) -> leaves x
       | Other (x, _) -> xs_of_list (X.leaves x)
     in
@@ -211,26 +211,26 @@ module Shostak (X : ALIEN) = struct
 
   let rec hash = function
     | Record (lbs, ty) ->
-        List.fold_left
-          (fun h (lb, x) -> (17 * hash x) + (13 * Util.Hstring.hash lb) + h)
-          (Structs.Ty.hash ty) lbs
+      List.fold_left
+        (fun h (lb, x) -> (17 * hash x) + (13 * Util.Hstring.hash lb) + h)
+        (Ast.Ty.hash ty) lbs
     | Access (a, x, ty) ->
-        (19 * hash x) + (17 * Util.Hstring.hash a) + Structs.Ty.hash ty
-    | Other (x, ty) -> Structs.Ty.hash ty + (23 * X.hash x)
+      (19 * hash x) + (17 * Util.Hstring.hash a) + Ast.Ty.hash ty
+    | Other (x, ty) -> Ast.Ty.hash ty + (23 * X.hash x)
 
   let rec subst_rec p v r =
     match r with
     | Other (t, _) -> embed (if X.equal p t then v else X.subst p v t)
     | Access (a, t, ty) -> Access (a, subst_rec p v t, ty)
     | Record (lbs, ty) ->
-        let lbs = List.map (fun (lb, t) -> (lb, subst_rec p v t)) lbs in
-        Record (lbs, ty)
+      let lbs = List.map (fun (lb, t) -> (lb, subst_rec p v t)) lbs in
+      Record (lbs, ty)
 
   let subst p v r = is_mine (subst_rec p v r)
 
   let is_mine_symb_aux sy =
     match sy with
-    | Structs.Sy.Op (Structs.Sy.Record | Structs.Sy.Access _) -> true
+    | Ast.Sy.Op (Ast.Sy.Record | Ast.Sy.Access _) -> true
     | _ -> false
 
   let is_mine_symb sy _ty = is_mine_symb_aux sy
@@ -240,18 +240,18 @@ module Shostak (X : ALIEN) = struct
     let abs_right_xe, acc =
       try (List.assoc xe acc, acc)
       with Not_found -> (
-        let left_abs_xe2, acc = X.abstract_selectors xe acc in
-        match X.type_info left_abs_xe2 with
-        | Structs.Ty.Trecord { Structs.Ty.lbs; _ } as tyr ->
+          let left_abs_xe2, acc = X.abstract_selectors xe acc in
+          match X.type_info left_abs_xe2 with
+          | Ast.Ty.Trecord { Ast.Ty.lbs; _ } as tyr ->
             let flds =
               List.map
                 (fun (lb, ty) ->
-                  (lb, embed (X.term_embed (Structs.Expr.fresh_name ty))))
+                   (lb, embed (X.term_embed (Ast.Expr.fresh_name ty))))
                 lbs
             in
             let record = is_mine (Record (flds, tyr)) in
             (record, (left_abs_xe2, record) :: acc)
-        | _ -> assert false)
+          | _ -> assert false)
     in
     let abs_access = normalize (Access (field, embed abs_right_xe, ty)) in
     (is_mine abs_access, acc)
@@ -262,15 +262,15 @@ module Shostak (X : ALIEN) = struct
     | Other _ -> assert false
     (* This is not a selector *)
     | Record (fields, ty) ->
-        let flds, acc =
-          (List.fold_left
-             (fun (flds, acc) (lbl, e) ->
-               let e, acc = X.abstract_selectors (is_mine e) acc in
-               ((lbl, embed e) :: flds, acc))
-             ([], acc) fields
-           [@ocaml.ppwarning "TODO: should not rebuild if not changed !"])
-        in
-        (is_mine (Record (List.rev flds, ty)), acc)
+      let flds, acc =
+        (List.fold_left
+           (fun (flds, acc) (lbl, e) ->
+              let e, acc = X.abstract_selectors (is_mine e) acc in
+              ((lbl, embed e) :: flds, acc))
+           ([], acc) fields
+         [@ocaml.ppwarning "TODO: should not rebuild if not changed !"])
+      in
+      (is_mine (Record (List.rev flds, ty)), acc)
     (* Selector ! Interesting case !*)
     | Access (field, e, ty) -> abstract_access field e ty acc
 
@@ -279,13 +279,13 @@ module Shostak (X : ALIEN) = struct
   (* unused --
      let mk_fresh_record x info =
      let ty = type_info x in
-     let lbs = match ty with Structs.Ty.Trecord r -> r.Structs.Ty.lbs | _ -> assert false in
+     let lbs = match ty with Ast.Ty.Trecord r -> r.Ast.Ty.lbs | _ -> assert false in
      let lbs =
       List.map
         (fun (lb, ty) ->
            match info with
            | Some (a, v) when Util.Hstring.equal lb a -> lb, v
-           | _ -> let n = embed (X.term_embed (Structs.Expr.fresh_name ty)) in lb, n)
+           | _ -> let n = embed (X.term_embed (Ast.Expr.fresh_name ty)) in lb, n)
         lbs
      in
      Record (lbs, ty), lbs
@@ -321,23 +321,23 @@ module Shostak (X : ALIEN) = struct
               let lbs =
                 List.map
                   (fun (_, r) ->
-                    match term_extract (is_mine r) with
-                    | None, _ -> raise Not_found
-                    | Some t, _ -> t)
+                     match term_extract (is_mine r) with
+                     | None, _ -> raise Not_found
+                     | Some t, _ -> t)
                   lbs
               in
               ( Some
-                  (Structs.Expr.mk_term (Structs.Sy.Op Structs.Sy.Record) lbs ty),
+                  (Ast.Expr.mk_term (Ast.Sy.Op Ast.Sy.Record) lbs ty),
                 false )
             with Not_found -> (None, false))
         | Access (a, r, ty) -> (
             match X.term_extract (is_mine r) with
             | None, _ -> (None, false)
             | Some t, _ ->
-                ( Some
-                    (Structs.Expr.mk_term (Structs.Sy.Op (Structs.Sy.Access a))
-                       [ t ] ty),
-                  false ))
+              ( Some
+                  (Ast.Expr.mk_term (Ast.Sy.Op (Ast.Sy.Access a))
+                     [ t ] ty),
+                false ))
         | Other (r, _) -> X.term_extract r)
     | None -> X.term_extract r
 
@@ -348,17 +348,17 @@ module Shostak (X : ALIEN) = struct
   let solve r1 r2 pb =
     match (embed r1, embed r2) with
     | Record (l1, _), Record (l2, _) ->
-        let eqs =
-          List.fold_left2
-            (fun eqs (a, b) (x, y) ->
-              assert (Util.Hstring.compare a x = 0);
-              (is_mine y, is_mine b) :: eqs)
-            pb.eqs l1 l2
-        in
-        { pb with eqs }
+      let eqs =
+        List.fold_left2
+          (fun eqs (a, b) (x, y) ->
+             assert (Util.Hstring.compare a x = 0);
+             (is_mine y, is_mine b) :: eqs)
+          pb.eqs l1 l2
+      in
+      { pb with eqs }
     | Other _, Other _ ->
-        if X.str_cmp r1 r2 > 0 then { pb with sbt = (r1, r2) :: pb.sbt }
-        else { pb with sbt = (r2, r1) :: pb.sbt }
+      if X.str_cmp r1 r2 > 0 then { pb with sbt = (r1, r2) :: pb.sbt }
+      else { pb with sbt = (r2, r1) :: pb.sbt }
     | Other _, Record _ -> orient_solved r1 r2 pb
     | Record _, Other _ -> orient_solved r2 r1 pb
     | Access _, _ -> assert false
@@ -392,31 +392,31 @@ module Shostak (X : ALIEN) = struct
     match embed t with
     | Access _ -> None
     | Record (_, ty) ->
-        if List.exists (fun (t, _) -> Structs.Expr.const_term t) eq then None
-        else Some (Structs.Expr.fresh_name ty, false)
+      if List.exists (fun (t, _) -> Ast.Expr.const_term t) eq then None
+      else Some (Ast.Expr.fresh_name ty, false)
     | Other (_, ty) -> (
         match ty with
-        | Structs.Ty.Trecord { Structs.Ty.lbs; _ } ->
-            let rev_lbs =
-              List.rev_map (fun (_, ty) -> Structs.Expr.fresh_name ty) lbs
-            in
-            let s =
-              Structs.Expr.mk_term (Structs.Sy.Op Structs.Sy.Record)
-                (List.rev rev_lbs) ty
-            in
-            Some (s, false)
-            (* false <-> not a case-split *)
+        | Ast.Ty.Trecord { Ast.Ty.lbs; _ } ->
+          let rev_lbs =
+            List.rev_map (fun (_, ty) -> Ast.Expr.fresh_name ty) lbs
+          in
+          let s =
+            Ast.Expr.mk_term (Ast.Sy.Op Ast.Sy.Record)
+              (List.rev rev_lbs) ty
+          in
+          Some (s, false)
+        (* false <-> not a case-split *)
         | _ -> assert false)
 
   let choose_adequate_model _ _ l =
     let acc =
       List.fold_left
         (fun acc (s, r) ->
-          if not (Structs.Expr.const_term s) then acc
-          else
-            match acc with
-            | Some (s', _) when Structs.Expr.compare s' s > 0 -> acc
-            | _ -> Some (s, r))
+           if not (Ast.Expr.const_term s) then acc
+           else
+             match acc with
+             | Some (s', _) when Ast.Expr.compare s' s > 0 -> acc
+             | _ -> Some (s, r))
         None l
     in
     match acc with

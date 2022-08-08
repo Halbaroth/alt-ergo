@@ -48,7 +48,7 @@ val th_ext_of_string : string -> theories_extensions option
 val string_of_th_ext : theories_extensions -> string
 
 val compare_algebraic : 'a -> 'a -> ('a * 'a -> int) -> int
-  [@@inline always]
+[@@inline always]
 (**
    generic function for comparing algebraic data types.
    [compare_algebraic a b f]

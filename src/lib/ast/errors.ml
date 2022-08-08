@@ -101,14 +101,14 @@ let warning_as_error () =
 
 let report_typing_error fmt = function
   | BitvExtract (i, j) ->
-      fprintf fmt "bitvector extraction malformed (%d>%d)" i j
+    fprintf fmt "bitvector extraction malformed (%d>%d)" i j
   | BitvExtractRange (n, j) -> fprintf fmt "extraction out of range (%d>%d)" j n
   | ClashType s -> fprintf fmt "the type %s is already defined" s
   | ClashParam s -> fprintf fmt "parameter %s is bound twice" s
   | ClashLabel (s, t) ->
-      fprintf fmt "the label %s already appears in type %s" s t
+    fprintf fmt "the label %s already appears in type %s" s t
   | CannotGeneralize ->
-      fprintf fmt "cannot generalize the type of this expression"
+    fprintf fmt "cannot generalize the type of this expression"
   | TypeDuplicateVar s -> fprintf fmt "duplicate type variable %s" s
   | UnboundedVar s -> fprintf fmt "unbounded variable %s" s
   | UnknownType s -> fprintf fmt "unknown type %s" s
@@ -118,72 +118,72 @@ let report_typing_error fmt = function
   | NotAPropVar s -> fprintf fmt "%s is not a propositional variable" s
   | NotAPredicate s -> fprintf fmt "%s is not a predicate" s
   | Unification (t1, t2) ->
-      fprintf fmt "%a and %a cannot be unified" Ty.print t1 Ty.print t2
+    fprintf fmt "%a and %a cannot be unified" Ty.print t1 Ty.print t2
   | ShouldBeApply s ->
-      fprintf fmt "%s is a function symbol, it should be apply" s
+    fprintf fmt "%s is a function symbol, it should be apply" s
   | WrongNumberofArgs s ->
-      fprintf fmt "Wrong number of arguments when applying %s" s
+    fprintf fmt "Wrong number of arguments when applying %s" s
   | ShouldHaveType (ty1, ty2) ->
-      fprintf fmt "this expression has type %a but is here used with type %a"
-        Ty.print ty1 Ty.print ty2
+    fprintf fmt "this expression has type %a but is here used with type %a"
+      Ty.print ty1 Ty.print ty2
   | ShouldHaveTypeBitv t ->
-      fprintf fmt "this expression has type %a but it should be a bitvector"
-        Ty.print t
+    fprintf fmt "this expression has type %a but it should be a bitvector"
+      Ty.print t
   | ShouldHaveTypeIntorReal t ->
-      fprintf fmt
-        "this expression has type %a but it should have type int or real"
-        Ty.print t
+    fprintf fmt
+      "this expression has type %a but it should have type int or real"
+      Ty.print t
   | ShouldHaveTypeInt t ->
-      fprintf fmt "this expression has type %a but it should have type int"
-        Ty.print t
+    fprintf fmt "this expression has type %a but it should have type int"
+      Ty.print t
   | ShouldHaveTypeArray -> fprintf fmt "this expression should have type farray"
   | ShouldHaveTypeRecord t ->
-      fprintf fmt "this expression has type %a but it should have a record type"
-        Ty.print t
+    fprintf fmt "this expression has type %a but it should have a record type"
+      Ty.print t
   | ShouldBeARecord -> fprintf fmt "this expression should have a record type"
   | ShouldHaveLabel (s, a) ->
-      fprintf fmt "this expression has type %s which has no label %s" s a
+    fprintf fmt "this expression has type %s which has no label %s" s a
   | NoLabelInType (lb, ty) ->
-      fprintf fmt "no label %s in type %a" (Util.Hstring.view lb) Ty.print ty
+    fprintf fmt "no label %s in type %a" (Util.Hstring.view lb) Ty.print ty
   | ShouldHaveTypeProp -> fprintf fmt "this expression should have type prop"
   | NoRecordType s ->
-      fprintf fmt "no record type has label %s" (Util.Hstring.view s)
+    fprintf fmt "no record type has label %s" (Util.Hstring.view s)
   | DuplicateLabel s ->
-      fprintf fmt "label %s is defined several times" (Util.Hstring.view s)
+    fprintf fmt "label %s is defined several times" (Util.Hstring.view s)
   | DuplicatePattern s -> fprintf fmt "pattern %s is bound several times" s
   | WrongLabel (s, ty) ->
-      fprintf fmt "wrong label %s in type %a" (Util.Hstring.view s) Ty.print ty
+    fprintf fmt "wrong label %s in type %a" (Util.Hstring.view s) Ty.print ty
   | WrongNumberOfLabels -> fprintf fmt "wrong number of labels"
   | ArrayIndexShouldHaveTypeInt ->
-      fprintf fmt "index of arrays should hava type int"
+    fprintf fmt "index of arrays should hava type int"
   | Notrigger -> fprintf fmt "No trigger for this lemma"
   | SyntaxError -> fprintf fmt "syntax error"
   | ThExtError s -> fprintf fmt "Theory extension %S not recognized" s
   | ThSemTriggerError ->
-      fprintf fmt "Semantic triggers are only allowed inside Theories"
+    fprintf fmt "Semantic triggers are only allowed inside Theories"
   | WrongDeclInTheory ->
-      fprintf fmt
-        "Currently, this kind of declarations are not allowed inside theories"
+    fprintf fmt
+      "Currently, this kind of declarations are not allowed inside theories"
   | ShouldBeADT ty ->
-      fprintf fmt "%a is not an algebraic, a record or an enumeration datatype"
-        Ty.print ty
+    fprintf fmt "%a is not an algebraic, a record or an enumeration datatype"
+      Ty.print ty
   | MatchNotExhaustive missing ->
-      fprintf fmt
-        "Pattern-matching is not exhaustive. These cases are missing: %a"
-        (Util.Util.print_list ~sep:" |" ~pp:Util.Hstring.print)
-        missing
+    fprintf fmt
+      "Pattern-matching is not exhaustive. These cases are missing: %a"
+      (Util.Util.print_list ~sep:" |" ~pp:Util.Hstring.print)
+      missing
   | MatchUnusedCases dead ->
-      fprintf fmt
-        "Pattern-matching contains unreachable cases. These cases are removed: \
-         %a"
-        (Util.Util.print_list ~sep:" |" ~pp:Util.Hstring.print)
-        dead
+    fprintf fmt
+      "Pattern-matching contains unreachable cases. These cases are removed: \
+       %a"
+      (Util.Util.print_list ~sep:" |" ~pp:Util.Hstring.print)
+      dead
   | NotAdtConstr (lbl, ty) ->
-      fprintf fmt "The symbol %s is not a constructor of the type %a" lbl
-        Ty.print ty
+    fprintf fmt "The symbol %s is not a constructor of the type %a" lbl
+      Ty.print ty
   | BadPopCommand { pushed; to_pop } ->
-      fprintf fmt "Cannot pop %d assertion contexts. Only %d have been pushed"
-        to_pop pushed
+    fprintf fmt "Cannot pop %d assertion contexts. Only %d have been pushed"
+      to_pop pushed
   | ShouldBePositive n -> fprintf fmt "This integer : %d should be positive" n
 
 let report_run_error fmt = function
@@ -195,19 +195,19 @@ let report_run_error fmt = function
 
 let report fmt = function
   | Parser_error s ->
-      Util.Options.print_output_format fmt (Format.sprintf "Parser Error: %s" s)
+    Util.Options.print_output_format fmt (Format.sprintf "Parser Error: %s" s)
   | Lexical_error (l, s) ->
-      Util.Loc.report fmt l;
-      Util.Options.print_output_format fmt
-        (Format.sprintf "Lexical Error: %s" s)
+    Util.Loc.report fmt l;
+    Util.Options.print_output_format fmt
+      (Format.sprintf "Lexical Error: %s" s)
   | Syntax_error (l, s) ->
-      Util.Loc.report fmt l;
-      Util.Options.print_output_format fmt (Format.sprintf "Syntax Error: %s" s)
+    Util.Loc.report fmt l;
+    Util.Options.print_output_format fmt (Format.sprintf "Syntax Error: %s" s)
   | Typing_error (l, e) ->
-      Util.Loc.report fmt l;
-      Util.Options.print_output_format fmt "Typing Error: ";
-      report_typing_error fmt e
+    Util.Loc.report fmt l;
+    Util.Options.print_output_format fmt "Typing Error: ";
+    report_typing_error fmt e
   | Run_error e ->
-      Util.Options.print_output_format fmt "Fatal Error: ";
-      report_run_error fmt e
+    Util.Options.print_output_format fmt "Fatal Error: ";
+    report_run_error fmt e
   | Warning_as_error -> ()

@@ -140,42 +140,42 @@ let compare_kinds k1 k2 =
 
 let compare_operators op1 op2 =
   Util.Util.compare_algebraic op1 op2 (function
-    | Access h1, Access h2 | Constr h1, Constr h2 -> Util.Hstring.compare h1 h2
-    | Destruct (h1, b1), Destruct (h2, b2) ->
+      | Access h1, Access h2 | Constr h1, Constr h2 -> Util.Hstring.compare h1 h2
+      | Destruct (h1, b1), Destruct (h2, b2) ->
         let c = Stdlib.compare b1 b2 in
         if c <> 0 then c else Util.Hstring.compare h1 h2
-    | ( _,
-        ( Plus | Minus | Mult | Div | Modulo | Concat | Extract | Get | Set
-        | Fixed | Float | Reach | Access _ | Record | Sqrt_real | Abs_int
-        | Abs_real | Real_of_int | Int_floor | Int_ceil | Sqrt_real_default
-        | Sqrt_real_excess | Min_real | Min_int | Max_real | Max_int
-        | Integer_log2 | Pow | Integer_round | Constr _ | Destruct _ | Tite ) )
-      ->
+      | ( _,
+          ( Plus | Minus | Mult | Div | Modulo | Concat | Extract | Get | Set
+          | Fixed | Float | Reach | Access _ | Record | Sqrt_real | Abs_int
+          | Abs_real | Real_of_int | Int_floor | Int_ceil | Sqrt_real_default
+          | Sqrt_real_excess | Min_real | Min_int | Max_real | Max_int
+          | Integer_log2 | Pow | Integer_round | Constr _ | Destruct _ | Tite ) )
+        ->
         assert false)
 
 let compare_builtin b1 b2 =
   Util.Util.compare_algebraic b1 b2 (function
-    | IsConstr h1, IsConstr h2 -> Util.Hstring.compare h1 h2
-    | _, (LT | LE | IsConstr _) -> assert false)
+      | IsConstr h1, IsConstr h2 -> Util.Hstring.compare h1 h2
+      | _, (LT | LE | IsConstr _) -> assert false)
 
 let compare_lits lit1 lit2 =
   Util.Util.compare_algebraic lit1 lit2 (function
-    | L_built b1, L_built b2 -> compare_builtin b1 b2
-    | L_neg_built b1, L_neg_built b2 -> compare_builtin b1 b2
-    | _, (L_eq | L_built _ | L_neg_eq | L_neg_built _ | L_neg_pred) ->
+      | L_built b1, L_built b2 -> compare_builtin b1 b2
+      | L_neg_built b1, L_neg_built b2 -> compare_builtin b1 b2
+      | _, (L_eq | L_built _ | L_neg_eq | L_neg_built _ | L_neg_pred) ->
         assert false)
 
 let compare_forms f1 f2 =
   Util.Util.compare_algebraic f1 f2 (function
-    | F_Unit b1, F_Unit b2 | F_Clause b1, F_Clause b2 -> Stdlib.compare b1 b2
-    | _, (F_Unit _ | F_Clause _ | F_Lemma | F_Skolem | F_Iff | F_Xor) ->
+      | F_Unit b1, F_Unit b2 | F_Clause b1, F_Clause b2 -> Stdlib.compare b1 b2
+      | _, (F_Unit _ | F_Clause _ | F_Lemma | F_Skolem | F_Iff | F_Xor) ->
         assert false)
 
 let compare_bounds_kind a b =
   Util.Util.compare_algebraic a b (function
-    | VarBnd h1, VarBnd h2 -> Var.compare h1 h2
-    | ValBnd q1, ValBnd q2 -> Util.Numbers.Q.compare q1 q2
-    | _, (VarBnd _ | ValBnd _) -> assert false)
+      | VarBnd h1, VarBnd h2 -> Var.compare h1 h2
+      | ValBnd q1, ValBnd q2 -> Util.Numbers.Q.compare q1 q2
+      | _, (VarBnd _ | ValBnd _) -> assert false)
 
 let compare_bounds a b =
   let c = Ty.compare a.sort b.sort in
@@ -189,21 +189,21 @@ let compare_bounds a b =
 
 let compare s1 s2 =
   Util.Util.compare_algebraic s1 s2 (function
-    | Int h1, Int h2 | Real h1, Real h2 -> Util.Hstring.compare h1 h2
-    | Var v1, Var v2 | MapsTo v1, MapsTo v2 -> Var.compare v1 v2
-    | Name (h1, k1), Name (h2, k2) ->
+      | Int h1, Int h2 | Real h1, Real h2 -> Util.Hstring.compare h1 h2
+      | Var v1, Var v2 | MapsTo v1, MapsTo v2 -> Var.compare v1 v2
+      | Name (h1, k1), Name (h2, k2) ->
         let c = Util.Hstring.compare h1 h2 in
         if c <> 0 then c else compare_kinds k1 k2
-    | Bitv s1, Bitv s2 -> String.compare s1 s2
-    | Op op1, Op op2 -> compare_operators op1 op2
-    | Lit lit1, Lit lit2 -> compare_lits lit1 lit2
-    | Form f1, Form f2 -> compare_forms f1 f2
-    | In (b1, b2), In (b1', b2') ->
+      | Bitv s1, Bitv s2 -> String.compare s1 s2
+      | Op op1, Op op2 -> compare_operators op1 op2
+      | Lit lit1, Lit lit2 -> compare_lits lit1 lit2
+      | Form f1, Form f2 -> compare_forms f1 f2
+      | In (b1, b2), In (b1', b2') ->
         let c = compare_bounds b1 b1' in
         if c <> 0 then c else compare_bounds b2 b2'
-    | ( _,
-        ( True | False | Void | Name _ | Int _ | Real _ | Bitv _ | Op _ | Lit _
-        | Form _ | Var _ | In _ | MapsTo _ | Let ) ) ->
+      | ( _,
+          ( True | False | Void | Name _ | Int _ | Real _ | Bitv _ | Op _ | Lit _
+          | Form _ | Var _ | In _ | MapsTo _ | Let ) ) ->
         assert false)
 
 let equal s1 s2 = compare s1 s2 = 0
@@ -276,7 +276,7 @@ let to_string ?(show_vars = true) x =
   | Op (Access s) -> "@Access_" ^ Util.Hstring.view s
   | Op (Constr s) -> Util.Hstring.view s
   | Op (Destruct (s, g)) ->
-      Format.sprintf "%s%s" (if g then "" else "!") (Util.Hstring.view s)
+    Format.sprintf "%s%s" (if g then "" else "!") (Util.Hstring.view s)
   | Op Record -> "@Record"
   | Op Get -> "get"
   | Op Set -> "set"
@@ -305,7 +305,7 @@ let to_string ?(show_vars = true) x =
   | False -> "false"
   | Void -> "void"
   | In (lb, rb) ->
-      Format.sprintf "%s , %s" (string_of_bound lb) (string_of_bound rb)
+    Format.sprintf "%s , %s" (string_of_bound lb) (string_of_bound rb)
   | MapsTo x -> Format.sprintf "%s |->" (Var.to_string x)
   | Lit lit -> string_of_lit lit
   | Form form -> string_of_form form
@@ -332,21 +332,21 @@ let fake_lt = name "@lt"
 let fake_le = name "@le"
 
 module Labels = Hashtbl.Make (struct
-  type t = s
+    type t = s
 
-  let equal = equal
-  let hash = hash
-end)
+    let equal = equal
+    let hash = hash
+  end)
 
 let labels = Labels.create 107
 let add_label lbl t = Labels.replace labels t lbl
 let label t = try Labels.find labels t with Not_found -> Util.Hstring.empty
 
 module Set : Set.S with type elt = t = Set.Make (struct
-  type t = s
+    type t = s
 
-  let compare = compare
-end)
+    let compare = compare
+  end)
 
 module Map : sig
   include Map.S with type key = t
@@ -355,10 +355,10 @@ module Map : sig
     (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a t -> unit
 end = struct
   include Map.Make (struct
-    type t = s
+      type t = s
 
-    let compare = compare
-  end)
+      let compare = compare
+    end)
 
   let print pr_elt fmt sbt =
     iter (fun k v -> fprintf fmt "%a -> %a  " print k pr_elt v) sbt

@@ -26,42 +26,42 @@
 (*                                                                            *)
 (******************************************************************************)
 
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 
 type gsubst = {
-  sbs : Structs.Expr.t Structs.Sy.Map.t;
-  sty : Structs.Ty.subst;
+  sbs : Ast.Expr.t Ast.Sy.Map.t;
+  sty : Ast.Ty.subst;
   gen : int;
-      (* l'age d'une substitution est l'age du plus vieux
-         		     terme qu'elle contient *)
+  (* l'age d'une substitution est l'age du plus vieux
+     		     terme qu'elle contient *)
   goal : bool;
-      (* vrai si la substitution contient un terme ayant un lien
-         		     avec le but de la PO *)
-  s_term_orig : Structs.Expr.t list;
-  s_lem_orig : Structs.Expr.t;
+  (* vrai si la substitution contient un terme ayant un lien
+     		     avec le but de la PO *)
+  s_term_orig : Ast.Expr.t list;
+  s_lem_orig : Ast.Expr.t;
 }
 
 type trigger_info = {
-  trigger : Structs.Expr.trigger;
+  trigger : Ast.Expr.trigger;
   trigger_age : int; (* age d'un trigger *)
-  trigger_orig : Structs.Expr.t; (* lemme d'origine *)
-  trigger_formula : Structs.Expr.t; (* formule associee au trigger *)
-  trigger_dep : Structs.Ex.t;
-  trigger_increm_guard : Structs.Expr.t;
-      (* guard associated to push in incremental mode *)
+  trigger_orig : Ast.Expr.t; (* lemme d'origine *)
+  trigger_formula : Ast.Expr.t; (* formule associee au trigger *)
+  trigger_dep : Ast.Ex.t;
+  trigger_increm_guard : Ast.Expr.t;
+  (* guard associated to push in incremental mode *)
 }
 
 type term_info = {
   term_age : int; (* age du terme *)
   term_from_goal : bool; (* vrai si le terme provient du but de la PO *)
-  term_from_formula : Structs.Expr.t option; (* lemme d'origine du terme *)
-  term_from_terms : Structs.Expr.t list;
+  term_from_formula : Ast.Expr.t option; (* lemme d'origine du terme *)
+  term_from_terms : Ast.Expr.t list;
 }
 
 type info = {
   age : int; (* age du terme *)
-  lem_orig : Structs.Expr.t list;
-      (* lemme d'ou provient eventuellement le terme *)
-  t_orig : Structs.Expr.t list;
+  lem_orig : Ast.Expr.t list;
+  (* lemme d'ou provient eventuellement le terme *)
+  t_orig : Ast.Expr.t list;
   but : bool; (* le terme a-t-il un lien avec le but final de la PO *)
 }

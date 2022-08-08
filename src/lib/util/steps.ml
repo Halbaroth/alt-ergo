@@ -38,8 +38,8 @@ type incr_kind =
   | Uf (* UF step increment *)
   | Ac (* AC step reasoning *)
   | Th_assumed of int
-(* Increment the counter for each term assumed in the
-   theories environment *)
+  (* Increment the counter for each term assumed in the
+     theories environment *)
 
 let naive_steps = ref 0
 let steps = ref 0
@@ -79,46 +79,46 @@ let pop_steps () =
 (* Multipliers are here to homogeneize the global step counter *)
 let incr k =
   (match k with
-  | Uf ->
-      mult_uf := !mult_uf + 1;
-      if !mult_uf = 500 then (
-        steps := !steps + 1;
-        mult_uf := 0)
-  | Matching ->
-      mult_m := !mult_m + 1;
-      if !mult_m = 100 then (
-        steps := !steps + 1;
-        mult_m := 0)
-  | Omega ->
-      mult_s := !mult_s + 1;
-      if !mult_s = 2 then (
-        steps := !steps + 1;
-        mult_s := 0)
-  | Ac ->
-      mult_a := !mult_a + 1;
-      if !mult_a = 1 then (
-        steps := !steps + 1;
-        mult_a := 0)
-  | Interval_Calculus ->
-      mult_b := !mult_b + 1;
-      if !mult_b = 5 then (
-        steps := !steps + 1;
-        mult_b := 0)
-  | Fourier ->
-      mult_f := !mult_f + 1;
-      if !mult_f = 40 then (
-        steps := !steps + 1;
-        mult_f := 0)
-  | Th_assumed n ->
-      (* Since n refers to the number of terms sent to the theories no
-       * multiplier is needed here *)
-      if n < 0 then (*run_error (Invalid_steps_count n);*) ();
-      naive_steps := !naive_steps + n);
+   | Uf ->
+     mult_uf := !mult_uf + 1;
+     if !mult_uf = 500 then (
+       steps := !steps + 1;
+       mult_uf := 0)
+   | Matching ->
+     mult_m := !mult_m + 1;
+     if !mult_m = 100 then (
+       steps := !steps + 1;
+       mult_m := 0)
+   | Omega ->
+     mult_s := !mult_s + 1;
+     if !mult_s = 2 then (
+       steps := !steps + 1;
+       mult_s := 0)
+   | Ac ->
+     mult_a := !mult_a + 1;
+     if !mult_a = 1 then (
+       steps := !steps + 1;
+       mult_a := 0)
+   | Interval_Calculus ->
+     mult_b := !mult_b + 1;
+     if !mult_b = 5 then (
+       steps := !steps + 1;
+       mult_b := 0)
+   | Fourier ->
+     mult_f := !mult_f + 1;
+     if !mult_f = 40 then (
+       steps := !steps + 1;
+       mult_f := 0)
+   | Th_assumed n ->
+     (* Since n refers to the number of terms sent to the theories no
+      * multiplier is needed here *)
+     if n < 0 then (*run_error (Invalid_steps_count n);*) ();
+     naive_steps := !naive_steps + n);
   let steps_bound = get_steps_bound () in
   if
     steps_bound <> -1
     && (Stdlib.compare !steps steps_bound > 0
-       || Stdlib.compare !naive_steps steps_bound > 0)
+        || Stdlib.compare !naive_steps steps_bound > 0)
   then
     let n =
       if !naive_steps > 0 then !naive_steps

@@ -26,7 +26,7 @@
 (*                                                                            *)
 (******************************************************************************)
 
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 module Reasoners = Alt_ergo_lib_reasoners
 
 module type S = sig
@@ -34,7 +34,7 @@ module type S = sig
   type used_context
 
   type status =
-    | Unsat of Commands.sat_tdecl * Structs.Ex.t
+    | Unsat of Commands.sat_tdecl * Ast.Ex.t
     | Inconsistent of Commands.sat_tdecl
     | Sat of Commands.sat_tdecl * sat_env
     | Unknown of Commands.sat_tdecl * sat_env
@@ -44,10 +44,10 @@ module type S = sig
   val process_decl :
     (status -> int -> unit) ->
     used_context ->
-    (bool * Structs.Ex.t) Stack.t ->
-    sat_env * bool * Structs.Ex.t ->
+    (bool * Ast.Ex.t) Stack.t ->
+    sat_env * bool * Ast.Ex.t ->
     Commands.sat_tdecl ->
-    sat_env * bool * Structs.Ex.t
+    sat_env * bool * Ast.Ex.t
 
   val print_status : status -> int -> unit
   val init_all_used_context : unit -> used_context

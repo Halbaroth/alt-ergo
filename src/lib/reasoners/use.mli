@@ -27,18 +27,19 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
-module SA : Set.S with type elt = Structs.Expr.t * Structs.Ex.t
+module Ast = Alt_ergo_lib_ast
+           
+module SA : Set.S with type elt = Ast.Expr.t * Ast.Ex.t
 
 type t
 type r = Shostak.Combine.r
 
 val empty : t
-val find : r -> t -> Structs.Expr.Set.t * SA.t
-val add : r -> Structs.Expr.Set.t * SA.t -> t -> t
+val find : r -> t -> Ast.Expr.Set.t * SA.t
+val add : r -> Ast.Expr.Set.t * SA.t -> t -> t
 val mem : r -> t -> bool
 val print : t -> unit
-val up_add : t -> Structs.Expr.t -> r -> r list -> t
-val congr_add : t -> r list -> Structs.Expr.Set.t
+val up_add : t -> Ast.Expr.t -> r -> r list -> t
+val congr_add : t -> r list -> Ast.Expr.Set.t
 val up_close_up : t -> r -> r -> t
-val congr_close_up : t -> r -> r list -> Structs.Expr.Set.t * SA.t
+val congr_close_up : t -> r -> r list -> Ast.Expr.Set.t * SA.t

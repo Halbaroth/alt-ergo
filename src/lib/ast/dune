@@ -1,6 +1,6 @@
 (library
- (name alt_ergo_lib_structs)
- (public_name alt-ergo-lib.structs)
+ (name alt_ergo_lib_ast)
+ (public_name alt-ergo-lib.ast)
  (modules Errors Ex Fpa_rounding Parsed Profiling Satml_types Sy Expr Var Ty
    Typed Xliteral)
  (libraries alt_ergo_lib_util))

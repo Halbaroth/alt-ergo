@@ -61,11 +61,11 @@ let main worker_id content =
     Input_frontend.register_legacy ();
 
     let module SatCont = (val Sat_solver.get_current ()
-                            : Sat_solver_sig.SatContainer)
+                           : Sat_solver_sig.SatContainer)
     in
     let module TH = (val if Options.get_no_theory () then
-                           (module Theory.Main_Empty : Theory.S)
-                         else (module Theory.Main_Default : Theory.S) : Theory.S)
+                        (module Theory.Main_Empty : Theory.S)
+                      else (module Theory.Main_Default : Theory.S) : Theory.S)
     in
     let module SAT = SatCont.Make (TH) in
     let module FE = Frontend.Make (SAT) in
@@ -115,14 +115,14 @@ let main worker_id content =
           | Typed.Check | Typed.Cut -> { state with local = [] }
           | _ -> { state with global = []; local = [] })
       | Typed.TAxiom (_, s, _, _) when Typed.is_global_hyp s ->
-          let cnf = Cnf.make state.global td in
-          { state with global = cnf }
+        let cnf = Cnf.make state.global td in
+        { state with global = cnf }
       | Typed.TAxiom (_, s, _, _) when Typed.is_local_hyp s ->
-          let cnf = Cnf.make state.local td in
-          { state with local = cnf }
+        let cnf = Cnf.make state.local td in
+        { state with local = cnf }
       | _ ->
-          let cnf = Cnf.make state.ctx td in
-          { state with ctx = cnf }
+        let cnf = Cnf.make state.ctx td in
+        { state with ctx = cnf }
     in
 
     let (module I : Input.S) = Input.find (Options.get_frontend ()) in
@@ -133,19 +133,19 @@ let main worker_id content =
         I.parse_file ~content ~format:None
       with
       | Parsing.Parse_error ->
-          Printer.print_err "%a" Errors.report
-            (Syntax_error ((Lexing.dummy_pos, Lexing.dummy_pos), ""));
-          raise Exit
+        Printer.print_err "%a" Errors.report
+          (Syntax_error ((Lexing.dummy_pos, Lexing.dummy_pos), ""));
+        raise Exit
       | Errors.Error e ->
-          (match e with
-          | Errors.Run_error r -> (
-              match r with
-              | Steps_limit _ ->
-                  returned_status := Worker_interface.LimitReached "Steps limit"
-              | _ -> returned_status := Worker_interface.Error "Run error")
-          | _ -> returned_status := Worker_interface.Error "Error");
-          Printer.print_err "%a" Errors.report e;
-          raise Exit
+        (match e with
+         | Errors.Run_error r -> (
+             match r with
+             | Steps_limit _ ->
+               returned_status := Worker_interface.LimitReached "Steps limit"
+             | _ -> returned_status := Worker_interface.Error "Run error")
+         | _ -> returned_status := Worker_interface.Error "Error");
+        Printer.print_err "%a" Errors.report e;
+        raise Exit
     in
     let all_used_context = FE.init_all_used_context () in
     let assertion_stack = Stack.create () in
@@ -169,30 +169,30 @@ let main worker_id content =
       let used =
         List.fold_left
           (fun acc ({ Explanation.f; _ } as r) ->
-            Util.MI.add (Expr.uid f) r acc)
+             Util.MI.add (Expr.uid f) r acc)
           Util.MI.empty !unsat_core
       in
       Hashtbl.fold
         (fun id (f, nb) acc ->
-          match Util.MI.find_opt id used with
-          | None -> (
-              match Expr.form_view f with
-              | Lemma { name; loc; _ } ->
-                  let b, e = loc in
-                  let used =
-                    if Options.get_unsat_core () then Worker_interface.Unused
-                    else Worker_interface.Unknown
-                  in
-                  (name, b.Lexing.pos_lnum, e.Lexing.pos_lnum, !nb, used) :: acc
-              | _ -> acc)
-          | Some r ->
-              let b, e = r.loc in
-              ( r.name,
-                b.Lexing.pos_lnum,
-                e.Lexing.pos_lnum,
-                !nb,
-                Worker_interface.Used )
-              :: acc)
+           match Util.MI.find_opt id used with
+           | None -> (
+               match Expr.form_view f with
+               | Lemma { name; loc; _ } ->
+                 let b, e = loc in
+                 let used =
+                   if Options.get_unsat_core () then Worker_interface.Unused
+                   else Worker_interface.Unknown
+                 in
+                 (name, b.Lexing.pos_lnum, e.Lexing.pos_lnum, !nb, used) :: acc
+               | _ -> acc)
+           | Some r ->
+             let b, e = r.loc in
+             ( r.name,
+               b.Lexing.pos_lnum,
+               e.Lexing.pos_lnum,
+               !nb,
+               Worker_interface.Used )
+             :: acc)
         tbl []
     in
 
@@ -211,29 +211,29 @@ let main worker_id content =
     }
   with
   | Assert_failure (s, l, p) ->
-      let res = Worker_interface.init_results () in
-      {
-        res with
-        Worker_interface.worker_id;
-        Worker_interface.status = Error "Assertion failure";
-        Worker_interface.errors =
-          Some [ Format.sprintf "assertion failed: %s line %d char %d" s l p ];
-      }
+    let res = Worker_interface.init_results () in
+    {
+      res with
+      Worker_interface.worker_id;
+      Worker_interface.status = Error "Assertion failure";
+      Worker_interface.errors =
+        Some [ Format.sprintf "assertion failed: %s line %d char %d" s l p ];
+    }
   | Errors.Error e ->
-      let res = Worker_interface.init_results () in
-      {
-        res with
-        Worker_interface.worker_id;
-        Worker_interface.status = Error "";
-        Worker_interface.errors = Some [ Format.asprintf "%a" Errors.report e ];
-      }
+    let res = Worker_interface.init_results () in
+    {
+      res with
+      Worker_interface.worker_id;
+      Worker_interface.status = Error "";
+      Worker_interface.errors = Some [ Format.asprintf "%a" Errors.report e ];
+    }
   | _ ->
-      let res = Worker_interface.init_results () in
-      {
-        res with
-        Worker_interface.worker_id;
-        Worker_interface.status = Error "Unknown error";
-      }
+    let res = Worker_interface.init_results () in
+    {
+      res with
+      Worker_interface.worker_id;
+      Worker_interface.status = Error "Unknown error";
+    }
 
 (** Worker initialisation
     Run Alt-ergo with the input file (string)
@@ -246,8 +246,8 @@ let () =
             Worker_interface.file_from_json json_file
           in
           (match filename with
-          | Some fl -> Options.set_file_for_js fl
-          | None -> Options.set_file_for_js "");
+           | Some fl -> Options.set_file_for_js fl
+           | None -> Options.set_file_for_js "");
           let filecontent = String.concat "\n" filecontent in
 
           (* Format.eprintf

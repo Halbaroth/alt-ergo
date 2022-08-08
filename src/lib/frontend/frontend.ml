@@ -27,9 +27,9 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 module Reasoners = Alt_ergo_lib_reasoners
-open Structs.Typed
+open Ast.Typed
 open Commands
 open Format
 open Util.Options
@@ -39,7 +39,7 @@ module type S = sig
   type used_context
 
   type status =
-    | Unsat of Commands.sat_tdecl * Structs.Ex.t
+    | Unsat of Commands.sat_tdecl * Ast.Ex.t
     | Inconsistent of Commands.sat_tdecl
     | Sat of Commands.sat_tdecl * sat_env
     | Unknown of Commands.sat_tdecl * sat_env
@@ -49,10 +49,10 @@ module type S = sig
   val process_decl :
     (status -> int -> unit) ->
     used_context ->
-    (bool * Structs.Ex.t) Stack.t ->
-    sat_env * bool * Structs.Ex.t ->
+    (bool * Ast.Ex.t) Stack.t ->
+    sat_env * bool * Ast.Ex.t ->
     Commands.sat_tdecl ->
-    sat_env * bool * Structs.Ex.t
+    sat_env * bool * Ast.Ex.t
 
   val print_status : status -> int -> unit
   val init_all_used_context : unit -> used_context
@@ -65,7 +65,7 @@ struct
   type used_context = Util.Util.SS.t option
 
   type status =
-    | Unsat of Commands.sat_tdecl * Structs.Ex.t
+    | Unsat of Commands.sat_tdecl * Ast.Ex.t
     | Inconsistent of Commands.sat_tdecl
     | Sat of Commands.sat_tdecl * sat_env
     | Unknown of Commands.sat_tdecl * sat_env
@@ -77,7 +77,7 @@ struct
       let f = Util.Options.get_used_context_file () in
       let cout = open_out (sprintf "%s.%s.used" f g_name) in
       let cfmt = Format.formatter_of_out_channel cout in
-      Structs.Ex.print_unsat_core cfmt dep;
+      Ast.Ex.print_unsat_core cfmt dep;
       close_out cout)
 
   let check_produced_unsat_core dep =
@@ -85,35 +85,35 @@ struct
       Util.Printer.print_dbg ~module_name:"Frontend"
         ~function_name:"check_produced_unsat_core"
         "@[<v 0>checking the unsat-core:@,-------------------@,@]%a"
-        (Structs.Ex.print_unsat_core ~tab:false)
+        (Ast.Ex.print_unsat_core ~tab:false)
         dep;
     try
-      let pb = Structs.Expr.Set.elements (Structs.Ex.formulas_of dep) in
+      let pb = Ast.Expr.Set.elements (Ast.Ex.formulas_of dep) in
       let env =
         List.fold_left
           (fun env f ->
-            SAT.assume env
-              {
-                Structs.Expr.ff = f;
-                origin_name = "";
-                gdist = -1;
-                hdist = -1;
-                trigger_depth = max_int;
-                nb_reductions = 0;
-                age = 0;
-                lem = None;
-                mf = false;
-                gf = false;
-                from_terms = [];
-                theory_elim = true;
-              }
-              Structs.Ex.empty)
+             SAT.assume env
+               {
+                 Ast.Expr.ff = f;
+                 origin_name = "";
+                 gdist = -1;
+                 hdist = -1;
+                 trigger_depth = max_int;
+                 nb_reductions = 0;
+                 age = 0;
+                 lem = None;
+                 mf = false;
+                 gf = false;
+                 from_terms = [];
+                 theory_elim = true;
+               }
+               Ast.Ex.empty)
           (SAT.empty ()) pb
       in
       ignore
         (SAT.unsat env
            {
-             Structs.Expr.ff = Structs.Expr.vrai;
+             Ast.Expr.ff = Ast.Expr.vrai;
              origin_name = "";
              gdist = -1;
              hdist = -1;
@@ -126,7 +126,7 @@ struct
              from_terms = [];
              theory_elim = true;
            });
-      Structs.Errors.run_error Structs.Errors.Failed_check_unsat_core
+      Ast.Errors.run_error Ast.Errors.Failed_check_unsat_core
     with
     | SAT.Unsat _ -> ()
     | (SAT.Sat _ | SAT.I_dont_know _) as e -> raise e
@@ -136,135 +136,135 @@ struct
 
   let mk_root_dep name f loc =
     if Util.Options.get_unsat_core () then
-      Structs.Ex.singleton (Structs.Ex.RootDep { name; f; loc })
-    else Structs.Ex.empty
+      Ast.Ex.singleton (Ast.Ex.RootDep { name; f; loc })
+    else Ast.Ex.empty
 
   let process_decl print_status used_context consistent_dep_stack
       ((env, consistent, dep) as acc) d =
     try
       match d.st_decl with
       | Push n ->
-          Util.Util.loop
-            ~f:(fun _n env () -> Stack.push env consistent_dep_stack)
-            ~max:n ~elt:(consistent, dep) ~init:();
-          (SAT.push env n, consistent, dep)
+        Util.Util.loop
+          ~f:(fun _n env () -> Stack.push env consistent_dep_stack)
+          ~max:n ~elt:(consistent, dep) ~init:();
+        (SAT.push env n, consistent, dep)
       | Pop n ->
-          let consistent, dep =
-            Util.Util.loop
-              ~f:(fun _n () _env -> Stack.pop consistent_dep_stack)
-              ~max:n ~elt:() ~init:(consistent, dep)
-          in
-          (SAT.pop env n, consistent, dep)
+        let consistent, dep =
+          Util.Util.loop
+            ~f:(fun _n () _env -> Stack.pop consistent_dep_stack)
+            ~max:n ~elt:() ~init:(consistent, dep)
+        in
+        (SAT.pop env n, consistent, dep)
       | Assume (n, f, mf) ->
-          let is_hyp = try Char.equal '@' n.[0] with _ -> false in
-          if (not is_hyp) && unused_context n used_context then acc
-          else
-            let dep =
-              if is_hyp then Structs.Ex.empty else mk_root_dep n f d.st_loc
-            in
-            if consistent then
-              ( SAT.assume env
-                  {
-                    Structs.Expr.ff = f;
-                    origin_name = n;
-                    gdist = -1;
-                    hdist = (if is_hyp then 0 else -1);
-                    trigger_depth = max_int;
-                    nb_reductions = 0;
-                    age = 0;
-                    lem = None;
-                    mf;
-                    gf = false;
-                    from_terms = [];
-                    theory_elim = true;
-                  }
-                  dep,
-                consistent,
-                dep )
-            else (env, consistent, dep)
+        let is_hyp = try Char.equal '@' n.[0] with _ -> false in
+        if (not is_hyp) && unused_context n used_context then acc
+        else
+          let dep =
+            if is_hyp then Ast.Ex.empty else mk_root_dep n f d.st_loc
+          in
+          if consistent then
+            ( SAT.assume env
+                {
+                  Ast.Expr.ff = f;
+                  origin_name = n;
+                  gdist = -1;
+                  hdist = (if is_hyp then 0 else -1);
+                  trigger_depth = max_int;
+                  nb_reductions = 0;
+                  age = 0;
+                  lem = None;
+                  mf;
+                  gf = false;
+                  from_terms = [];
+                  theory_elim = true;
+                }
+                dep,
+              consistent,
+              dep )
+          else (env, consistent, dep)
       | PredDef (f, name) ->
-          if unused_context name used_context then acc
-          else
-            let dep = mk_root_dep name f d.st_loc in
-            (SAT.pred_def env f name dep d.st_loc, consistent, dep)
+        if unused_context name used_context then acc
+        else
+          let dep = mk_root_dep name f d.st_loc in
+          (SAT.pred_def env f name dep d.st_loc, consistent, dep)
       | RwtDef _ -> assert false
       | Query (n, f, sort) ->
-          let dep =
-            if consistent then
-              let dep' =
-                SAT.unsat env
-                  {
-                    Structs.Expr.ff = f;
-                    origin_name = n;
-                    hdist = -1;
-                    gdist = 0;
-                    trigger_depth = max_int;
-                    nb_reductions = 0;
-                    age = 0;
-                    lem = None;
-                    mf = sort != Check;
-                    gf = true;
-                    from_terms = [];
-                    theory_elim = true;
-                  }
-              in
-              Structs.Ex.union dep' dep
-            else dep
-          in
-          if get_debug_unsat_core () then check_produced_unsat_core dep;
-          if get_save_used_context () then output_used_context n dep;
-          print_status (Unsat (d, dep)) (Util.Steps.get_steps ());
-          (env, false, dep)
-      | ThAssume ({ Structs.Expr.ax_name; Structs.Expr.ax_form; _ } as th_elt)
+        let dep =
+          if consistent then
+            let dep' =
+              SAT.unsat env
+                {
+                  Ast.Expr.ff = f;
+                  origin_name = n;
+                  hdist = -1;
+                  gdist = 0;
+                  trigger_depth = max_int;
+                  nb_reductions = 0;
+                  age = 0;
+                  lem = None;
+                  mf = sort != Check;
+                  gf = true;
+                  from_terms = [];
+                  theory_elim = true;
+                }
+            in
+            Ast.Ex.union dep' dep
+          else dep
+        in
+        if get_debug_unsat_core () then check_produced_unsat_core dep;
+        if get_save_used_context () then output_used_context n dep;
+        print_status (Unsat (d, dep)) (Util.Steps.get_steps ());
+        (env, false, dep)
+      | ThAssume ({ Ast.Expr.ax_name; Ast.Expr.ax_form; _ } as th_elt)
         ->
-          if unused_context ax_name used_context then acc
-          else if consistent then
-            let dep = mk_root_dep ax_name ax_form d.st_loc in
-            let env = SAT.assume_th_elt env th_elt dep in
-            (env, consistent, dep)
-          else (env, consistent, dep)
+        if unused_context ax_name used_context then acc
+        else if consistent then
+          let dep = mk_root_dep ax_name ax_form d.st_loc in
+          let env = SAT.assume_th_elt env th_elt dep in
+          (env, consistent, dep)
+        else (env, consistent, dep)
     with
     | SAT.Sat t ->
-        (* This case should mainly occur when a query has a non-unsat result,
-           so we want to print the status in this case. *)
-        print_status (Sat (d, t)) (Util.Steps.get_steps ());
-        if get_model () then SAT.print_model ~header:true (get_fmt_mdl ()) t;
-        (env, consistent, dep)
+      (* This case should mainly occur when a query has a non-unsat result,
+         so we want to print the status in this case. *)
+      print_status (Sat (d, t)) (Util.Steps.get_steps ());
+      if get_model () then SAT.print_model ~header:true (get_fmt_mdl ()) t;
+      (env, consistent, dep)
     | SAT.Unsat dep' ->
-        (* This case should mainly occur when a new assumption results in an unsat
-           env, in which case we do not want to print status, since the correct
-           status should be printed at the next query. *)
-        let dep = Structs.Ex.union dep dep' in
-        if get_debug_unsat_core () then check_produced_unsat_core dep;
-        (* print_status (Inconsistent d) (Steps.get_steps ()); *)
-        (env, false, dep)
+      (* This case should mainly occur when a new assumption results in an unsat
+         env, in which case we do not want to print status, since the correct
+         status should be printed at the next query. *)
+      let dep = Ast.Ex.union dep dep' in
+      if get_debug_unsat_core () then check_produced_unsat_core dep;
+      (* print_status (Inconsistent d) (Steps.get_steps ()); *)
+      (env, false, dep)
     | SAT.I_dont_know t ->
-        (* In this case, it's not clear whether we want to print the status.
-           Instead, it'd be better to accumulate in `consistent` a 3-case adt
-           and not a simple bool. *)
-        print_status (Unknown (d, t)) (Util.Steps.get_steps ());
-        if get_model () then SAT.print_model ~header:true (get_fmt_mdl ()) t;
-        (env, consistent, dep)
+      (* In this case, it's not clear whether we want to print the status.
+         Instead, it'd be better to accumulate in `consistent` a 3-case adt
+         and not a simple bool. *)
+      print_status (Unknown (d, t)) (Util.Steps.get_steps ());
+      if get_model () then SAT.print_model ~header:true (get_fmt_mdl ()) t;
+      (env, consistent, dep)
     | Util.Util.Timeout as e ->
-        (* In this case, we obviously want to print the status,
-           since we exit right after *)
-        print_status (Timeout (Some d)) (Util.Steps.get_steps ());
-        raise e
+      (* In this case, we obviously want to print the status,
+         since we exit right after *)
+      print_status (Timeout (Some d)) (Util.Steps.get_steps ());
+      raise e
 
   let print_status status steps =
     let check_status_consistency s =
       let known_status = get_status () in
       match s with
       | Unsat _ ->
-          if known_status == Status_Sat then (
-            Util.Printer.print_wrn
-              "This file is known to be Sat but Alt-Ergo return Unsat";
-            Structs.Errors.warning_as_error ())
+        if known_status == Status_Sat then (
+          Util.Printer.print_wrn
+            "This file is known to be Sat but Alt-Ergo return Unsat";
+          Ast.Errors.warning_as_error ())
       | Sat _ ->
-          if known_status == Status_Unsat then (
-            Util.Printer.print_wrn
-              "This file is known to be Unsat but Alt-Ergo return Sat";
-            Structs.Errors.warning_as_error ())
+        if known_status == Status_Unsat then (
+          Util.Printer.print_wrn
+            "This file is known to be Unsat but Alt-Ergo return Sat";
+          Ast.Errors.warning_as_error ())
       | Inconsistent _ | Unknown _ | Timeout _ | Preprocess -> assert false
     in
     let validity_mode =
@@ -278,43 +278,43 @@ struct
     let time = Time.value () in
     match status with
     | Unsat (d, dep) ->
-        let loc = d.st_loc in
-        Util.Printer.print_status_unsat ~validity_mode (Some loc) (Some time)
-          (Some steps) (get_goal_name d);
-        if
-          get_unsat_core ()
-          && (not (get_debug_unsat_core ()))
-          && not (get_save_used_context ())
-        then
-          Util.Printer.print_fmt
-            (Util.Options.get_fmt_usc ())
-            "unsat-core:@,%a@."
-            (Structs.Ex.print_unsat_core ~tab:true)
-            dep;
-        check_status_consistency status
+      let loc = d.st_loc in
+      Util.Printer.print_status_unsat ~validity_mode (Some loc) (Some time)
+        (Some steps) (get_goal_name d);
+      if
+        get_unsat_core ()
+        && (not (get_debug_unsat_core ()))
+        && not (get_save_used_context ())
+      then
+        Util.Printer.print_fmt
+          (Util.Options.get_fmt_usc ())
+          "unsat-core:@,%a@."
+          (Ast.Ex.print_unsat_core ~tab:true)
+          dep;
+      check_status_consistency status
     | Inconsistent d ->
-        let loc = d.st_loc in
-        Util.Printer.print_status_inconsistent ~validity_mode (Some loc)
-          (Some time) (Some steps) (get_goal_name d)
+      let loc = d.st_loc in
+      Util.Printer.print_status_inconsistent ~validity_mode (Some loc)
+        (Some time) (Some steps) (get_goal_name d)
     | Sat (d, _) ->
-        let loc = d.st_loc in
-        Util.Printer.print_status_sat ~validity_mode (Some loc) (Some time)
-          (Some steps) (get_goal_name d);
-        check_status_consistency status
+      let loc = d.st_loc in
+      Util.Printer.print_status_sat ~validity_mode (Some loc) (Some time)
+        (Some steps) (get_goal_name d);
+      check_status_consistency status
     | Unknown (d, _) ->
-        let loc = d.st_loc in
-        Util.Printer.print_status_unknown ~validity_mode (Some loc) (Some time)
-          (Some steps) (get_goal_name d)
+      let loc = d.st_loc in
+      Util.Printer.print_status_unknown ~validity_mode (Some loc) (Some time)
+        (Some steps) (get_goal_name d)
     | Timeout (Some d) ->
-        let loc = d.st_loc in
-        Util.Printer.print_status_timeout ~validity_mode (Some loc) (Some time)
-          (Some steps) (get_goal_name d)
+      let loc = d.st_loc in
+      Util.Printer.print_status_timeout ~validity_mode (Some loc) (Some time)
+        (Some steps) (get_goal_name d)
     | Timeout None ->
-        Util.Printer.print_status_timeout ~validity_mode None (Some time)
-          (Some steps) None
+      Util.Printer.print_status_timeout ~validity_mode None (Some time)
+        (Some steps) None
     | Preprocess ->
-        Util.Printer.print_status_preprocess ~validity_mode (Some time)
-          (Some steps)
+      Util.Printer.print_status_preprocess ~validity_mode (Some time)
+        (Some steps)
 
   let init_with_replay_used acc f =
     assert (Sys.file_exists f);
@@ -346,9 +346,9 @@ struct
       let dir = Filename.dirname (Util.Options.get_used_context_file ()) in
       Array.fold_left
         (fun acc f ->
-          let f = sprintf "%s/%s" dir f in
-          if Filename.check_suffix f ".used" then init_with_replay_used acc f
-          else acc)
+           let f = sprintf "%s/%s" dir f in
+           if Filename.check_suffix f ".used" then init_with_replay_used acc f
+           else acc)
         None (Sys.readdir dir)
     else None
 

@@ -8,7 +8,7 @@
 (*                                                                            *)
 (******************************************************************************)
 
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 
 (** Typed input
 
@@ -48,9 +48,9 @@ module type S = sig
   (** The empty/initial environment *)
 
   val type_parsed :
-    env -> env Stack.t -> parsed -> int Structs.Typed.atdecl list * env
-  (** Parse and typecheck some input file,
-        together with some prelude files. *)
+    env -> env Stack.t -> parsed -> int Ast.Typed.atdecl list * env
+    (** Parse and typecheck some input file,
+          together with some prelude files. *)
 end
 
 val register : string -> (module S) -> unit

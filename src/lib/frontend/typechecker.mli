@@ -26,7 +26,7 @@
 (*                                                                            *)
 (******************************************************************************)
 
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 
 type env
 (** The type of global environment of the typechecker. *)
@@ -36,9 +36,9 @@ val empty_env : env
 
 val type_expr :
   env ->
-  (Structs.Sy.t * Structs.Ty.t) list ->
-  Structs.Parsed.lexpr ->
-  int Structs.Typed.atterm
+  (Ast.Sy.t * Ast.Ty.t) list ->
+  Ast.Parsed.lexpr ->
+  int Ast.Typed.atterm
 (** Typecheck an input expression (i.e. term (or formula ?)), given
     a local environment and a list of local types used to extend the
     initial environment.
@@ -49,13 +49,13 @@ val type_expr :
 val type_parsed :
   env ->
   env Stack.t ->
-  Structs.Parsed.decl ->
-  int Structs.Typed.atdecl list * env
+  Ast.Parsed.decl ->
+  int Ast.Typed.atdecl list * env
 (** Type a single declaration.
     @raise Typing_error {!Errors.Typing_error} *)
 
 val type_file :
-  Structs.Parsed.file -> (int Structs.Typed.atdecl * env) list * env
+  Ast.Parsed.file -> (int Ast.Typed.atdecl * env) list * env
 (** Type an input file. Returns the successive global environments
     obtained after typing each declaration.
     @raise Typing_error {!Errors.Typing_error} *)
@@ -63,10 +63,10 @@ val type_file :
 (* TODO: move these functions out of the typechecker *)
 (* used by main_gui *)
 val split_goals :
-  (int Structs.Typed.atdecl * 'a) list ->
-  ((int Structs.Typed.atdecl * 'a) list * string) list
+  (int Ast.Typed.atdecl * 'a) list ->
+  ((int Ast.Typed.atdecl * 'a) list * string) list
 
 (* exported for compat with lib_usage.ml *)
 val split_goals_and_cnf :
-  (int Structs.Typed.atdecl * 'a) list ->
+  (int Ast.Typed.atdecl * 'a) list ->
   (Commands.sat_tdecl list * string) list

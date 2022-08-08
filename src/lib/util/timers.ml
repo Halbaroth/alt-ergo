@@ -199,11 +199,11 @@ let accumulate_cumulative_mode name env m f cur =
         (string_of_ty_module m) (string_of_ty_function f);
     List.iter
       (fun (m, f, _) ->
-        if Options.get_debug () then
-          Printer.print_dbg ~flushed:false ~header:false
-            "also update time of %s , %s@ " (string_of_ty_module m)
-            (string_of_ty_function f);
-        accumulate env cur m f)
+         if Options.get_debug () then
+           Printer.print_dbg ~flushed:false ~header:false
+             "also update time of %s , %s@ " (string_of_ty_module m)
+             (string_of_ty_function f);
+         accumulate env cur m f)
       env.stack;
     if Options.get_debug () then Printer.print_dbg ~header:false "@]")
 
@@ -212,10 +212,10 @@ let start env m f =
   let cur = MyUnix.cur_time () in
   accumulate_cumulative_mode "start" env m f cur;
   (match env.cur_t with
-  | M_None, _, _ -> ()
-  | kd ->
-      accumulate env cur m f;
-      env.stack <- kd :: env.stack);
+   | M_None, _, _ -> ()
+   | kd ->
+     accumulate env cur m f;
+     env.stack <- kd :: env.stack);
   env.cur_t <- (m, f, fresh_id ());
   env.cur_u <- cur
 
@@ -228,8 +228,8 @@ let pause env m f =
   match env.stack with
   | [] -> env.cur_t <- (M_None, F_none, 0)
   | kd :: st ->
-      env.cur_t <- kd;
-      env.stack <- st
+    env.cur_t <- kd;
+    env.stack <- st
 
 (** update the value of the current timer **)
 let update env =

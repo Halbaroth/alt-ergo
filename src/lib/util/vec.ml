@@ -26,8 +26,8 @@ let from_list l sz d =
     match !l with
     | [] -> assert false
     | e :: r ->
-        l := r;
-        e
+      l := r;
+      e
   in
   { data = Array.init sz f_init; sz; dummy = d }
 

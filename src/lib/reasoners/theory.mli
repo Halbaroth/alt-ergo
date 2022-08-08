@@ -26,7 +26,7 @@
 (*                                                                            *)
 (******************************************************************************)
 
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 
 module type S = sig
   type t
@@ -38,32 +38,32 @@ module type S = sig
      decreasing order with respect to (dlvl, plvl) *)
   val assume :
     ?ordered:bool ->
-    (Structs.Expr.t * Structs.Ex.t * int * int) list ->
+    (Ast.Expr.t * Ast.Ex.t * int * int) list ->
     t ->
-    t * Structs.Expr.Set.t * int
+    t * Ast.Expr.Set.t * int
 
-  val query : Structs.Expr.t -> t -> Th_util.answer
+  val query : Ast.Expr.t -> t -> Th_util.answer
   val print_model : Format.formatter -> t -> unit
-  val cl_extract : t -> Structs.Expr.Set.t list
-  val extract_ground_terms : t -> Structs.Expr.Set.t
+  val cl_extract : t -> Ast.Expr.Set.t list
+  val extract_ground_terms : t -> Ast.Expr.Set.t
   val get_real_env : t -> Ccx.Main.t
   val get_case_split_env : t -> Ccx.Main.t
-  val do_case_split : t -> t * Structs.Expr.Set.t
-  val add_term : t -> Structs.Expr.t -> add_in_cs:bool -> t
+  val do_case_split : t -> t * Ast.Expr.Set.t
+  val add_term : t -> Ast.Expr.t -> add_in_cs:bool -> t
   val compute_concrete_model : t -> t
-  val assume_th_elt : t -> Structs.Expr.th_elt -> Structs.Ex.t -> t
+  val assume_th_elt : t -> Ast.Expr.th_elt -> Ast.Ex.t -> t
 
   val theories_instances :
     do_syntactic_matching:bool ->
-    Matching_types.info Structs.Expr.Map.t
-    * Structs.Expr.t list Structs.Expr.Map.t Structs.Sy.Map.t ->
+    Matching_types.info Ast.Expr.Map.t
+    * Ast.Expr.t list Ast.Expr.Map.t Ast.Sy.Map.t ->
     t ->
-    (Structs.Expr.t -> Structs.Expr.t -> bool) ->
+    (Ast.Expr.t -> Ast.Expr.t -> bool) ->
     int ->
     int ->
     t * Sig_rel.instances
 
-  val get_assumed : t -> Structs.Expr.Set.t
+  val get_assumed : t -> Ast.Expr.Set.t
 end
 
 module Main_Default : S

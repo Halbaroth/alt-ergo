@@ -10,11 +10,11 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 open Util.Options
 
-module Atom = Structs.Satml_types.Atom
-module FF = Structs.Satml_types.Flat_Formula
+module Atom = Ast.Satml_types.Atom
+module FF = Ast.Satml_types.Flat_Formula
 open Atom
 
 exception Sat
@@ -26,9 +26,9 @@ exception Stopped
 type conflict_origin =
   | C_none
   | C_bool of clause
-  | C_theory of Structs.Ex.t
+  | C_theory of Ast.Ex.t
 
-let vraie_form = Structs.Expr.vrai
+let vraie_form = Ast.Expr.vrai
 
 
 module type SAT_ML = sig
@@ -50,19 +50,19 @@ module type SAT_ML = sig
 
   val assume :
     t ->
-    Atom.atom list list -> Atom.atom list list -> Structs.Expr.t ->
+    Atom.atom list list -> Atom.atom list list -> Ast.Expr.t ->
     cnumber : int ->
     Atom.atom option FF.Map.t -> dec_lvl:int ->
     unit
 
   val boolean_model : t -> Atom.atom list
   val instantiation_context :
-    t -> FF.hcons_env -> Structs.Satml_types.Atom.Set.t
+    t -> FF.hcons_env -> Ast.Satml_types.Atom.Set.t
   val current_tbox : t -> th
   val set_current_tbox : t -> th -> unit
   val empty : unit -> t
 
-  val assume_th_elt : t -> Structs.Expr.th_elt -> Structs.Ex.t -> unit
+  val assume_th_elt : t -> Ast.Expr.th_elt -> Ast.Ex.t -> unit
   val decision_level : t -> int
   val cancel_until : t -> int -> unit
 
@@ -81,7 +81,7 @@ module type SAT_ML = sig
   val decide : t -> Atom.atom -> unit
   val conflict_analyze_and_fix : t -> conflict_origin -> unit
 
-  val push : t -> Structs.Satml_types.Atom.atom -> unit
+  val push : t -> Ast.Satml_types.Atom.atom -> unit
   val pop : t -> unit
 
 end
@@ -408,7 +408,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
     env.decisions <- env.decisions + 1;
     Util.Vec.push env.trail_lim (Util.Vec.size env.trail);
     if Util.Options.get_profiling() then
-      Structs.Profiling.decision (decision_level env) "<none>";
+      Ast.Profiling.decision (decision_level env) "<none>";
     Util.Vec.push env.tenv_queue env.tenv; (* save the current tenv *)
     if Util.Options.get_cdcl_tableaux () then begin
       Util.Vec.push env.lazy_cnf_queue env.lazy_cnf;
@@ -528,7 +528,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
        with _ -> assert false
       );
     end;
-    if Util.Options.get_profiling() then Structs.Profiling.reset_dlevel (decision_level env);
+    if Util.Options.get_profiling() then Ast.Profiling.reset_dlevel (decision_level env);
     assert (Util.Vec.size env.trail_lim = Util.Vec.size env.tenv_queue);
     assert (Util.Options.get_minimal_bj () || (!repush == []));
     List.iter (enqueue_assigned env) !repush
@@ -634,7 +634,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
       (* clause vraie, la garder dans les watched *)
       Util.Vec.set watched !new_sz c;
       incr new_sz;
-      if Util.Options.get_profiling() then Structs.Profiling.elim true;
+      if Util.Options.get_profiling() then Ast.Profiling.elim true;
     end
     else
       try (* chercher un nouveau watcher *)
@@ -656,7 +656,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
             Util.Vec.set watched !new_sz (Util.Vec.get watched k);
             incr new_sz;
           done;
-          if Util.Options.get_profiling() then Structs.Profiling.bcp_conflict true true;
+          if Util.Options.get_profiling() then Ast.Profiling.bcp_conflict true true;
           raise (Conflict c)
         end
         else begin
@@ -665,7 +665,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
           incr new_sz;
           let mlvl = best_propagation_level env c in
           enqueue env first mlvl (Some c);
-          if Util.Options.get_profiling() then Structs.Profiling.red true;
+          if Util.Options.get_profiling() then Ast.Profiling.red true;
         end
       with Exit -> ()
 
@@ -693,7 +693,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
         let tenv, _ = Th.do_case_split env.tenv in
         env.tenv <- tenv;
         C_none
-      with Structs.Ex.Inconsistent (expl, _) ->
+      with Ast.Ex.Inconsistent (expl, _) ->
         C_theory expl
     else C_none
 
@@ -788,7 +788,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
   (*   if D1.d then Util.Printer.print_dbg
           "expensive_theory_propagate => None@."; *)
   (*   None *)
-  (* with Structs.Ex.Inconsistent dep ->  *)
+  (* with Ast.Ex.Inconsistent dep ->  *)
   (*   if D1.d then Util.Printer.print_dbg
        "expensive_theory_propagate => Inconsistent@."; *)
   (*   Some dep *)
@@ -800,7 +800,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
            assert (ta.is_true);
            assert (ta.var.level >= 0);
            if ta.var.level = 0 then
-             (ta.lit, Structs.Ex.empty, 0, env.cpt_current_propagations) :: acc
+             (ta.lit, Ast.Ex.empty, 0, env.cpt_current_propagations) :: acc
            else acc
         )[] lazy_q
     in
@@ -816,11 +816,11 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
         Util.Steps.incr (Util.Steps.Th_assumed cpt);
         env.unit_tenv <- t;
         C_none
-      with Structs.Ex.Inconsistent (dep, _terms) ->
+      with Ast.Ex.Inconsistent (dep, _terms) ->
         (* XXX what to do with terms ? *)
         (* Util.Printer.print_dbg
-           "th inconsistent : %a @." Structs.Ex.print dep; *)
-        if Util.Options.get_profiling() then Structs.Profiling.theory_conflict();
+           "th inconsistent : %a @." Ast.Ex.print dep; *)
+        if Util.Options.get_profiling() then Ast.Profiling.theory_conflict();
         C_theory dep
 
   let theory_propagate env =
@@ -847,10 +847,10 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
         in
         let ex =
           if get_unsat_core () || ta.var.level > 0 then
-            Structs.Ex.singleton (Structs.Ex.Literal ta)
-          else Structs.Ex.empty
+            Ast.Ex.singleton (Ast.Ex.Literal ta)
+          else Ast.Ex.empty
         in
-        assert (Structs.Expr.is_ground ta.lit);
+        assert (Ast.Expr.is_ground ta.lit);
         let th_imp =
           if ta.timp = -1 then
             let lit = Atom.literal a in
@@ -884,11 +884,11 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
           do_case_split env Util.Util.AfterTheoryAssume
         (*if full_model then expensive_theory_propagate ()
           else None*)
-        with Structs.Ex.Inconsistent (dep, _terms) ->
+        with Ast.Ex.Inconsistent (dep, _terms) ->
           (* XXX what to do with terms ? *)
           (* Util.Printer.print_dbg
-             "th inconsistent : %a @." Structs.Ex.print dep; *)
-          if Util.Options.get_profiling() then Structs.Profiling.theory_conflict();
+             "th inconsistent : %a @." Ast.Ex.print dep; *)
+          if Util.Options.get_profiling() then Ast.Profiling.theory_conflict();
           C_theory dep
 
   let propagate env =
@@ -1031,10 +1031,10 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
     end
     else
       let l =
-        Structs.Ex.fold_atoms
+        Ast.Ex.fold_atoms
           (fun ex l ->
              match ex with
-             | Structs.Ex.Literal { var = v; _ } ->
+             | Ast.Ex.Literal { var = v; _ } ->
                let l = List.rev_append v.vpremise l in
                begin match v.reason with
                  | None -> l
@@ -1077,8 +1077,8 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
        let rec theory_simplify () =
        let theory_simplification = 2 in
        let assume a =
-       assert (Structs.Expr.is_ground ta.lit);
-       ignore (Th.assume a.lit Structs.Ex.empty env.tenv)
+       assert (Ast.Expr.is_ground ta.lit);
+       ignore (Th.assume a.lit Ast.Ex.empty env.tenv)
        in
        if theory_simplification >= 2 then begin
        for i = 0 to Util.Vec.size env.vars - 1 do
@@ -1088,12 +1088,12 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
        try
        assume a;
        try assume a.neg
-       with Structs.Ex.Inconsistent _ ->
+       with Ast.Ex.Inconsistent _ ->
        if debug () then
        Util.Printer.print_dbg
        "%a propagated m/theory at level 0@." Atom.pr_atom a;
        enqueue a 0 None (* Mettre Some dep pour les unsat-core*)
-       with Structs.Ex.Inconsistent _ ->
+       with Ast.Ex.Inconsistent _ ->
        if debug () then
        Util.Printer.print_dbg
        "%a propagated m/theory at level 0@." Atom.pr_atom a.neg;
@@ -1262,10 +1262,10 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
     | C_none -> assert false
     | C_theory dep ->
       let atoms, sz, max_lvl, c_hist =
-        Structs.Ex.fold_atoms
+        Ast.Ex.fold_atoms
           (fun ex (acc, sz, max_lvl, c_hist) ->
              match ex with
-             | Structs.Ex.Literal a ->
+             | Ast.Ex.Literal a ->
                let c_hist = List.rev_append a.var.vpremise c_hist in
                let c_hist = match a.var.reason with
                  | None -> c_hist | Some r -> r:: c_hist
@@ -1313,14 +1313,14 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
 (*
   try
   let env = ref (Th.empty()) in ();
-  Structs.Ex.iter_atoms
+  Ast.Ex.iter_atoms
   (fun atom ->
-  let t,_,_ = Th.assume ~cs:true atom.lit (Structs.Ex.singleton atom) !env in
+  let t,_,_ = Th.assume ~cs:true atom.lit (Ast.Ex.singleton atom) !env in
   env := t)
   dep;
 (* ignore (Th.expensive_processing !env); *)
   assert false
-  with Structs.Ex.Inconsistent _ -> ()
+  with Ast.Ex.Inconsistent _ -> ()
 *)
 
 
@@ -1392,10 +1392,10 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
   let clause_of_dep d fuip =
     let cpt = ref 0 in
     let l =
-      Structs.Ex.fold_atoms
+      Ast.Ex.fold_atoms
         (fun e acc ->
            match e with
-           | Structs.Ex.Literal a ->
+           | Ast.Ex.Literal a ->
              incr cpt;
              a.neg :: acc
            | _ -> assert false
@@ -1412,7 +1412,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
         a.timp <- 1;
         Some (clause_of_dep d a)
       | None  ->
-        match Th.query (Structs.Expr.neg lit) tenv with
+        match Th.query (Ast.Expr.neg lit) tenv with
         | Some (d,_) ->
           a.neg.timp <- 1;
           Some (clause_of_dep d a.Atom.neg)
@@ -1539,7 +1539,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
               (fun (atoms, init) a ->
                  if a.is_true then raise Trivial;
                  if a.neg.is_true then begin
-                   if Util.Options.get_profiling() then Structs.Profiling.red true;
+                   if Util.Options.get_profiling() then Ast.Profiling.red true;
                    atoms, (List.rev_append (a.var.vpremise) init)
                  end
                  else a::atoms, init
@@ -1592,7 +1592,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
     (* TODO *)
 
     with Trivial ->
-      if Util.Options.get_profiling() then Structs.Profiling.elim true
+      if Util.Options.get_profiling() then Ast.Profiling.elim true
 
 
   let update_lazy_cnf env ~do_bcp mff ~dec_lvl =
@@ -1722,7 +1722,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
     if Util.Options.get_cdcl_tableaux_th () then
       (* use atoms from theory environment if tableaux method
          is used for theories *)
-      Structs.Expr.Set.fold
+      Ast.Expr.Set.fold
         (fun a accu ->
            SA.add (FF.get_atom hcons a) accu
         )(Th.get_assumed env.tenv) SA.empty

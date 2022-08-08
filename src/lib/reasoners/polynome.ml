@@ -27,7 +27,7 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 open Format
 open Util.Options
 module Z = Util.Numbers.Z
@@ -49,7 +49,7 @@ module type T = sig
   val compare : t -> t -> int
   val equal : t -> t -> bool
   val hash : t -> int
-  val create : (Q.t * r) list -> Q.t -> Structs.Ty.t -> t
+  val create : (Q.t * r) list -> Q.t -> Ast.Ty.t -> t
   val add : t -> t -> t
   val sub : t -> t -> t
   val mult : t -> t -> t
@@ -66,7 +66,7 @@ module type T = sig
   val to_list : t -> (Q.t * r) list * Q.t
   val leaves : t -> r list
   val print : Format.formatter -> t -> unit
-  val type_info : t -> Structs.Ty.t
+  val type_info : t -> Ast.Ty.t
   val is_monomial : t -> (Q.t * r * Q.t) option
   val ppmc_denominators : t -> Q.t
   val pgcd_numerators : t -> Q.t
@@ -87,13 +87,13 @@ module Make (X : S) = struct
   type r = X.r
 
   module M : Map.S with type key = r = Map.Make (struct
-    type t = r
+      type t = r
 
-    (*sorted in decreasing order to comply with AC(X) order requirements*)
-    let compare x y = X.str_cmp y x
-  end)
+      (*sorted in decreasing order to comply with AC(X) order requirements*)
+      let compare x y = X.str_cmp y x
+    end)
 
-  type t = { m : Q.t M.t; c : Q.t; ty : Structs.Ty.t }
+  type t = { m : Q.t M.t; c : Q.t; ty : Ast.Ty.t }
 
   let map_to_list m =
     List.rev (M.fold (fun x a aliens -> (a, x) :: aliens) m [])
@@ -104,20 +104,20 @@ module Make (X : S) = struct
     try
       List.iter2
         (fun (a, x) (b, y) ->
-          let c = X.str_cmp x y in
-          if c <> 0 then raise (Out c);
-          let c = Q.compare a b in
-          if c <> 0 then raise (Out c))
+           let c = X.str_cmp x y in
+           if c <> 0 then raise (Out c);
+           let c = Q.compare a b in
+           if c <> 0 then raise (Out c))
         l1 l2;
       0
     with
     | Out c -> c
     | Invalid_argument s ->
-        assert (String.compare s "List.iter2" = 0);
-        List.length l1 - List.length l2
+      assert (String.compare s "List.iter2" = 0);
+      List.length l1 - List.length l2
 
   let compare p1 p2 =
-    let c = Structs.Ty.compare p1.ty p2.ty in
+    let c = Ast.Ty.compare p1.ty p2.ty in
     if c <> 0 then c
     else
       match (M.is_empty p1.m, M.is_empty p2.m) with
@@ -125,8 +125,8 @@ module Make (X : S) = struct
       | false, true -> 1
       | true, true -> Q.compare p1.c p2.c
       | false, false ->
-          let c = compare_maps (map_to_list p1.m) (map_to_list p2.m) in
-          if c = 0 then Q.compare p1.c p2.c else c
+        let c = compare_maps (map_to_list p1.m) (map_to_list p2.m) in
+        if c = 0 then Q.compare p1.c p2.c else c
 
   let equal { m = m1; c = c1; _ } { m = m2; c = c2; _ } =
     Q.equal c1 c2 && M.equal Q.equal m1 m2
@@ -136,7 +136,7 @@ module Make (X : S) = struct
       M.fold
         (fun k v acc -> (23 * acc) + (X.hash k * Q.hash v))
         p.m
-        ((19 * Q.hash p.c) + (17 * Structs.Ty.hash p.ty))
+        ((19 * Q.hash p.c) + (17 * Ast.Ty.hash p.ty))
     in
     abs h
 
@@ -146,15 +146,15 @@ module Make (X : S) = struct
       let zero = ref true in
       M.iter
         (fun x n ->
-          let s, n, op =
-            if Q.equal n Q.one then ((if !zero then "" else "+"), "", "")
-            else if Q.equal n Q.m_one then ("-", "", "")
-            else if Q.sign n > 0 then
-              ((if !zero then "" else "+"), Q.to_string n, "*")
-            else ("-", Q.to_string (Q.minus n), "*")
-          in
-          zero := false;
-          fprintf fmt "%s%s%s%a" s n op X.print x)
+           let s, n, op =
+             if Q.equal n Q.one then ((if !zero then "" else "+"), "", "")
+             else if Q.equal n Q.m_one then ("-", "", "")
+             else if Q.sign n > 0 then
+               ((if !zero then "" else "+"), Q.to_string n, "*")
+             else ("-", Q.to_string (Q.minus n), "*")
+           in
+           zero := false;
+           fprintf fmt "%s%s%s%a" s n op X.print x)
         p.m;
       let s, n =
         if Q.sign p.c > 0 then ((if !zero then "" else "+"), Q.to_string p.c)
@@ -171,7 +171,7 @@ module Make (X : S) = struct
         fprintf fmt "%s%s"
           (if Q.compare_to_0 p.c >= 0 then "+ " else "")
           (Q.to_string p.c);
-        fprintf fmt " [%a]" Structs.Ty.print p.ty)
+        fprintf fmt " [%a]" Ast.Ty.print p.ty)
   end
   (*BISECT-IGNORE-END*)
 
@@ -183,8 +183,8 @@ module Make (X : S) = struct
     let m =
       List.fold_left
         (fun m (n, x) ->
-          let n' = Q.add n (find x m) in
-          if Q.sign n' = 0 then M.remove x m else M.add x n' m)
+           let n' = Q.add n (find x m) in
+           if Q.sign n' = 0 then M.remove x m else M.add x n' m)
         M.empty l
     in
     { m; c; ty }
@@ -194,8 +194,8 @@ module Make (X : S) = struct
     let m =
       M.fold
         (fun x a m ->
-          let a' = Q.add (find x m) a in
-          if Q.sign a' = 0 then M.remove x m else M.add x a' m)
+           let a' = Q.add (find x m) a in
+           if Q.sign a' = 0 then M.remove x m else M.add x a' m)
         p2.m p1.m
     in
     { m; c = Q.add p1.c p2.c; ty = p1.ty }
@@ -224,8 +224,8 @@ module Make (X : S) = struct
     let m =
       M.fold
         (fun x a m ->
-          let a' = Q.sub (find x m) a in
-          if Q.sign a' = 0 then M.remove x m else M.add x a' m)
+           let a' = Q.sub (find x m) a in
+           if Q.sign a' = 0 then M.remove x m else M.add x a' m)
         p2.m p1.m
     in
     { m; c = Q.sub p1.c p2.c; ty = p1.ty }
@@ -242,9 +242,9 @@ module Make (X : S) = struct
     if Q.sign p2.c = 0 then raise Division_by_zero;
     let p = mult_const (Q.div Q.one p2.c) p1 in
     match (M.is_empty p.m, p.ty) with
-    | _, Structs.Ty.Treal -> (p, false)
-    | true, Structs.Ty.Tint -> ({ p with c = euc_div_num p1.c p2.c }, false)
-    | false, Structs.Ty.Tint -> (p, true (* XXX *))
+    | _, Ast.Ty.Treal -> (p, false)
+    | true, Ast.Ty.Tint -> ({ p with c = euc_div_num p1.c p2.c }, false)
+    | false, Ast.Ty.Tint -> (p, true (* XXX *))
     | _ -> assert false
 
   let modulo p1 p2 =
@@ -263,8 +263,8 @@ module Make (X : S) = struct
     (try
        M.iter
          (fun x a ->
-           tn := Some (a, x);
-           raise Exit)
+            tn := Some (a, x);
+            raise Exit)
          p.m
      with Exit -> ());
     (*version II : prend le dernier element de la table i.e. le plus grand
@@ -281,10 +281,10 @@ module Make (X : S) = struct
   let to_list p = (map_to_list p.m, p.c)
 
   module SX = Set.Make (struct
-    type t = r
+      type t = r
 
-    let compare = X.hash_cmp
-  end)
+      let compare = X.hash_cmp
+    end)
 
   let xs_of_list sx l = List.fold_left (fun s x -> SX.add x s) sx l
 
@@ -329,15 +329,15 @@ module Make (X : S) = struct
     let mp, acc =
       M.fold
         (fun r i (mp, acc) ->
-          let r, acc = X.abstract_selectors r acc in
-          let mp =
-            try
-              let j = M.find r mp in
-              let k = Q.add i j in
-              if Q.sign k = 0 then M.remove r mp else M.add r k mp
-            with Not_found -> M.add r i mp
-          in
-          (mp, acc))
+           let r, acc = X.abstract_selectors r acc in
+           let mp =
+             try
+               let j = M.find r mp in
+               let k = Q.add i j in
+               if Q.sign k = 0 then M.remove r mp else M.add r k mp
+             with Not_found -> M.add r i mp
+           in
+           (mp, acc))
         p.m (M.empty, acc)
     in
     ({ p with m = mp }, acc)

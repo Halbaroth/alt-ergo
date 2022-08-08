@@ -92,26 +92,26 @@ let print_view ?(lbl = "") pr_elt fmt vw =
   match vw with
   | Eq (z1, z2) -> Format.fprintf fmt "%s %a = %a" lbl pr_elt z1 pr_elt z2
   | Distinct (b, z :: l) ->
-      let b = if b then "~ " else "" in
-      Format.fprintf fmt "%s %s%a" lbl b pr_elt z;
-      List.iter (fun x -> Format.fprintf fmt " <> %a" pr_elt x) l
+    let b = if b then "~ " else "" in
+    Format.fprintf fmt "%s %s%a" lbl b pr_elt z;
+    List.iter (fun x -> Format.fprintf fmt " <> %a" pr_elt x) l
   | Builtin (true, LE, [ v1; v2 ]) ->
-      Format.fprintf fmt "%s %a <= %a" lbl pr_elt v1 pr_elt v2
+    Format.fprintf fmt "%s %a <= %a" lbl pr_elt v1 pr_elt v2
   | Builtin (true, LT, [ v1; v2 ]) ->
-      Format.fprintf fmt "%s %a < %a" lbl pr_elt v1 pr_elt v2
+    Format.fprintf fmt "%s %a < %a" lbl pr_elt v1 pr_elt v2
   | Builtin (false, LE, [ v1; v2 ]) ->
-      Format.fprintf fmt "%s %a > %a" lbl pr_elt v1 pr_elt v2
+    Format.fprintf fmt "%s %a > %a" lbl pr_elt v1 pr_elt v2
   | Builtin (false, LT, [ v1; v2 ]) ->
-      Format.fprintf fmt "%s %a >= %a" lbl pr_elt v1 pr_elt v2
+    Format.fprintf fmt "%s %a >= %a" lbl pr_elt v1 pr_elt v2
   | Builtin (_, (LE | LT), _) -> assert false (* not reachable *)
   | Builtin (pos, IsConstr hs, [ e ]) ->
-      Format.fprintf fmt "%s(%a ? %a)"
-        (if pos then "" else "not ")
-        pr_elt e Util.Hstring.print hs
+    Format.fprintf fmt "%s(%a ? %a)"
+      (if pos then "" else "not ")
+      pr_elt e Util.Hstring.print hs
   | Builtin (_, IsConstr _, _) -> assert false (* not reachable *)
   | Pred (p, b) ->
-      Format.fprintf fmt "%s %a = %s" lbl pr_elt p
-        (if b then "false" else "true")
+    Format.fprintf fmt "%s %a = %s" lbl pr_elt p
+      (if b then "false" else "true")
   | Distinct (_, _) -> assert false
 
 module Make (X : OrderedType) : S with type elt = X.t = struct
@@ -130,7 +130,7 @@ module Make (X : OrderedType) : S with type elt = X.t = struct
     match (t.neg, t.at.value) with
     | false, EQ (s, t) -> Eq (s, t)
     | true, EQ (s, t) ->
-        Distinct (false, [ s; t ]) (* b false <-> not negated *)
+      Distinct (false, [ s; t ]) (* b false <-> not negated *)
     | false, EQ_LIST l -> Distinct (true, l)
     | true, EQ_LIST l -> Distinct (false, l)
     | b, PR p -> Pred (p, b)
@@ -186,14 +186,14 @@ module Make (X : OrderedType) : S with type elt = X.t = struct
       match a.value with
       | EQ (t1, t2) -> abs (19 * (X.hash t1 + X.hash t2))
       | BT (n, l) ->
-          abs
-            (List.fold_left
-               (fun acc t -> (acc * 13) + X.hash t)
-               (Hashtbl.hash n + 7)
-               l)
+        abs
+          (List.fold_left
+             (fun acc t -> (acc * 13) + X.hash t)
+             (Hashtbl.hash n + 7)
+             l)
       | PR p -> abs (17 * X.hash p) (*XXX * 29 ?*)
       | EQ_LIST l ->
-          abs (List.fold_left (fun acc t -> (acc * 31) + X.hash t) 1 l)
+        abs (List.fold_left (fun acc t -> (acc * 31) + X.hash t) 1 l)
 
     let set_id n v = { v with uid = n }
     let initial_size = 9001

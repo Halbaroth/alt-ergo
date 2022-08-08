@@ -10,32 +10,32 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 
 module Make (Th : Theory.S) = struct
   open Util.Options
-  module Atom = Structs.Satml_types.Atom
+  module Atom = Ast.Satml_types.Atom
   module MA = Atom.Map
   module SAT = Satml.Make (Th)
-  module PF = Structs.Satml_types.Proxy_formula
+  module PF = Ast.Satml_types.Proxy_formula
 
   type t = {
     sat : SAT.t;
-    assumed : Structs.Expr.Set.t;
-    proxies : Atom.atom Structs.Expr.Map.t;
-    inv_proxies : Structs.Expr.t MA.t;
+    assumed : Ast.Expr.Set.t;
+    proxies : Atom.atom Ast.Expr.Map.t;
+    inv_proxies : Ast.Expr.t MA.t;
     hcons_env : Atom.hcons_env;
-    decisions : (int * Structs.Expr.t) list;
-    pending : (Structs.Expr.gformula * Structs.Ex.t) list list;
+    decisions : (int * Ast.Expr.t) list;
+    pending : (Ast.Expr.gformula * Ast.Ex.t) list list;
   }
 
-  exception Bottom of Structs.Ex.t * Structs.Expr.Set.t list * t
+  exception Bottom of Ast.Ex.t * Ast.Expr.Set.t list * t
 
   let empty () =
     {
       sat = SAT.empty ();
-      assumed = Structs.Expr.Set.empty;
-      proxies = Structs.Expr.Map.empty;
+      assumed = Ast.Expr.Set.empty;
+      proxies = Ast.Expr.Map.empty;
       inv_proxies = MA.empty;
       hcons_env = Atom.empty_hcons_env ();
       decisions = [];
@@ -51,19 +51,19 @@ module Make (Th : Theory.S) = struct
   let is_true env f =
     match PF.get_proxy_of f env.proxies with
     | Some p ->
-        assert ((not (Atom.is_true p)) || Atom.level p >= 0);
-        if Atom.is_true p then
-          let l_ex =
-            let r =
-              Atom.Set.fold
-                (fun a acc -> Structs.Expr.Set.add (formula_of_atom env a) acc)
-                (SAT.reason_of_deduction p)
-                Structs.Expr.Set.empty
-            in
-            lazy (Structs.Ex.make_deps r)
+      assert ((not (Atom.is_true p)) || Atom.level p >= 0);
+      if Atom.is_true p then
+        let l_ex =
+          let r =
+            Atom.Set.fold
+              (fun a acc -> Ast.Expr.Set.add (formula_of_atom env a) acc)
+              (SAT.reason_of_deduction p)
+              Ast.Expr.Set.empty
           in
-          Some (l_ex, Atom.level p)
-        else None
+          lazy (Ast.Ex.make_deps r)
+        in
+        Some (l_ex, Atom.level p)
+      else None
     | None -> assert false
 
   let forget_decision env f lvl =
@@ -74,7 +74,7 @@ module Make (Th : Theory.S) = struct
       | Some p -> p
       | None -> (
           (* TODO *)
-          match PF.get_proxy_of (Structs.Expr.neg f) env.proxies with
+          match PF.get_proxy_of (Ast.Expr.neg f) env.proxies with
           | Some p -> p
           | None -> assert false)
     in
@@ -91,31 +91,31 @@ module Make (Th : Theory.S) = struct
   let get_decisions env = env.decisions
 
   let decide_aux env (dlvl, f) =
-    match (is_true env f, is_true env (Structs.Expr.neg f)) with
+    match (is_true env f, is_true env (Ast.Expr.neg f)) with
     | None, None -> (
         match PF.get_proxy_of f env.proxies with
         | Some p -> SAT.decide env.sat p
         | None -> assert false)
     | Some _, Some _ -> assert false
     | Some _, None ->
-        if get_verbose () && get_debug_sat () then
-          Util.Printer.print_dbg ~module_name:"Satml_frontend_hybrid"
-            ~function_name:"decide_aux"
-            "!!! [dlvl=%d] %a becomes true before deciding" dlvl
-            Structs.Expr.print f
+      if get_verbose () && get_debug_sat () then
+        Util.Printer.print_dbg ~module_name:"Satml_frontend_hybrid"
+          ~function_name:"decide_aux"
+          "!!! [dlvl=%d] %a becomes true before deciding" dlvl
+          Ast.Expr.print f
     | None, Some (ex, _) ->
-        if get_verbose () && get_debug_sat () then
-          Util.Printer.print_dbg ~module_name:"Satml_frontend_hybrid"
-            ~function_name:"decide_aux"
-            "!!! [dlvl=%d] %a becomes false before deciding" dlvl
-            Structs.Expr.print f;
-        (* Satml_types.Atom.pr_atom (fst f); *)
-        let ex =
-          Structs.Ex.union
-            (Structs.Ex.singleton (Structs.Ex.Bj f))
-            (Lazy.force ex)
-        in
-        raise (Bottom (ex, [], env))
+      if get_verbose () && get_debug_sat () then
+        Util.Printer.print_dbg ~module_name:"Satml_frontend_hybrid"
+          ~function_name:"decide_aux"
+          "!!! [dlvl=%d] %a becomes false before deciding" dlvl
+          Ast.Expr.print f;
+      (* Satml_types.Atom.pr_atom (fst f); *)
+      let ex =
+        Ast.Ex.union
+          (Ast.Ex.singleton (Ast.Ex.Bj f))
+          (Lazy.force ex)
+      in
+      raise (Bottom (ex, [], env))
   (*SAT.print_env ();*)
 
   let assume delay env l =
@@ -127,26 +127,26 @@ module Make (Th : Theory.S) = struct
       let env, pfl, cnf, new_vars =
         List.fold_left
           (fun acc l ->
-            List.fold_left
-              (fun ((env, pfl, cnf, vars) as acc)
-                   ({ Structs.Expr.ff = f; _ }, ex) ->
-                if Structs.Expr.Set.mem f env.assumed then acc
-                else if Structs.Ex.has_no_bj ex then
-                  let pf, (added_proxy, inv_proxies, new_vars, cnf) =
-                    PF.mk_cnf env.hcons_env f
-                      (env.proxies, env.inv_proxies, vars, cnf)
-                  in
-                  ( {
-                      env with
-                      assumed = Structs.Expr.Set.add f env.assumed;
-                      proxies = added_proxy;
-                      inv_proxies;
-                    },
-                    [ pf ] :: pfl,
-                    cnf,
-                    new_vars )
-                else acc)
-              acc l)
+             List.fold_left
+               (fun ((env, pfl, cnf, vars) as acc)
+                 ({ Ast.Expr.ff = f; _ }, ex) ->
+                 if Ast.Expr.Set.mem f env.assumed then acc
+                 else if Ast.Ex.has_no_bj ex then
+                   let pf, (added_proxy, inv_proxies, new_vars, cnf) =
+                     PF.mk_cnf env.hcons_env f
+                       (env.proxies, env.inv_proxies, vars, cnf)
+                   in
+                   ( {
+                     env with
+                     assumed = Ast.Expr.Set.add f env.assumed;
+                     proxies = added_proxy;
+                     inv_proxies;
+                   },
+                     [ pf ] :: pfl,
+                     cnf,
+                     new_vars )
+                 else acc)
+               acc l)
           (env, [], [], []) ll
       in
       if pfl != [] then env
@@ -164,23 +164,23 @@ module Make (Th : Theory.S) = struct
             List.iter (decide_aux env) (List.rev env.decisions)
           with
           | Satml.Sat ->
-              assert false
-              (* Uncomment if Sat.solve is called *)
-              (* SAT.cancel_until env.sat 0;
-               * env *)
+            assert false
+          (* Uncomment if Sat.solve is called *)
+          (* SAT.cancel_until env.sat 0;
+           * env *)
           | Satml.Unsat _ ->
-              assert (
-                Util.Options.get_tableaux_cdcl ()
-                && SAT.decision_level env.sat = 0);
-              raise (Bottom (Structs.Ex.empty, [], env))
+            assert (
+              Util.Options.get_tableaux_cdcl ()
+              && SAT.decision_level env.sat = 0);
+            raise (Bottom (Ast.Ex.empty, [], env))
           | Satml.Last_UIP_reason r ->
-              let r =
-                Atom.Set.fold
-                  (fun a acc ->
-                    Structs.Expr.Set.add (formula_of_atom env a) acc)
-                  r Structs.Expr.Set.empty
-              in
-              raise (Bottom (Structs.Ex.make_deps r, [], env))
+            let r =
+              Atom.Set.fold
+                (fun a acc ->
+                   Ast.Expr.Set.add (formula_of_atom env a) acc)
+                r Ast.Expr.Set.empty
+            in
+            raise (Bottom (Ast.Ex.make_deps r, [], env))
         in
         env
 
@@ -191,14 +191,14 @@ module Make (Th : Theory.S) = struct
       { env with decisions = (dlvl, f) :: env.decisions }
     with
     | Satml.Unsat _ ->
-        assert (
-          Util.Options.get_tableaux_cdcl () && SAT.decision_level env.sat = 0);
-        raise (Bottom (Structs.Ex.empty, [], env))
+      assert (
+        Util.Options.get_tableaux_cdcl () && SAT.decision_level env.sat = 0);
+      raise (Bottom (Ast.Ex.empty, [], env))
     | Satml.Last_UIP_reason r ->
-        let r =
-          Atom.Set.fold
-            (fun a acc -> Structs.Expr.Set.add (formula_of_atom env a) acc)
-            r Structs.Expr.Set.empty
-        in
-        raise (Bottom (Structs.Ex.make_deps r, [], env))
+      let r =
+        Atom.Set.fold
+          (fun a acc -> Ast.Expr.Set.add (formula_of_atom env a) acc)
+          r Ast.Expr.Set.empty
+      in
+      raise (Bottom (Ast.Ex.make_deps r, [], env))
 end

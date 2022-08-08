@@ -39,24 +39,24 @@ type exp =
   | RootDep of rootdep
 
 module S = Set.Make (struct
-  type t = exp
+    type t = exp
 
-  let compare a b =
-    match (a, b) with
-    | Fresh i1, Fresh i2 -> i1 - i2
-    | Literal a, Literal b -> Satml_types.Atom.cmp_atom a b
-    | Dep e1, Dep e2 -> Expr.compare e1 e2
-    | RootDep r1, RootDep r2 -> Expr.compare r1.f r2.f
-    | Bj e1, Bj e2 -> Expr.compare e1 e2
-    | Literal _, _ -> -1
-    | _, Literal _ -> 1
-    | Fresh _, _ -> -1
-    | _, Fresh _ -> 1
-    | Dep _, _ -> 1
-    | _, Dep _ -> -1
-    | RootDep _, _ -> 1
-    | _, RootDep _ -> -1
-end)
+    let compare a b =
+      match (a, b) with
+      | Fresh i1, Fresh i2 -> i1 - i2
+      | Literal a, Literal b -> Satml_types.Atom.cmp_atom a b
+      | Dep e1, Dep e2 -> Expr.compare e1 e2
+      | RootDep r1, RootDep r2 -> Expr.compare r1.f r2.f
+      | Bj e1, Bj e2 -> Expr.compare e1 e2
+      | Literal _, _ -> -1
+      | _, Literal _ -> 1
+      | Fresh _, _ -> -1
+      | _, Fresh _ -> 1
+      | Dep _, _ -> 1
+      | _, Dep _ -> -1
+      | RootDep _, _ -> 1
+      | _, RootDep _ -> -1
+  end)
 
 let is_empty t = S.is_empty t
 
@@ -101,18 +101,18 @@ let print fmt ex =
 let get_unsat_core dep =
   fold_atoms
     (fun a acc ->
-      match a with
-      | RootDep r -> r :: acc
-      | Dep _ -> acc
-      | Bj _ | Fresh _ | Literal _ -> assert false)
+       match a with
+       | RootDep r -> r :: acc
+       | Dep _ -> acc
+       | Bj _ | Fresh _ | Literal _ -> assert false)
     dep []
 
 let print_unsat_core ?(tab = false) fmt dep =
   iter_atoms
     (function
       | RootDep r ->
-          if tab then Format.fprintf fmt "  %s@." r.name (* tab is too big *)
-          else Format.fprintf fmt "%s@." r.name
+        if tab then Format.fprintf fmt "  %s@." r.name (* tab is too big *)
+        else Format.fprintf fmt "%s@." r.name
       | Dep _ -> ()
       | Bj _ | Fresh _ | Literal _ -> assert false)
     dep
@@ -120,19 +120,19 @@ let print_unsat_core ?(tab = false) fmt dep =
 let formulas_of s =
   S.fold
     (fun e acc ->
-      match e with
-      | Dep f | Bj f -> Expr.Set.add f acc
-      | RootDep _ | Fresh _ -> acc
-      | Literal _ -> assert false (*TODO*))
+       match e with
+       | Dep f | Bj f -> Expr.Set.add f acc
+       | RootDep _ | Fresh _ -> acc
+       | Literal _ -> assert false (*TODO*))
     s Expr.Set.empty
 
 let bj_formulas_of s =
   S.fold
     (fun e acc ->
-      match e with
-      | Bj f -> Expr.Set.add f acc
-      | Dep _ | RootDep _ | Fresh _ -> acc
-      | Literal _ -> assert false (*TODO*))
+       match e with
+       | Bj f -> Expr.Set.add f acc
+       | Dep _ | RootDep _ | Fresh _ -> acc
+       | Literal _ -> assert false (*TODO*))
     s Expr.Set.empty
 
 let rec literals_of_acc lit fs f acc =
@@ -140,21 +140,21 @@ let rec literals_of_acc lit fs f acc =
   | Expr.Not_a_form -> assert false
   | Expr.Literal _ -> if lit then f :: acc else acc
   | Expr.Iff (f1, f2) ->
-      let g = Expr.elim_iff f1 f2 (Expr.id f) ~with_conj:true in
-      literals_of_acc lit fs g acc
+    let g = Expr.elim_iff f1 f2 (Expr.id f) ~with_conj:true in
+    literals_of_acc lit fs g acc
   | Expr.Xor (f1, f2) ->
-      let g = Expr.neg @@ Expr.elim_iff f1 f2 (Expr.id f) ~with_conj:false in
-      literals_of_acc lit fs g acc
+    let g = Expr.neg @@ Expr.elim_iff f1 f2 (Expr.id f) ~with_conj:false in
+    literals_of_acc lit fs g acc
   | Expr.Unit (f1, f2) ->
-      let acc = literals_of_acc false fs f1 acc in
-      literals_of_acc false fs f2 acc
+    let acc = literals_of_acc false fs f1 acc in
+    literals_of_acc false fs f2 acc
   | Expr.Clause (f1, f2, _) ->
-      let acc = literals_of_acc true fs f1 acc in
-      literals_of_acc true fs f2 acc
+    let acc = literals_of_acc true fs f1 acc in
+    literals_of_acc true fs f2 acc
   | Expr.Lemma _ -> acc
   | Expr.Skolem { Expr.main = f; _ } -> literals_of_acc true fs f acc
   | Expr.Let { Expr.in_e; let_e; _ } ->
-      literals_of_acc true fs in_e @@ literals_of_acc true fs let_e acc
+    literals_of_acc true fs in_e @@ literals_of_acc true fs let_e acc
 
 let literals_of ex =
   let fs = formulas_of ex in
@@ -163,9 +163,9 @@ let literals_of ex =
 let literals_ids_of ex =
   List.fold_left
     (fun acc f ->
-      let i = Expr.id f in
-      let m = try Util.Util.MI.find i acc with Not_found -> 0 in
-      Util.Util.MI.add i (m + 1) acc)
+       let i = Expr.id f in
+       let m = try Util.Util.MI.find i acc with Not_found -> 0 in
+       Util.Util.MI.add i (m + 1) acc)
     Util.Util.MI.empty (literals_of ex)
 
 let make_deps sf = Expr.Set.fold (fun l acc -> S.add (Bj l) acc) sf S.empty

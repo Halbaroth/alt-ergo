@@ -342,7 +342,7 @@ module Atom : ATOM = struct
   let get_atom hcons lit =
     try (HT.find hcons.tbl lit).pa
     with Not_found -> (
-      try (HT.find hcons.tbl (Expr.neg lit)).na with Not_found -> assert false)
+        try (HT.find hcons.tbl (Expr.neg lit)).na with Not_found -> assert false)
 
   let make_clause name ali f sz_ali is_learnt premise =
     let atoms = Util.Vec.from_list ali sz_ali dummy_atom in
@@ -394,29 +394,29 @@ module Atom : ATOM = struct
     match a.var.reason with
     | None -> []
     | Some c ->
-        let cpt = ref 0 in
-        let l = ref [] in
-        for i = 0 to Util.Vec.size c.atoms - 1 do
-          let b = Util.Vec.get c.atoms i in
-          if eq_atom a b then incr cpt else l := b :: !l
-        done;
-        if !cpt <> 1 then (
-          Util.Printer.print_err "cpt = %d@ a = %a@ c = %a" !cpt pr_atom a
-            pr_clause c;
-          assert false);
-        !l
+      let cpt = ref 0 in
+      let l = ref [] in
+      for i = 0 to Util.Vec.size c.atoms - 1 do
+        let b = Util.Vec.get c.atoms i in
+        if eq_atom a b then incr cpt else l := b :: !l
+      done;
+      if !cpt <> 1 then (
+        Util.Printer.print_err "cpt = %d@ a = %a@ c = %a" !cpt pr_atom a
+          pr_clause c;
+        assert false);
+      !l
 
   module Set = Set.Make (struct
-    type t = atom
+      type t = atom
 
-    let compare = cmp_atom
-  end)
+      let compare = cmp_atom
+    end)
 
   module Map = Map.Make (struct
-    type t = atom
+      type t = atom
 
-    let compare = cmp_atom
-  end)
+      let compare = cmp_atom
+    end)
 end
 
 (******************************************************************************)
@@ -488,22 +488,22 @@ module Flat_Formula : FLAT_FORMULA = struct
     match fa.view with
     | UNIT a -> fprintf fmt "%a" Atom.pr_atom a
     | AND s ->
-        incr cpt;
-        fprintf fmt "(and%a" print_list s;
-        decr cpt;
-        fprintf fmt "@.%s)" (sp ())
+      incr cpt;
+      fprintf fmt "(and%a" print_list s;
+      decr cpt;
+      fprintf fmt "@.%s)" (sp ())
     | OR s ->
-        incr cpt;
-        fprintf fmt "(or%a" print_list s;
-        decr cpt;
-        fprintf fmt "@.%s)" (sp ())
+      incr cpt;
+      fprintf fmt "(or%a" print_list s;
+      decr cpt;
+      fprintf fmt "@.%s)" (sp ())
 
   and print_list fmt l =
     match l with
     | [] -> assert false
     | e :: l ->
-        fprintf fmt "@.%s%a" (sp ()) print e;
-        List.iter (fprintf fmt "@.%s%a" (sp ()) print) l
+      fprintf fmt "@.%s%a" (sp ()) print e;
+      List.iter (fprintf fmt "@.%s%a" (sp ()) print) l
 
   let print fmt f =
     cpt := 0;
@@ -524,38 +524,38 @@ module Flat_Formula : FLAT_FORMULA = struct
     | UNIT at -> at == at.Atom.var.Atom.pa
 
   module HT = Hashtbl.Make (struct
-    type nonrec t = t
+      type nonrec t = t
 
-    let hash f =
-      let h_aux f =
-        match f with
-        | UNIT a -> Atom.hash_atom a
-        | AND l -> List.fold_left (fun acc f -> (acc * 19) + f.tag) 1 l
-        | OR l -> List.fold_left (fun acc f -> (acc * 23) + f.tag) 1 l
-      in
-      let h = h_aux f.view in
-      match f.view with
-      | UNIT _ -> abs (3 * h)
-      | AND _ -> abs ((3 * h) + 1)
-      | OR _ -> abs ((3 * h) + 2)
+      let hash f =
+        let h_aux f =
+          match f with
+          | UNIT a -> Atom.hash_atom a
+          | AND l -> List.fold_left (fun acc f -> (acc * 19) + f.tag) 1 l
+          | OR l -> List.fold_left (fun acc f -> (acc * 23) + f.tag) 1 l
+        in
+        let h = h_aux f.view in
+        match f.view with
+        | UNIT _ -> abs (3 * h)
+        | AND _ -> abs ((3 * h) + 1)
+        | OR _ -> abs ((3 * h) + 2)
 
-    let equal f1 f2 =
-      let eq_aux c1 c2 =
-        match (c1, c2) with
-        | UNIT x, UNIT y -> Atom.eq_atom x y
-        | AND u, AND v | OR u, OR v -> (
-            try
-              List.iter2 (fun x y -> if x.tag <> y.tag then raise Exit) u v;
-              true
-            with
-            | Exit -> false
-            | Invalid_argument s ->
+      let equal f1 f2 =
+        let eq_aux c1 c2 =
+          match (c1, c2) with
+          | UNIT x, UNIT y -> Atom.eq_atom x y
+          | AND u, AND v | OR u, OR v -> (
+              try
+                List.iter2 (fun x y -> if x.tag <> y.tag then raise Exit) u v;
+                true
+              with
+              | Exit -> false
+              | Invalid_argument s ->
                 assert (String.compare s "List.iter2" = 0);
                 false)
-        | _, _ -> false
-      in
-      eq_aux f1.view f2.view
-  end)
+          | _, _ -> false
+        in
+        eq_aux f1.view f2.view
+    end)
 
   type hcons_env = { tbl : t HT.t; cpt : int ref; atoms : Atom.hcons_env }
 
@@ -613,43 +613,43 @@ module Flat_Formula : FLAT_FORMULA = struct
       | [], l2 -> l2
       | l1, [] -> l1
       | h1 :: t1, h2 :: t2 ->
-          let c = compare h1 h2 in
-          if c = 0 then merge_rec l1 t2 hd
-          else if compare h1 h2 < 0 then (
-            if complements hd h1 then raise Exit;
-            h1 :: merge_rec t1 l2 h1)
-          else (
-            if complements hd h2 then raise Exit;
-            h2 :: merge_rec l1 t2 h2)
+        let c = compare h1 h2 in
+        if c = 0 then merge_rec l1 t2 hd
+        else if compare h1 h2 < 0 then (
+          if complements hd h1 then raise Exit;
+          h1 :: merge_rec t1 l2 h1)
+        else (
+          if complements hd h2 then raise Exit;
+          h2 :: merge_rec l1 t2 h2)
     in
     match (l1, l2) with
     | [], l2 -> l2
     | l1, [] -> l1
     | h1 :: t1, h2 :: _ ->
-        let c = compare h1 h2 in
-        if c = 0 then merge_rec t1 l2 h1
-        else if compare h1 h2 < 0 then merge_rec l1 l2 h1
-        else merge_rec l1 l2 h2
+      let c = compare h1 h2 in
+      if c = 0 then merge_rec t1 l2 h1
+      else if compare h1 h2 < 0 then merge_rec l1 l2 h1
+      else merge_rec l1 l2 h2
 
   let mk_and hcons l =
     try
       let so, nso =
         List.fold_left
           (fun ((so, nso) as acc) e ->
-            match e.view with
-            | AND l -> (merge_and_check so l, nso)
-            | UNIT a
-              when (not (get_disable_flat_formulas_simplification ()))
-                   && a.Atom.var.Atom.level = 0 ->
-                if a.Atom.neg.Atom.is_true then (
-                  aaz a;
-                  raise Exit);
-                (* XXX*)
-                if a.Atom.is_true then (
-                  aaz a;
-                  acc)
-                else (so, e :: nso)
-            | _ -> (so, e :: nso))
+             match e.view with
+             | AND l -> (merge_and_check so l, nso)
+             | UNIT a
+               when (not (get_disable_flat_formulas_simplification ()))
+                 && a.Atom.var.Atom.level = 0 ->
+               if a.Atom.neg.Atom.is_true then (
+                 aaz a;
+                 raise Exit);
+               (* XXX*)
+               if a.Atom.is_true then (
+                 aaz a;
+                 acc)
+               else (so, e :: nso)
+             | _ -> (so, e :: nso))
           ([], []) l
       in
       let delta_inv = List.fast_sort (fun a b -> compare b a) nso in
@@ -657,14 +657,14 @@ module Flat_Formula : FLAT_FORMULA = struct
         match delta_inv with
         | [] -> delta_inv
         | e :: l ->
-            let _, delta_u =
-              List.fold_left
-                (fun ((c, l) as acc) e ->
-                  if complements c e then raise Exit;
-                  if equal c e then acc else (e, e :: l))
-                (e, [ e ]) l
-            in
-            delta_u
+          let _, delta_u =
+            List.fold_left
+              (fun ((c, l) as acc) e ->
+                 if complements c e then raise Exit;
+                 if equal c e then acc else (e, e :: l))
+              (e, [ e ]) l
+          in
+          delta_u
       in
       match merge_and_check so delta_u with
       | [] -> vrai
@@ -678,10 +678,10 @@ module Flat_Formula : FLAT_FORMULA = struct
       match (l1, l2) with
       | [], _ | _, [] -> List.rev acc
       | f1 :: r1, f2 :: r2 ->
-          let c = compare f1 f2 in
-          if c = 0 then inter r1 r2 (f1 :: acc)
-          else if c > 0 then inter l1 r2 acc
-          else inter r1 l2 acc
+        let c = compare f1 f2 in
+        if c = 0 then inter r1 r2 (f1 :: acc)
+        else if c > 0 then inter l1 r2 acc
+        else inter r1 l2 acc
     in
     inter l1 l2 []
 
@@ -692,10 +692,10 @@ module Flat_Formula : FLAT_FORMULA = struct
       match l with
       | [] -> raise Not_included
       | f :: r ->
-          let c = compare f e in
-          if c = 0 then List.rev_append acc r
-          else if c < 0 then relt r (f :: acc)
-          else raise Not_included
+        let c = compare f e in
+        if c = 0 then List.rev_append acc r
+        else if c < 0 then relt r (f :: acc)
+        else raise Not_included
     in
     relt l []
 
@@ -706,10 +706,10 @@ module Flat_Formula : FLAT_FORMULA = struct
       | [], r -> List.rev_append acc r
       | _, [] -> raise Not_included
       | f1 :: r1, f2 :: r2 ->
-          let c = compare f1 f2 in
-          if c = 0 then diff r1 r2 acc
-          else if c > 0 then diff l1 r2 (f2 :: acc)
-          else raise Not_included
+        let c = compare f1 f2 in
+        if c = 0 then diff r1 r2 acc
+        else if c > 0 then diff l1 r2 (f2 :: acc)
+        else raise Not_included
     in
     diff to_exclude l []
 
@@ -717,19 +717,19 @@ module Flat_Formula : FLAT_FORMULA = struct
     let atoms, ands =
       List.fold_left
         (fun (atoms, ands) f ->
-          match view f with
-          | OR _ -> assert false
-          | UNIT _ -> (f :: atoms, ands)
-          | AND l -> (atoms, l :: ands))
+           match view f with
+           | OR _ -> assert false
+           | UNIT _ -> (f :: atoms, ands)
+           | AND l -> (atoms, l :: ands))
         ([], []) l
     in
     match (atoms, ands) with
     | [], [] -> assert false
     | _ :: _ :: _, _ ->
-        if get_debug_sat () then
-          Util.Printer.print_dbg ~module_name:"Satml_types"
-            ~function_name:"extract_common" "Failure: many distinct atoms";
-        None
+      if get_debug_sat () then
+        Util.Printer.print_dbg ~module_name:"Satml_types"
+          ~function_name:"extract_common" "Failure: many distinct atoms";
+      None
     | ([ _ ] as common), _ -> (
         if get_debug_sat () then
           Util.Printer.print_dbg ~module_name:"Satml_types"
@@ -757,20 +757,20 @@ module Flat_Formula : FLAT_FORMULA = struct
       let so, nso =
         List.fold_left
           (fun ((so, nso) as acc) e ->
-            match e.view with
-            | OR l -> (merge_and_check so l, nso)
-            | UNIT a
-              when (not (get_disable_flat_formulas_simplification ()))
-                   && a.Atom.var.Atom.level = 0 ->
-                if a.Atom.is_true then (
-                  aaz a;
-                  raise Exit);
-                (* XXX *)
-                if a.Atom.neg.Atom.is_true then (
-                  aaz a;
-                  acc)
-                else (so, e :: nso)
-            | _ -> (so, e :: nso))
+             match e.view with
+             | OR l -> (merge_and_check so l, nso)
+             | UNIT a
+               when (not (get_disable_flat_formulas_simplification ()))
+                 && a.Atom.var.Atom.level = 0 ->
+               if a.Atom.is_true then (
+                 aaz a;
+                 raise Exit);
+               (* XXX *)
+               if a.Atom.neg.Atom.is_true then (
+                 aaz a;
+                 acc)
+               else (so, e :: nso)
+             | _ -> (so, e :: nso))
           ([], []) l
       in
       let delta_inv = List.fast_sort (fun a b -> compare b a) nso in
@@ -778,14 +778,14 @@ module Flat_Formula : FLAT_FORMULA = struct
         match delta_inv with
         | [] -> delta_inv
         | e :: l ->
-            let _, delta_u =
-              List.fold_left
-                (fun ((c, l) as acc) e ->
-                  if complements c e then raise Exit;
-                  if equal c e then acc else (e, e :: l))
-                (e, [ e ]) l
-            in
-            delta_u
+          let _, delta_u =
+            List.fold_left
+              (fun ((c, l) as acc) e ->
+                 if complements c e then raise Exit;
+                 if equal c e then acc else (e, e :: l))
+              (e, [ e ]) l
+          in
+          delta_u
       in
       match merge_and_check so delta_u with
       | [] -> faux
@@ -802,8 +802,8 @@ module Flat_Formula : FLAT_FORMULA = struct
                     make hcons (OR l) (AND (List.rev (List.rev_map mk_not l))))
               | _ -> make hcons (OR l) (AND (List.rev (List.rev_map mk_not l))))
           | Some (com, ands) ->
-              let ands = List.rev_map (mk_and hcons) ands in
-              mk_and hcons (mk_or hcons ands :: com))
+            let ands = List.rev_map (mk_and hcons) ands in
+            mk_and hcons (mk_or hcons ands :: com))
     with Exit -> vrai
 
   (* translation from E.t *)
@@ -811,20 +811,20 @@ module Flat_Formula : FLAT_FORMULA = struct
   let abstract_lemma hcons abstr (f : Expr.t) tl lem new_vars =
     try fst (abstr f)
     with Not_found -> (
-      try fst (snd (List.find (fun (x, _) -> Expr.equal f x) !lem))
-      with Not_found ->
-        if tl then (
-          lem := (f, (vrai, Atom.vrai_atom)) :: !lem;
-          vrai)
-        else
-          let lit = Expr.fresh_name Ty.Tbool in
-          let xlit, new_v = mk_lit hcons lit !new_vars in
-          let at_lit, new_v = Atom.add_atom hcons.atoms lit new_v in
-          new_vars := new_v;
-          lem :=
-            ((f, (xlit, at_lit)) :: !lem)
-            [@ocaml.ppwarning "xlit or at_lit is probably redundant"];
-          xlit)
+        try fst (snd (List.find (fun (x, _) -> Expr.equal f x) !lem))
+        with Not_found ->
+          if tl then (
+            lem := (f, (vrai, Atom.vrai_atom)) :: !lem;
+            vrai)
+          else
+            let lit = Expr.fresh_name Ty.Tbool in
+            let xlit, new_v = mk_lit hcons lit !new_vars in
+            let at_lit, new_v = Atom.add_atom hcons.atoms lit new_v in
+            new_vars := new_v;
+            lem :=
+              ((f, (xlit, at_lit)) :: !lem)
+              [@ocaml.ppwarning "xlit or at_lit is probably redundant"];
+            xlit)
 
   let simplify hcons f abstr new_vars =
     let lem = ref [] in
@@ -833,9 +833,9 @@ module Flat_Formula : FLAT_FORMULA = struct
       match Expr.form_view f with
       | Expr.Not_a_form -> assert false
       | Expr.Literal a ->
-          let ff, l = mk_lit hcons a !new_vars in
-          new_vars := l;
-          ff
+        let ff, l = mk_lit hcons a !new_vars in
+        new_vars := l;
+        ff
       | Expr.Lemma _ -> abstract_lemma hcons abstr f topl lem new_vars
       | Expr.Skolem _ -> mk_not (simp false ~parent_disj:false (Expr.neg f))
       | Expr.Unit (f1, f2) -> (
@@ -855,15 +855,15 @@ module Flat_Formula : FLAT_FORMULA = struct
           | _, OR l2 -> mk_or hcons (x1 :: l2)
           | _ -> mk_or hcons [ x1; x2 ])
       | Expr.Iff (f1, f2) ->
-          simp topl ~parent_disj
-          @@ Expr.elim_iff f1 f2 (Expr.id f) ~with_conj:(not parent_disj)
+        simp topl ~parent_disj
+        @@ Expr.elim_iff f1 f2 (Expr.id f) ~with_conj:(not parent_disj)
       | Expr.Xor (f1, f2) ->
-          let g =
-            Expr.neg @@ Expr.elim_iff f1 f2 (Expr.id f) ~with_conj:parent_disj
-          in
-          simp topl ~parent_disj g
+        let g =
+          Expr.neg @@ Expr.elim_iff f1 f2 (Expr.id f) ~with_conj:parent_disj
+        in
+        simp topl ~parent_disj g
       | Expr.Let letin ->
-          simp false ~parent_disj:false (Expr.elim_let ~recursive:true letin)
+        simp false ~parent_disj:false (Expr.elim_let ~recursive:true letin)
     in
     let res = simp true ~parent_disj:false f in
     (res, !lem, !new_vars)
@@ -884,10 +884,10 @@ module Flat_Formula : FLAT_FORMULA = struct
       let p, _, _ = Util.Util.MI.find f.tag proxies_mp in
       Some p
     with Not_found -> (
-      try
-        let p, _, _ = Util.Util.MI.find f.neg.tag proxies_mp in
-        Some p.Atom.neg
-      with Not_found -> None)
+        try
+          let p, _, _ = Util.Util.MI.find f.neg.tag proxies_mp in
+          Some p.Atom.neg
+        with Not_found -> None)
 
   let expand_proxy_defn acc (p, l, is_and) =
     if is_and then
@@ -912,49 +912,49 @@ module Flat_Formula : FLAT_FORMULA = struct
           match get_proxy_of f proxies_mp with
           | Some p -> (p, new_proxies, proxies_mp, new_vars)
           | None ->
-              let l, new_proxies, proxies_mp, new_vars =
-                List.fold_left
-                  (fun (l, new_proxies, proxies_mp, new_vars) f ->
-                    let f, new_proxies, proxies_mp, new_vars =
-                      abstr f new_proxies proxies_mp new_vars
-                    in
-                    (f :: l, new_proxies, proxies_mp, new_vars))
-                  ([], new_proxies, proxies_mp, new_vars)
-                  l
-              in
-              let l = List.rev l in
-              let p, new_vars =
-                atom_of_lit hcons (mk_new_proxy f.tag) false new_vars
-              in
-              let is_and =
-                match f.view with
-                | AND _ -> true
-                | OR _ -> false
-                | UNIT _ -> assert false
-              in
-              let new_proxies = (p, l, is_and) :: new_proxies in
-              let proxies_mp =
-                Util.Util.MI.add f.tag (p, l, is_and) proxies_mp
-              in
-              (p, new_proxies, proxies_mp, new_vars))
+            let l, new_proxies, proxies_mp, new_vars =
+              List.fold_left
+                (fun (l, new_proxies, proxies_mp, new_vars) f ->
+                   let f, new_proxies, proxies_mp, new_vars =
+                     abstr f new_proxies proxies_mp new_vars
+                   in
+                   (f :: l, new_proxies, proxies_mp, new_vars))
+                ([], new_proxies, proxies_mp, new_vars)
+                l
+            in
+            let l = List.rev l in
+            let p, new_vars =
+              atom_of_lit hcons (mk_new_proxy f.tag) false new_vars
+            in
+            let is_and =
+              match f.view with
+              | AND _ -> true
+              | OR _ -> false
+              | UNIT _ -> assert false
+            in
+            let new_proxies = (p, l, is_and) :: new_proxies in
+            let proxies_mp =
+              Util.Util.MI.add f.tag (p, l, is_and) proxies_mp
+            in
+            (p, new_proxies, proxies_mp, new_vars))
     in
     abstr f [] proxies_mp new_vars
 
   let get_atom hcons a = Atom.get_atom hcons.atoms a
 
   module Set = Set.Make (struct
-    type t' = t
-    type t = t'
+      type t' = t
+      type t = t'
 
-    let compare = compare
-  end)
+      let compare = compare
+    end)
 
   module Map = Map.Make (struct
-    type t' = t
-    type t = t'
+      type t' = t
+      type t = t'
 
-    let compare = compare
-  end)
+      let compare = compare
+    end)
 end
 
 module Proxy_formula = struct
@@ -988,31 +988,31 @@ module Proxy_formula = struct
             let inv_proxies = Atom.Map.add na nf inv_proxies in
             match Expr.form_view f with
             | Expr.Unit (f1, f2) ->
-                let accu = (proxies, inv_proxies, new_vars, cnf) in
-                let a1, accu = mk_cnf hcons f1 accu in
-                let a2, (proxies, inv_proxies, new_vars, cnf) =
-                  mk_cnf hcons f2 accu
-                in
-                let cnf =
-                  [ na; a1 ] :: [ na; a2 ]
-                  :: [ a; Atom.neg a1; Atom.neg a2 ]
-                  :: cnf
-                in
-                (a, (proxies, inv_proxies, new_vars, cnf))
+              let accu = (proxies, inv_proxies, new_vars, cnf) in
+              let a1, accu = mk_cnf hcons f1 accu in
+              let a2, (proxies, inv_proxies, new_vars, cnf) =
+                mk_cnf hcons f2 accu
+              in
+              let cnf =
+                [ na; a1 ] :: [ na; a2 ]
+                :: [ a; Atom.neg a1; Atom.neg a2 ]
+                :: cnf
+              in
+              (a, (proxies, inv_proxies, new_vars, cnf))
             | Expr.Clause (f1, f2, _) ->
-                let accu = (proxies, inv_proxies, new_vars, cnf) in
-                let a1, accu = mk_cnf hcons f1 accu in
-                let a2, (proxies, inv_proxies, new_vars, cnf) =
-                  mk_cnf hcons f2 accu
-                in
-                let cnf =
-                  [ a; Atom.neg a1 ]
-                  :: [ a; Atom.neg a2 ]
-                  :: [ na; a1; a2 ] :: cnf
-                in
-                (a, (proxies, inv_proxies, new_vars, cnf))
+              let accu = (proxies, inv_proxies, new_vars, cnf) in
+              let a1, accu = mk_cnf hcons f1 accu in
+              let a2, (proxies, inv_proxies, new_vars, cnf) =
+                mk_cnf hcons f2 accu
+              in
+              let cnf =
+                [ a; Atom.neg a1 ]
+                :: [ a; Atom.neg a2 ]
+                :: [ na; a1; a2 ] :: cnf
+              in
+              (a, (proxies, inv_proxies, new_vars, cnf))
             | Expr.Let _ | Expr.Skolem _ | Expr.Lemma _ | Expr.Literal _
             | Expr.Iff _ | Expr.Xor _ ->
-                (a, (proxies, inv_proxies, new_vars, cnf))
+              (a, (proxies, inv_proxies, new_vars, cnf))
             | Expr.Not_a_form -> assert false))
 end

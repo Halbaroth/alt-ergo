@@ -43,8 +43,8 @@ type incr_kind =
   | Uf  (** UF step increment *)
   | Ac  (** AC step reasoning *)
   | Th_assumed of int
-      (** Increment the counter for each term assumed in the
-                          theories environment *)
+  (** Increment the counter for each term assumed in the
+                      theories environment *)
 
 val incr : incr_kind -> unit
 (** Increment the number of steps depending of the incr_kind

@@ -61,4 +61,4 @@ let () =
       in
       write_file "format_shims.ml"
         (if (major, minor) >= (4, 8) then shims_fmt_post_408
-        else shims_fmt_pre_408))
+         else shims_fmt_pre_408))

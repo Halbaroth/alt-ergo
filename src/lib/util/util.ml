@@ -14,16 +14,16 @@ exception Unsolvable
 exception Cmp of int
 
 module MI = Map.Make (struct
-  type t = int
+    type t = int
 
-  let compare (x : int) y = Stdlib.compare x y
-end)
+    let compare (x : int) y = Stdlib.compare x y
+  end)
 
 module SI = Set.Make (struct
-  type t = int
+    type t = int
 
-  let compare (x : int) y = Stdlib.compare x y
-end)
+    let compare (x : int) y = Stdlib.compare x y
+  end)
 
 module SS = Set.Make (String)
 
@@ -89,15 +89,15 @@ let[@inline always] compare_algebraic s1 s2 f_same_constrs_with_args =
   | true, false -> -1
   | false, true -> 1
   | false, false ->
-      let cmp_tags = Obj.tag r1 - Obj.tag r2 in
-      if cmp_tags <> 0 then cmp_tags else f_same_constrs_with_args (s1, s2)
+    let cmp_tags = Obj.tag r1 - Obj.tag r2 in
+    if cmp_tags <> 0 then cmp_tags else f_same_constrs_with_args (s1, s2)
 
 let[@inline always] cmp_lists l1 l2 cmp_elts =
   try
     List.iter2
       (fun a b ->
-        let c = cmp_elts a b in
-        if c <> 0 then raise (Cmp c))
+         let c = cmp_elts a b in
+         if c <> 0 then raise (Cmp c))
       l1 l2;
     0
   with
@@ -114,7 +114,7 @@ type matching_env = {
 }
 
 let loop ~(f : int -> 'a -> 'b -> 'b) ~(max : int) ~(elt : 'a) ~(init : 'b) : 'b
-    =
+  =
   let rec loop_aux cpt acc =
     if cpt >= max then acc else loop_aux (cpt + 1) (f cpt elt acc)
   in
@@ -124,12 +124,12 @@ let print_list ~sep ~pp fmt l =
   match l with
   | [] -> ()
   | e :: l ->
-      Format.fprintf fmt "%a" pp e;
-      List.iter (fun e -> Format.fprintf fmt "%s %a" sep pp e) l
+    Format.fprintf fmt "%a" pp e;
+    List.iter (fun e -> Format.fprintf fmt "%s %a" sep pp e) l
 
 let rec print_list_pp ~sep ~pp fmt = function
   | [] -> ()
   | [ x ] -> pp fmt x
   | x :: l ->
-      Format.fprintf fmt "%a %a" pp x sep ();
-      print_list_pp ~sep ~pp fmt l
+    Format.fprintf fmt "%a %a" pp x sep ();
+    print_list_pp ~sep ~pp fmt l

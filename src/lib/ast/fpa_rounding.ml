@@ -19,7 +19,7 @@ let is_rounding_mode t =
   &&
   match Expr.term_view t with
   | Expr.Term { Expr.ty = Ty.Tsum (hs, _); _ } ->
-      String.compare (Util.Hstring.view hs) "fpa_rounding_mode" = 0
+    String.compare (Util.Hstring.view hs) "fpa_rounding_mode" = 0
   | _ -> false
 
 let fpa_rounding_mode =
@@ -145,21 +145,21 @@ let round_big_int mode y =
   | Down -> Q.num (Q.floor y)
   | ToZero -> Q.truncate y
   | NearestTiesToEven ->
-      let z = Q.truncate y in
-      let diff = Q.abs (Q.sub y (Q.from_z z)) in
-      if Q.sign diff = 0 then z
-      else
-        let tmp = Q.compare diff half in
-        if tmp < 0 then z
-        else if tmp > 0 then Z.add z (signed_one y)
-        else if Z.testbit z 0 then Z.add z (signed_one y)
-        else z
+    let z = Q.truncate y in
+    let diff = Q.abs (Q.sub y (Q.from_z z)) in
+    if Q.sign diff = 0 then z
+    else
+      let tmp = Q.compare diff half in
+      if tmp < 0 then z
+      else if tmp > 0 then Z.add z (signed_one y)
+      else if Z.testbit z 0 then Z.add z (signed_one y)
+      else z
   | NearestTiesToAway ->
-      let z = Q.truncate y in
-      let diff = Q.abs (Q.sub y (Q.from_z z)) in
-      if Q.sign diff = 0 then z
-      else if Q.compare diff half < 0 then z
-      else Z.add z (signed_one y)
+    let z = Q.truncate y in
+    let diff = Q.abs (Q.sub y (Q.from_z z)) in
+    if Q.sign diff = 0 then z
+    else if Q.compare diff half < 0 then z
+    else Z.add z (signed_one y)
   | Aw | Od | No | Nz | Nd | Nu -> assert false
 
 let to_mantissa_exp prec exp mode x =
@@ -194,31 +194,31 @@ let mode_of_term t =
 let int_of_term t =
   match Expr.term_view t with
   | Expr.Term { Expr.f = Sy.Int n; _ } ->
-      let n = Util.Hstring.view n in
-      let n =
-        try int_of_string n
-        with _ ->
-          Util.Printer.print_err "error when trying to convert %s to an int" n;
-          assert false
-      in
-      n (* ! may be negative or null *)
+    let n = Util.Hstring.view n in
+    let n =
+      try int_of_string n
+      with _ ->
+        Util.Printer.print_err "error when trying to convert %s to an int" n;
+        assert false
+    in
+    n (* ! may be negative or null *)
   | _ ->
-      Util.Printer.print_err "the given term %a is not an integer" Expr.print t;
-      assert false
+    Util.Printer.print_err "the given term %a is not an integer" Expr.print t;
+    assert false
 
 module MQ = Map.Make (struct
-  type t = Expr.t * Expr.t * Expr.t * Q.t
+    type t = Expr.t * Expr.t * Expr.t * Q.t
 
-  let compare (prec1, exp1, mode1, x1) (prec2, exp2, mode2, x2) =
-    let c = Q.compare x1 x2 in
-    if c <> 0 then c
-    else
-      let c = Expr.compare prec1 prec2 in
+    let compare (prec1, exp1, mode1, x1) (prec2, exp2, mode2, x2) =
+      let c = Q.compare x1 x2 in
       if c <> 0 then c
       else
-        let c = Expr.compare exp1 exp2 in
-        if c <> 0 then c else Expr.compare mode1 mode2
-end)
+        let c = Expr.compare prec1 prec2 in
+        if c <> 0 then c
+        else
+          let c = Expr.compare exp1 exp2 in
+          if c <> 0 then c else Expr.compare mode1 mode2
+  end)
 
 let cache = ref MQ.empty
 

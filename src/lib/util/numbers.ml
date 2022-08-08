@@ -63,15 +63,15 @@ module Q = struct
     match root_num q n with
     | None -> None
     | Some s as res ->
-        let d = sub q (power s n) in
-        if sign d >= 0 then res else Some (div q (power s (n - 1)))
+      let d = sub q (power s n) in
+      if sign d >= 0 then res else Some (div q (power s (n - 1)))
 
   let unaccurate_root_excess q n =
     match root_num q n with
     | None -> None
     | Some s as res ->
-        let d = sub q (power s n) in
-        if sign d <= 0 then res else Some (div q (power s (n - 1)))
+      let d = sub q (power s n) in
+      if sign d <= 0 then res else Some (div q (power s (n - 1)))
 
   let accurate_root_default q n =
     let dd = unaccurate_root_default q n in
@@ -79,8 +79,8 @@ module Q = struct
     match (dd, ee) with
     | None, _ | _, None -> dd
     | Some d, Some e ->
-        let cand = div (add d e) two in
-        if MyQNumbers.compare (power cand n) q <= 0 then Some cand else dd
+      let cand = div (add d e) two in
+      if MyQNumbers.compare (power cand n) q <= 0 then Some cand else dd
 
   let accurate_root_excess q n =
     let dd = unaccurate_root_default q n in
@@ -88,21 +88,21 @@ module Q = struct
     match (dd, ee) with
     | None, _ | _, None -> ee
     | Some d, Some e ->
-        let cand = div (add d e) two in
-        if MyQNumbers.compare (power cand n) q >= 0 then Some cand else ee
+      let cand = div (add d e) two in
+      if MyQNumbers.compare (power cand n) q >= 0 then Some cand else ee
 
   let sqrt_excess q =
     match root_num q 2 with
     | None -> None
     | Some s ->
-        if not (is_zero s) then Some (div (add s (div q s)) two)
-        else accurate_root_default q 2
+      if not (is_zero s) then Some (div (add s (div q s)) two)
+      else accurate_root_default q 2
 
   let sqrt_default q =
     match sqrt_excess q with
     | None -> None
     | Some s ->
-        if not (is_zero s) then Some (div q s) else accurate_root_excess q 2
+      if not (is_zero s) then Some (div q s) else accurate_root_excess q 2
 
   let root_default = accurate_root_default
   let root_excess = accurate_root_excess

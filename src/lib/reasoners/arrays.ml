@@ -27,7 +27,7 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 open Util.Options
 open Format
 
@@ -63,21 +63,21 @@ module Shostak (X : ALIEN) = struct
   let solve _ _ = assert false
 
   let assign_value r _ eq =
-    if List.exists (fun (t, _) -> Structs.Expr.const_term t) eq then None
+    if List.exists (fun (t, _) -> Ast.Expr.const_term t) eq then None
     else
       match X.term_extract r with
-      | Some _, true -> Some (Structs.Expr.fresh_name (X.type_info r), false)
+      | Some _, true -> Some (Ast.Expr.fresh_name (X.type_info r), false)
       | _ -> assert false
 
   let choose_adequate_model _ _ l =
     let acc =
       List.fold_left
         (fun acc (s, r) ->
-          if not (Structs.Expr.const_term s) then acc
-          else
-            match acc with
-            | Some (s', _) when Structs.Expr.compare s' s > 0 -> acc
-            | _ -> Some (s, r))
+           if not (Ast.Expr.const_term s) then acc
+           else
+             match acc with
+             | Some (s', _) when Ast.Expr.compare s' s > 0 -> acc
+             | _ -> Some (s, r))
         None l
     in
     match acc with

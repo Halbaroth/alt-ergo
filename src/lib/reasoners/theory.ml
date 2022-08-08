@@ -27,12 +27,12 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 open Format
 open Util.Options
 open Sig_rel
 module X = Shostak.Combine
-module A = Structs.Xliteral
+module A = Ast.Xliteral
 module LR = Uf.LX
 module CC_X = Ccx.Main
 
@@ -46,32 +46,32 @@ module type S = sig
      decreasing order with respect to (dlvl, plvl) *)
   val assume :
     ?ordered:bool ->
-    (Structs.Expr.t * Structs.Ex.t * int * int) list ->
+    (Ast.Expr.t * Ast.Ex.t * int * int) list ->
     t ->
-    t * Structs.Expr.Set.t * int
+    t * Ast.Expr.Set.t * int
 
-  val query : Structs.Expr.t -> t -> Th_util.answer
+  val query : Ast.Expr.t -> t -> Th_util.answer
   val print_model : Format.formatter -> t -> unit
-  val cl_extract : t -> Structs.Expr.Set.t list
-  val extract_ground_terms : t -> Structs.Expr.Set.t
+  val cl_extract : t -> Ast.Expr.Set.t list
+  val extract_ground_terms : t -> Ast.Expr.Set.t
   val get_real_env : t -> Ccx.Main.t
   val get_case_split_env : t -> Ccx.Main.t
-  val do_case_split : t -> t * Structs.Expr.Set.t
-  val add_term : t -> Structs.Expr.t -> add_in_cs:bool -> t
+  val do_case_split : t -> t * Ast.Expr.Set.t
+  val add_term : t -> Ast.Expr.t -> add_in_cs:bool -> t
   val compute_concrete_model : t -> t
-  val assume_th_elt : t -> Structs.Expr.th_elt -> Structs.Ex.t -> t
+  val assume_th_elt : t -> Ast.Expr.th_elt -> Ast.Ex.t -> t
 
   val theories_instances :
     do_syntactic_matching:bool ->
-    Matching_types.info Structs.Expr.Map.t
-    * Structs.Expr.t list Structs.Expr.Map.t Structs.Sy.Map.t ->
+    Matching_types.info Ast.Expr.Map.t
+    * Ast.Expr.t list Ast.Expr.Map.t Ast.Sy.Map.t ->
     t ->
-    (Structs.Expr.t -> Structs.Expr.t -> bool) ->
+    (Ast.Expr.t -> Ast.Expr.t -> bool) ->
     int ->
     int ->
     t * Sig_rel.instances
 
-  val get_assumed : t -> Structs.Expr.Set.t
+  val get_assumed : t -> Ast.Expr.Set.t
 end
 
 module Main_Default : S = struct
@@ -82,109 +82,109 @@ module Main_Default : S = struct
     let subterms_of_assumed l =
       List.fold_left
         (List.fold_left (fun st (a, _, _) ->
-             Structs.Expr.Set.union st
-               (Structs.Expr.sub_terms Structs.Expr.Set.empty a)))
-        Structs.Expr.Set.empty l
+             Ast.Expr.Set.union st
+               (Ast.Expr.sub_terms Ast.Expr.Set.empty a)))
+        Ast.Expr.Set.empty l
 
     let types_of_subterms st =
-      Structs.Expr.Set.fold
-        (fun t acc -> Structs.Ty.Set.add (Structs.Expr.type_info t) acc)
-        st Structs.Ty.Set.empty
+      Ast.Expr.Set.fold
+        (fun t acc -> Ast.Ty.Set.add (Ast.Expr.type_info t) acc)
+        st Ast.Ty.Set.empty
 
     let generalize_types ty1 ty2 =
       match (ty1, ty2) with
-      | Structs.Ty.Tvar _, _ -> ty1
-      | _, Structs.Ty.Tvar _ -> ty2
-      | _ -> Structs.Ty.fresh_tvar ()
+      | Ast.Ty.Tvar _, _ -> ty1
+      | _, Ast.Ty.Tvar _ -> ty2
+      | _ -> Ast.Ty.fresh_tvar ()
 
     let logics_of_assumed st =
-      Structs.Expr.Set.fold
+      Ast.Expr.Set.fold
         (fun t mp ->
-          match Structs.Expr.term_view t with
-          | Structs.Expr.Not_a_term _ -> assert false
-          | Structs.Expr.Term
-              {
-                Structs.Expr.f =
-                  Structs.Sy.Name
-                    (hs, ((Structs.Sy.Ac | Structs.Sy.Other) as is_ac));
-                xs;
-                ty;
-                _;
-              } ->
-              let xs = List.map Structs.Expr.type_info xs in
-              let xs, ty =
-                try
-                  let xs', ty', is_ac' = Util.Hstring.Map.find hs mp in
-                  assert (is_ac == is_ac');
-                  let ty = generalize_types ty ty' in
-                  let xs =
-                    try List.map2 generalize_types xs xs'
-                    with _ -> assert false
-                  in
-                  (xs, ty)
-                with Not_found -> (xs, ty)
-              in
-              Util.Hstring.Map.add hs (xs, ty, is_ac) mp
-          | _ -> mp)
+           match Ast.Expr.term_view t with
+           | Ast.Expr.Not_a_term _ -> assert false
+           | Ast.Expr.Term
+               {
+                 Ast.Expr.f =
+                   Ast.Sy.Name
+                     (hs, ((Ast.Sy.Ac | Ast.Sy.Other) as is_ac));
+                 xs;
+                 ty;
+                 _;
+               } ->
+             let xs = List.map Ast.Expr.type_info xs in
+             let xs, ty =
+               try
+                 let xs', ty', is_ac' = Util.Hstring.Map.find hs mp in
+                 assert (is_ac == is_ac');
+                 let ty = generalize_types ty ty' in
+                 let xs =
+                   try List.map2 generalize_types xs xs'
+                   with _ -> assert false
+                 in
+                 (xs, ty)
+               with Not_found -> (xs, ty)
+             in
+             Util.Hstring.Map.add hs (xs, ty, is_ac) mp
+           | _ -> mp)
         st Util.Hstring.Map.empty
 
     let types_of_assumed sty =
-      let open Structs.Ty in
-      Structs.Ty.Set.fold
+      let open Ast.Ty in
+      Ast.Ty.Set.fold
         (fun ty mp ->
-          match ty with
-          | Tint | Treal | Tbool | Tunit | Tbitv _ | Tfarray _ -> mp
-          | Tvar _ -> assert false
-          | (Text (_, hs) | Tsum (hs, _) | Trecord { name = hs; _ })
-            when Util.Hstring.Map.mem hs mp ->
-              mp
-          | Text (l, hs) ->
-              let l = List.map (fun _ -> Structs.Ty.fresh_tvar ()) l in
-              Util.Hstring.Map.add hs (Text (l, hs)) mp
-          | Tsum (hs, _) -> Util.Hstring.Map.add hs ty mp
-          | Trecord { name; _ } ->
-              (* cannot do better for records ? *)
-              Util.Hstring.Map.add name ty mp
-          | Tadt (hs, _) ->
-              (* cannot do better for ADT ? *)
-              Util.Hstring.Map.add hs ty mp)
+           match ty with
+           | Tint | Treal | Tbool | Tunit | Tbitv _ | Tfarray _ -> mp
+           | Tvar _ -> assert false
+           | (Text (_, hs) | Tsum (hs, _) | Trecord { name = hs; _ })
+             when Util.Hstring.Map.mem hs mp ->
+             mp
+           | Text (l, hs) ->
+             let l = List.map (fun _ -> Ast.Ty.fresh_tvar ()) l in
+             Util.Hstring.Map.add hs (Text (l, hs)) mp
+           | Tsum (hs, _) -> Util.Hstring.Map.add hs ty mp
+           | Trecord { name; _ } ->
+             (* cannot do better for records ? *)
+             Util.Hstring.Map.add name ty mp
+           | Tadt (hs, _) ->
+             (* cannot do better for ADT ? *)
+             Util.Hstring.Map.add hs ty mp)
         sty Util.Hstring.Map.empty
 
     let print_types_decls ?(header = true) types =
-      let open Structs.Ty in
+      let open Ast.Ty in
       print_dbg ~flushed:false ~header "@[<v 2>(* types decls: *)@ ";
       Util.Hstring.Map.iter
         (fun _ ty ->
-          match ty with
-          | Tint | Treal | Tbool | Tunit | Tbitv _ | Tfarray _ -> ()
-          | Tvar _ -> assert false
-          | Text _ -> print_dbg ~flushed:false "type %a@ " Structs.Ty.print ty
-          | Tsum (_, l) -> (
-              print_dbg ~flushed:false ~header:false "type %a = "
-                Structs.Ty.print ty;
-              match l with
-              | [] -> assert false
-              | e :: l ->
-                  let print fmt e = fprintf fmt " | %s" (Util.Hstring.view e) in
-                  print_dbg ~flushed:false ~header:false "%s@ %a@ "
-                    (Util.Hstring.view e) (pp_list_no_space print) l)
-          | Trecord { Structs.Ty.lbs; _ } -> (
-              print_dbg ~flushed:false ~header:false "type %a = "
-                Structs.Ty.print ty;
-              match lbs with
-              | [] -> assert false
-              | (lbl, ty) :: l ->
-                  let print fmt (lbl, ty) =
-                    fprintf fmt " ; %s :%a" (Util.Hstring.view lbl)
-                      Structs.Ty.print ty
-                  in
-                  print_dbg ~flushed:false ~header:false "{ %s : %a%a"
-                    (Util.Hstring.view lbl) Structs.Ty.print ty
-                    (pp_list_no_space print) l;
-                  print_dbg ~flushed:false ~header:false " }@ ")
-          | Tadt _ ->
-              print_dbg ~flushed:false ~header:false "%a@ "
-                Structs.Ty.print_full ty)
+           match ty with
+           | Tint | Treal | Tbool | Tunit | Tbitv _ | Tfarray _ -> ()
+           | Tvar _ -> assert false
+           | Text _ -> print_dbg ~flushed:false "type %a@ " Ast.Ty.print ty
+           | Tsum (_, l) -> (
+               print_dbg ~flushed:false ~header:false "type %a = "
+                 Ast.Ty.print ty;
+               match l with
+               | [] -> assert false
+               | e :: l ->
+                 let print fmt e = fprintf fmt " | %s" (Util.Hstring.view e) in
+                 print_dbg ~flushed:false ~header:false "%s@ %a@ "
+                   (Util.Hstring.view e) (pp_list_no_space print) l)
+           | Trecord { Ast.Ty.lbs; _ } -> (
+               print_dbg ~flushed:false ~header:false "type %a = "
+                 Ast.Ty.print ty;
+               match lbs with
+               | [] -> assert false
+               | (lbl, ty) :: l ->
+                 let print fmt (lbl, ty) =
+                   fprintf fmt " ; %s :%a" (Util.Hstring.view lbl)
+                     Ast.Ty.print ty
+                 in
+                 print_dbg ~flushed:false ~header:false "{ %s : %a%a"
+                   (Util.Hstring.view lbl) Ast.Ty.print ty
+                   (pp_list_no_space print) l;
+                 print_dbg ~flushed:false ~header:false " }@ ")
+           | Tadt _ ->
+             print_dbg ~flushed:false ~header:false "%a@ "
+               Ast.Ty.print_full ty)
         types;
       print_dbg ~header:false "@]"
 
@@ -192,17 +192,17 @@ module Main_Default : S = struct
       match xs with
       | [] -> ()
       | e :: l ->
-          fprintf fmt "%a" Structs.Ty.print e;
-          List.iter (fprintf fmt ", %a" Structs.Ty.print) l;
-          fprintf fmt " -> "
+        fprintf fmt "%a" Ast.Ty.print e;
+        List.iter (fprintf fmt ", %a" Ast.Ty.print) l;
+        fprintf fmt " -> "
 
     let print_logics ?(header = true) logics =
       print_dbg ~header "@[<v 2>(* logics: *)@ ";
       Util.Hstring.Map.iter
         (fun hs (xs, ty, is_ac) ->
-          print_dbg ~flushed:false ~header:false "logic %s%s : %a%a@ "
-            (if is_ac == Structs.Sy.Ac then "ac " else "")
-            (Util.Hstring.view hs) print_arrow_type xs Structs.Ty.print ty)
+           print_dbg ~flushed:false ~header:false "logic %s%s : %a%a@ "
+             (if is_ac == Ast.Sy.Ac then "ac " else "")
+             (Util.Hstring.view hs) print_arrow_type xs Ast.Ty.print ty)
         logics;
       print_dbg ~header:false "@]"
 
@@ -225,18 +225,18 @@ module Main_Default : S = struct
           print_dbg ~flushed:false ~header:false "goal g_%d :@ " !cpt;
           List.iter
             (fun l ->
-              print_dbg ~flushed:false ~header:false "(* call to assume *)@ ";
-              match List.rev l with
-              | [] -> assert false
-              | (a, dlvl, plvl) :: l ->
-                  print_dbg ~flushed:false ~header:false "( (* %d , %d *) %a "
-                    dlvl plvl Structs.Expr.print a;
-                  List.iter
-                    (fun (a, dlvl, plvl) ->
+               print_dbg ~flushed:false ~header:false "(* call to assume *)@ ";
+               match List.rev l with
+               | [] -> assert false
+               | (a, dlvl, plvl) :: l ->
+                 print_dbg ~flushed:false ~header:false "( (* %d , %d *) %a "
+                   dlvl plvl Ast.Expr.print a;
+                 List.iter
+                   (fun (a, dlvl, plvl) ->
                       print_dbg ~flushed:false ~header:false
-                        " and@ (* %d , %d *) %a " dlvl plvl Structs.Expr.print a)
-                    l;
-                  print_dbg ~flushed:false ~header:false ") ->@ ")
+                        " and@ (* %d , %d *) %a " dlvl plvl Ast.Expr.print a)
+                   l;
+                 print_dbg ~flushed:false ~header:false ") ->@ ")
             (List.rev l);
           print_dbg ~header:false "false")
 
@@ -252,19 +252,19 @@ module Main_Default : S = struct
       match choices with
       | [] -> ()
       | _ ->
-          fprintf fmt "@[<v 2>Stack of choices:@ ";
-          List.iter
-            (fun (rx, lit_orig, _, ex) ->
-              match lit_orig with
-              | Th_util.CS (k, _) ->
-                  fprintf fmt "  > %s  cs: %a (because %a)@ " (theory_of k)
-                    LR.print (LR.make rx) Structs.Ex.print ex
-              | Th_util.NCS (k, _) ->
-                  fprintf fmt "  > %s ncs: %a (because %a)@ " (theory_of k)
-                    LR.print (LR.make rx) Structs.Ex.print ex
-              | _ -> assert false)
-            choices;
-          fprintf fmt "==============================================@."
+        fprintf fmt "@[<v 2>Stack of choices:@ ";
+        List.iter
+          (fun (rx, lit_orig, _, ex) ->
+             match lit_orig with
+             | Th_util.CS (k, _) ->
+               fprintf fmt "  > %s  cs: %a (because %a)@ " (theory_of k)
+                 LR.print (LR.make rx) Ast.Ex.print ex
+             | Th_util.NCS (k, _) ->
+               fprintf fmt "  > %s ncs: %a (because %a)@ " (theory_of k)
+                 LR.print (LR.make rx) Ast.Ex.print ex
+             | _ -> assert false)
+          choices;
+        fprintf fmt "==============================================@."
 
     let begin_case_split choices =
       if get_debug_split () then
@@ -288,22 +288,22 @@ module Main_Default : S = struct
     let split_backtrack neg_c ex_c =
       if get_debug_split () then
         print_dbg ~module_name:"Theory" ~function_name:"split_backtrack"
-          "I backtrack on %a : %a" print_lr_view neg_c Structs.Ex.print ex_c
+          "I backtrack on %a : %a" print_lr_view neg_c Ast.Ex.print ex_c
 
     let split_assume c ex_c =
       if get_debug_split () then
         print_dbg ~module_name:"Theory" ~function_name:"split assume"
-          "I assume %a : %a" print_lr_view c Structs.Ex.print ex_c
+          "I assume %a : %a" print_lr_view c Ast.Ex.print ex_c
 
     let split_backjump c dep =
       if get_debug_split () then
         print_dbg ~module_name:"Theory" ~function_name:"split_backjump"
-          "I backjump on %a : %a" print_lr_view c Structs.Ex.print dep
+          "I backjump on %a : %a" print_lr_view c Ast.Ex.print dep
 
     let query a =
       if get_debug_cc () then
         print_dbg ~module_name:"Theory" ~function_name:"query" "query : %a"
-          Structs.Expr.print a
+          Ast.Expr.print a
 
     let split_sat_contradicts_cs filt_choices =
       if get_debug_split () then
@@ -315,19 +315,19 @@ module Main_Default : S = struct
   (*BISECT-IGNORE-END*)
 
   type choice_sign =
-    | CPos of Structs.Ex.exp (* The explication of this choice *)
+    | CPos of Ast.Ex.exp (* The explication of this choice *)
     | CNeg (* The choice has been already negated *)
 
   type choice =
-    X.r Structs.Xliteral.view * Th_util.lit_origin * choice_sign * Structs.Ex.t
+    X.r Ast.Xliteral.view * Th_util.lit_origin * choice_sign * Ast.Ex.t
   (** the choice, the size, choice_sign,  the explication set,
         the explication for this choice. *)
 
   type t = {
-    assumed_set : Structs.Expr.Set.t;
-    assumed : (Structs.Expr.t * int * int) list list;
-    cs_pending_facts : (Structs.Expr.t * Structs.Ex.t * int * int) list list;
-    terms : Structs.Expr.Set.t;
+    assumed_set : Ast.Expr.Set.t;
+    assumed : (Ast.Expr.t * int * int) list list;
+    cs_pending_facts : (Ast.Expr.t * Ast.Ex.t * int * int) list list;
+    terms : Ast.Expr.Set.t;
     gamma : CC_X.t;
     gamma_finite : CC_X.t;
     choices : choice list;
@@ -343,29 +343,29 @@ module Main_Default : S = struct
           match l with
           | [] -> ({ t with gamma_finite = base_env; choices = List.rev dl }, ch)
           | l ->
-              let l =
-                List.map
-                  (fun (c, is_cs, size) ->
-                    Util.Steps.incr_cs_steps ();
-                    let exp = Structs.Ex.fresh_exp () in
-                    let ex_c_exp =
-                      if is_cs then Structs.Ex.add_fresh exp Structs.Ex.empty
-                      else Structs.Ex.empty
-                    in
-                    (* A new explanation in order to track the choice *)
-                    (c, size, CPos exp, ex_c_exp))
-                  l
-              in
-              aux ch None dl base_env l)
+            let l =
+              List.map
+                (fun (c, is_cs, size) ->
+                   Util.Steps.incr_cs_steps ();
+                   let exp = Ast.Ex.fresh_exp () in
+                   let ex_c_exp =
+                     if is_cs then Ast.Ex.add_fresh exp Ast.Ex.empty
+                     else Ast.Ex.empty
+                   in
+                   (* A new explanation in order to track the choice *)
+                   (c, size, CPos exp, ex_c_exp))
+                l
+            in
+            aux ch None dl base_env l)
       | ((c, lit_orig, CNeg, ex_c) as a) :: l, _ ->
-          let facts = CC_X.empty_facts () in
-          CC_X.add_fact facts (LSem c, ex_c, lit_orig);
-          let base_env, ch = CC_X.assume_literals base_env ch facts in
-          aux ch bad_last (a :: dl) base_env l
+        let facts = CC_X.empty_facts () in
+        CC_X.add_fact facts (LSem c, ex_c, lit_orig);
+        let base_env, ch = CC_X.assume_literals base_env ch facts in
+        aux ch bad_last (a :: dl) base_env l
       (* This optimisation is not correct with the current explanation *)
       (* | [(c, lit_orig, CPos exp, ex_c)], Yes (dep,_) -> *)
       (*     let neg_c = CC_X.Rel.choice_mk_not c in *)
-      (*     let ex_c = Structs.Ex.union ex_c dep in *)
+      (*     let ex_c = Ast.Ex.union ex_c dep in *)
       (*     Debug.split_backtrack neg_c ex_c; *)
       (*     aux ch No dl base_env [neg_c, Numbers.Q.Int 1, CNeg, ex_c] *)
       | ((c, lit_orig, CPos exp, ex_c_exp) as a) :: l, _ -> (
@@ -376,14 +376,14 @@ module Main_Default : S = struct
             let base_env, ch = CC_X.assume_literals base_env ch facts in
             Util.Options.tool_req 3 "TR-CCX-CS-Normal-Run";
             aux ch bad_last (a :: dl) base_env l
-          with Structs.Ex.Inconsistent (dep, classes) -> (
-            match Structs.Ex.remove_fresh exp dep with
-            | None ->
+          with Ast.Ex.Inconsistent (dep, classes) -> (
+              match Ast.Ex.remove_fresh exp dep with
+              | None ->
                 (* The choice doesn't participate to the inconsistency *)
                 Debug.split_backjump c dep;
                 Util.Options.tool_req 3 "TR-CCX-CS-Case-Split-Conflict";
-                raise (Structs.Ex.Inconsistent (dep, classes))
-            | Some dep ->
+                raise (Ast.Ex.Inconsistent (dep, classes))
+              | Some dep ->
                 Util.Options.tool_req 3 "TR-CCX-CS-Case-Split-Progress";
                 (* The choice participates to the inconsistency *)
                 let neg_c = LR.view (LR.neg (LR.make c)) in
@@ -395,7 +395,7 @@ module Main_Default : S = struct
                 Debug.split_backtrack neg_c dep;
                 if get_bottom_classes () then
                   Util.Printer.print_dbg "bottom (case-split):%a"
-                    Structs.Expr.print_tagged_classes classes;
+                    Ast.Expr.print_tagged_classes classes;
                 aux ch None dl base_env [ (neg_c, lit_orig, CNeg, dep) ]))
     in
     aux ch bad_last (List.rev t.choices) base_env l
@@ -411,10 +411,10 @@ module Main_Default : S = struct
     in
     List.for_all
       (fun r ->
-        List.for_all
-          (fun x ->
-            match X.term_extract x with Some t, _ -> Uf.mem uf t | _ -> true)
-          (X.leaves r))
+         List.for_all
+           (fun x ->
+              match X.term_extract x with Some t, _ -> Uf.mem uf t | _ -> true)
+           (X.leaves r))
       l
 
   (* 1. Remove case-split decisions contain fresh variables (introduced by
@@ -428,25 +428,25 @@ module Main_Default : S = struct
     let ignored_decisions =
       List.fold_left
         (fun ex (_, _, ch, _) ->
-          match ch with
-          | CPos (Structs.Ex.Fresh _ as e) -> Structs.Ex.add_fresh e ex
-          | CPos _ -> assert false
-          | CNeg -> ex)
-        Structs.Ex.empty to_ignore
+           match ch with
+           | CPos (Ast.Ex.Fresh _ as e) -> Ast.Ex.add_fresh e ex
+           | CPos _ -> assert false
+           | CNeg -> ex)
+        Ast.Ex.empty to_ignore
     in
     List.filter
       (fun (_, _, _, ex) ->
-        try
-          Structs.Ex.iter_atoms
-            (function
-              | Structs.Ex.Fresh _ as fr
-                when Structs.Ex.mem fr ignored_decisions ->
-                  raise Exit
-              | _ -> ())
-            ex;
-          true
-        with Exit -> (* ignore implicated related to ignored decisions *)
-                     false)
+         try
+           Ast.Ex.iter_atoms
+             (function
+               | Ast.Ex.Fresh _ as fr
+                 when Ast.Ex.mem fr ignored_decisions ->
+                 raise Exit
+               | _ -> ())
+             ex;
+           true
+         with Exit -> (* ignore implicated related to ignored decisions *)
+           false)
       candidates_to_keep
 
   let try_it t facts ~for_model =
@@ -459,7 +459,7 @@ module Main_Default : S = struct
           try
             let env, ch = CC_X.assume_literals t.gamma_finite [] facts in
             look_for_sat ch t env [] ~for_model
-          with Structs.Ex.Inconsistent (dep, classes) ->
+          with Ast.Ex.Inconsistent (dep, classes) ->
             Util.Options.tool_req 3 "TR-CCX-CS-Case-Split-Erase-Choices";
             (* we replay the conflict in look_for_sat, so we can
                safely ignore the explanation which is not useful *)
@@ -469,10 +469,10 @@ module Main_Default : S = struct
             look_for_sat
               ~bad_last:(Some (dep, classes))
               [] { t with choices = [] } t.gamma filt_choices ~for_model
-      with Structs.Ex.Inconsistent (d, cl) ->
+      with Ast.Ex.Inconsistent (d, cl) ->
         Debug.end_case_split t.choices;
         Util.Options.tool_req 3 "TR-CCX-CS-Conflict";
-        raise (Structs.Ex.Inconsistent (d, cl))
+        raise (Ast.Ex.Inconsistent (d, cl))
     in
     Debug.end_case_split (fst r).choices;
     r
@@ -480,9 +480,9 @@ module Main_Default : S = struct
   let extract_from_semvalues acc l =
     List.fold_left
       (fun acc r ->
-        match X.term_extract r with
-        | Some t, _ -> Structs.Expr.Set.add t acc
-        | _ -> acc)
+         match X.term_extract r with
+         | Some t, _ -> Ast.Expr.Set.add t acc
+         | _ -> acc)
       acc l
 
   let extract_terms_from_choices =
@@ -497,15 +497,15 @@ module Main_Default : S = struct
     List.fold_left (fun acc (a, _, _) ->
         match a with
         | LTerm r -> (
-            match Structs.Expr.lit_view r with
-            | Structs.Expr.Not_a_lit _ -> assert false
-            | Structs.Expr.Eq (t1, t2) ->
-                Structs.Expr.Set.add t1 (Structs.Expr.Set.add t2 acc)
-            | Structs.Expr.Eql l
-            | Structs.Expr.Distinct l
-            | Structs.Expr.Builtin (_, _, l) ->
-                List.fold_right Structs.Expr.Set.add l acc
-            | Structs.Expr.Pred (t1, _) -> Structs.Expr.Set.add t1 acc)
+            match Ast.Expr.lit_view r with
+            | Ast.Expr.Not_a_lit _ -> assert false
+            | Ast.Expr.Eq (t1, t2) ->
+              Ast.Expr.Set.add t1 (Ast.Expr.Set.add t2 acc)
+            | Ast.Expr.Eql l
+            | Ast.Expr.Distinct l
+            | Ast.Expr.Builtin (_, _, l) ->
+              List.fold_right Ast.Expr.Set.add l acc
+            | Ast.Expr.Pred (t1, _) -> Ast.Expr.Set.add t1 acc)
         | _ -> acc)
 
   let rec is_ordered_list l =
@@ -514,9 +514,9 @@ module Main_Default : S = struct
     | [] :: r -> is_ordered_list r
     | [ e ] :: r1 :: r2 -> is_ordered_list ((e :: r1) :: r2)
     | (e1 :: e2 :: l) :: r ->
-        let _, d1, p1 = e1 in
-        let _, d2, p2 = e2 in
-        (d1 > d2 || (d1 = d2 && p1 > p2)) && is_ordered_list ((e2 :: l) :: r)
+      let _, d1, p1 = e1 in
+      let _, d2, p2 = e2 in
+      (d1 > d2 || (d1 = d2 && p1 > p2)) && is_ordered_list ((e2 :: l) :: r)
 
   let do_case_split t =
     let in_facts_l = t.cs_pending_facts in
@@ -528,10 +528,10 @@ module Main_Default : S = struct
       in_facts_l;
 
     let t, ch = try_it t facts ~for_model:false in
-    let choices = extract_terms_from_choices Structs.Expr.Set.empty t.choices in
+    let choices = extract_terms_from_choices Ast.Expr.Set.empty t.choices in
     let choices_terms = extract_terms_from_assumed choices ch in
 
-    ( { t with terms = Structs.Expr.Set.union t.terms choices_terms },
+    ( { t with terms = Ast.Expr.Set.union t.terms choices_terms },
       choices_terms )
 
   (* facts are sorted in decreasing order with respect to (dlvl, plvl) *)
@@ -540,15 +540,15 @@ module Main_Default : S = struct
     let assumed, assumed_set, cpt =
       List.fold_left
         (fun ((assumed, assumed_set, cpt) as accu) (a, ex, dlvl, plvl) ->
-          if Structs.Expr.Set.mem a assumed_set then accu
-          else (
-            CC_X.add_fact facts (LTerm a, ex, Th_util.Other);
-            ( (a, dlvl, plvl) :: assumed,
-              Structs.Expr.Set.add a assumed_set,
-              cpt + 1 )))
+           if Ast.Expr.Set.mem a assumed_set then accu
+           else (
+             CC_X.add_fact facts (LTerm a, ex, Th_util.Other);
+             ( (a, dlvl, plvl) :: assumed,
+               Ast.Expr.Set.add a assumed_set,
+               cpt + 1 )))
         ([], t.assumed_set, 0) in_facts
     in
-    if assumed == [] then (t, Structs.Expr.Set.empty, 0)
+    if assumed == [] then (t, Ast.Expr.Set.empty, 0)
     else
       let t =
         {
@@ -558,30 +558,30 @@ module Main_Default : S = struct
           cs_pending_facts = in_facts :: t.cs_pending_facts;
         }
       in
-      if Util.Options.get_profiling () then Structs.Profiling.assume cpt;
+      if Util.Options.get_profiling () then Ast.Profiling.assume cpt;
       Debug.assumed t.assumed;
       assert ((not ordered) || is_ordered_list t.assumed);
 
       let gamma, _ = CC_X.assume_literals t.gamma [] facts in
       let new_terms = CC_X.new_terms gamma in
-      ( { t with gamma; terms = Structs.Expr.Set.union t.terms new_terms },
+      ( { t with gamma; terms = Ast.Expr.Set.union t.terms new_terms },
         new_terms,
         cpt )
 
   let get_debug_theories_instances th_instances ilvl dlvl =
-    let module MF = Structs.Expr.Map in
+    let module MF = Ast.Expr.Map in
     Util.Printer.print_dbg ~flushed:false ~module_name:"Theory"
       ~function_name:"theories_instances"
       "@[<v 2>dec. level = %d, instant.level = %d, %d new Th instances@ " dlvl
       ilvl (List.length th_instances);
     let mp =
       List.fold_left
-        (fun acc ((hyps : Structs.Expr.t list), gf, _) ->
-          match gf.Structs.Expr.lem with
-          | None -> assert false
-          | Some lem ->
-              let inst = try MF.find lem acc with Not_found -> MF.empty in
-              MF.add lem (MF.add gf.Structs.Expr.ff hyps inst) acc)
+        (fun acc ((hyps : Ast.Expr.t list), gf, _) ->
+           match gf.Ast.Expr.lem with
+           | None -> assert false
+           | Some lem ->
+             let inst = try MF.find lem acc with Not_found -> MF.empty in
+             MF.add lem (MF.add gf.Ast.Expr.ff hyps inst) acc)
         MF.empty th_instances
     in
     let l =
@@ -590,21 +590,21 @@ module Main_Default : S = struct
     let l = List.fast_sort (fun (_, m, _) (_, n, _) -> n - m) l in
     List.iter
       (fun (f, m, inst) ->
-        Util.Printer.print_dbg ~flushed:false ~header:false "%3d  -->  %a@ " m
-          Structs.Expr.print f;
-        if true then
-          MF.iter
-            (fun f hyps ->
-              Util.Printer.print_dbg ~flushed:false ~header:false
-                "@[<v 2>[inst]@ ";
-              List.iter
-                (fun h ->
-                  Util.Printer.print_dbg ~flushed:false ~header:false
-                    "hypothesis: %a@ " Structs.Expr.print h)
-                hyps;
-              Util.Printer.print_dbg ~flushed:false ~header:false
-                "@]conclusion: %a@ " Structs.Expr.print f)
-            inst)
+         Util.Printer.print_dbg ~flushed:false ~header:false "%3d  -->  %a@ " m
+           Ast.Expr.print f;
+         if true then
+           MF.iter
+             (fun f hyps ->
+                Util.Printer.print_dbg ~flushed:false ~header:false
+                  "@[<v 2>[inst]@ ";
+                List.iter
+                  (fun h ->
+                     Util.Printer.print_dbg ~flushed:false ~header:false
+                       "hypothesis: %a@ " Ast.Expr.print h)
+                  hyps;
+                Util.Printer.print_dbg ~flushed:false ~header:false
+                  "@]conclusion: %a@ " Ast.Expr.print f)
+             inst)
       l;
     Util.Printer.print_dbg ~header:false "@]"
 
@@ -621,42 +621,42 @@ module Main_Default : S = struct
       (* !!! query does not modify gamma_finite anymore *)
       Util.Options.exec_thread_yield ();
       let gamma, facts =
-        CC_X.add t.gamma (CC_X.empty_facts ()) a Structs.Ex.empty
+        CC_X.add t.gamma (CC_X.empty_facts ()) a Ast.Ex.empty
       in
       let gamma, _ = CC_X.assume_literals gamma [] facts in
       { t with gamma }
     in
     fun a t ->
-      if Util.Options.get_profiling () then Structs.Profiling.query ();
+      if Util.Options.get_profiling () then Ast.Profiling.query ();
       Util.Options.exec_thread_yield ();
       Debug.query a;
       try
-        match Structs.Expr.lit_view a with
-        | Structs.Expr.Eq (t1, t2) ->
-            let t = add_and_process_conseqs a t in
-            CC_X.are_equal t.gamma t1 t2 ~init_terms:false
-        | Structs.Expr.Distinct [ t1; t2 ] ->
-            let na = Structs.Expr.neg a in
-            let t = add_and_process_conseqs na t in
-            (* na ? *)
-            CC_X.are_distinct t.gamma t1 t2
-        | Structs.Expr.Distinct _ | Structs.Expr.Eql _ ->
-            (* we only assume toplevel distinct with more that one arg.
-               not interesting to do a query in this case ?? or query ? *)
-            None
-        | Structs.Expr.Pred (t1, b) ->
-            let t = add_and_process_conseqs a t in
-            if b then CC_X.are_distinct t.gamma t1 Structs.Expr.vrai
-            else CC_X.are_equal t.gamma t1 Structs.Expr.vrai ~init_terms:false
+        match Ast.Expr.lit_view a with
+        | Ast.Expr.Eq (t1, t2) ->
+          let t = add_and_process_conseqs a t in
+          CC_X.are_equal t.gamma t1 t2 ~init_terms:false
+        | Ast.Expr.Distinct [ t1; t2 ] ->
+          let na = Ast.Expr.neg a in
+          let t = add_and_process_conseqs na t in
+          (* na ? *)
+          CC_X.are_distinct t.gamma t1 t2
+        | Ast.Expr.Distinct _ | Ast.Expr.Eql _ ->
+          (* we only assume toplevel distinct with more that one arg.
+             not interesting to do a query in this case ?? or query ? *)
+          None
+        | Ast.Expr.Pred (t1, b) ->
+          let t = add_and_process_conseqs a t in
+          if b then CC_X.are_distinct t.gamma t1 Ast.Expr.vrai
+          else CC_X.are_equal t.gamma t1 Ast.Expr.vrai ~init_terms:false
         | _ ->
-            let na = Structs.Expr.neg a in
-            let t = add_and_process_conseqs na t in
-            CC_X.query t.gamma na
-      with Structs.Ex.Inconsistent (d, classes) -> Some (d, classes)
+          let na = Ast.Expr.neg a in
+          let t = add_and_process_conseqs na t in
+          CC_X.query t.gamma na
+      with Ast.Ex.Inconsistent (d, classes) -> Some (d, classes)
 
   let add_term_in_gm gm t =
     let facts = CC_X.empty_facts () in
-    let gm, facts = CC_X.add_term gm facts t Structs.Ex.empty in
+    let gm, facts = CC_X.add_term gm facts t Ast.Ex.empty in
     fst (CC_X.assume_literals gm [] facts)
   (* may raise Inconsistent *)
 
@@ -669,27 +669,27 @@ module Main_Default : S = struct
   let empty () =
     let env = CC_X.empty () in
     let env, _ =
-      CC_X.add_term env (CC_X.empty_facts ()) Structs.Expr.vrai Structs.Ex.empty
+      CC_X.add_term env (CC_X.empty_facts ()) Ast.Expr.vrai Ast.Ex.empty
     in
     let env, _ =
-      CC_X.add_term env (CC_X.empty_facts ()) Structs.Expr.faux Structs.Ex.empty
+      CC_X.add_term env (CC_X.empty_facts ()) Ast.Expr.faux Ast.Ex.empty
     in
     let t =
       {
         gamma = env;
         gamma_finite = env;
         choices = [];
-        assumed_set = Structs.Expr.Set.empty;
+        assumed_set = Ast.Expr.Set.empty;
         assumed = [];
         cs_pending_facts = [];
-        terms = Structs.Expr.Set.empty;
+        terms = Ast.Expr.Set.empty;
       }
     in
     let a =
-      Structs.Expr.mk_distinct ~iff:false
-        [ Structs.Expr.vrai; Structs.Expr.faux ]
+      Ast.Expr.mk_distinct ~iff:false
+        [ Ast.Expr.vrai; Ast.Expr.faux ]
     in
-    let t, _, _ = assume true [ (a, Structs.Ex.empty, 0, -1) ] t in
+    let t, _, _ = assume true [ (a, Ast.Ex.empty, 0, -1) ] t in
     t
 
   let print_model fmt t = CC_X.print_model fmt t.gamma_finite
@@ -733,28 +733,28 @@ module Main_Default : S = struct
 end
 
 module Main_Empty : S = struct
-  type t = { assumed_set : Structs.Expr.Set.t }
+  type t = { assumed_set : Ast.Expr.Set.t }
 
-  let empty () = { assumed_set = Structs.Expr.Set.empty }
+  let empty () = { assumed_set = Ast.Expr.Set.empty }
 
   let assume ?ordered:(_ = true) in_facts t =
     let assumed_set =
       List.fold_left
         (fun assumed_set (a, _, _, _) ->
-          if Structs.Expr.Set.mem a assumed_set then assumed_set
-          else Structs.Expr.Set.add a assumed_set)
+           if Ast.Expr.Set.mem a assumed_set then assumed_set
+           else Ast.Expr.Set.add a assumed_set)
         t.assumed_set in_facts
     in
-    ({ assumed_set }, Structs.Expr.Set.empty, 0)
+    ({ assumed_set }, Ast.Expr.Set.empty, 0)
 
   let query _ _ = None
   let print_model _ _ = ()
   let cl_extract _ = []
-  let extract_ground_terms _ = Structs.Expr.Set.empty
+  let extract_ground_terms _ = Ast.Expr.Set.empty
   let empty_ccx = CC_X.empty ()
   let get_real_env _ = empty_ccx
   let get_case_split_env _ = empty_ccx
-  let do_case_split env = (env, Structs.Expr.Set.empty)
+  let do_case_split env = (env, Ast.Expr.Set.empty)
   let add_term env _ ~add_in_cs:_ = env
   let compute_concrete_model e = e
   let assume_th_elt e _ _ = e

@@ -27,20 +27,20 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 open Format
 open Util.Options
 module Q = Util.Numbers.Q
 
 type borne =
-  | Strict of (Q.t * Structs.Ex.t)
-  | Large of (Q.t * Structs.Ex.t)
+  | Strict of (Q.t * Ast.Ex.t)
+  | Large of (Q.t * Ast.Ex.t)
   | Pinfty
   | Minfty
 
-type t = { ints : (borne * borne) list; is_int : bool; expl : Structs.Ex.t }
+type t = { ints : (borne * borne) list; is_int : bool; expl : Ast.Ex.t }
 
-exception NotConsistent of Structs.Ex.t
+exception NotConsistent of Ast.Ex.t
 exception No_finite_bound
 
 (*BISECT-IGNORE-BEGIN*)
@@ -49,9 +49,9 @@ module Debug = struct
     | Minfty -> fprintf fmt "-inf"
     | Pinfty -> fprintf fmt "+inf"
     | Strict (v, e) | Large (v, e) ->
-        fprintf fmt "%s" (Q.to_string v);
-        if get_verbose () || get_unsat_core () then
-          fprintf fmt " %a" Structs.Ex.print e
+      fprintf fmt "%s" (Q.to_string v);
+      if get_verbose () || get_unsat_core () then
+        fprintf fmt " %a" Ast.Ex.print e
 
   let print_interval fmt (b1, b2) =
     let c1, c2 =
@@ -66,13 +66,13 @@ module Debug = struct
   let print_list fmt = function
     | [] -> fprintf fmt "[empty]"
     | e :: l ->
-        print_interval fmt e;
-        List.iter (fprintf fmt " U %a" print_interval) l
+      print_interval fmt e;
+      List.iter (fprintf fmt " U %a" print_interval) l
 
   let print fmt { ints; expl = e; _ } =
     print_list fmt ints;
     if get_verbose () || get_unsat_core () then
-      fprintf fmt " %a" Structs.Ex.print e
+      fprintf fmt " %a" Ast.Ex.print e
 end
 (*BISECT-IGNORE-END*)
 
@@ -82,15 +82,15 @@ let large_borne_of n e = Large (n, e)
 let strict_borne_of n e = Strict (n, e)
 
 let undefined_int =
-  { ints = [ (Minfty, Pinfty) ]; is_int = true; expl = Structs.Ex.empty }
+  { ints = [ (Minfty, Pinfty) ]; is_int = true; expl = Ast.Ex.empty }
 
 let undefined_real =
-  { ints = [ (Minfty, Pinfty) ]; is_int = false; expl = Structs.Ex.empty }
+  { ints = [ (Minfty, Pinfty) ]; is_int = false; expl = Ast.Ex.empty }
 
 let undefined ty =
   match ty with
-  | Structs.Ty.Tint -> undefined_int
-  | Structs.Ty.Treal -> undefined_real
+  | Ast.Ty.Tint -> undefined_int
+  | Ast.Ty.Treal -> undefined_real
   | _ -> assert false
 
 let is_undefined t =
@@ -99,14 +99,14 @@ let is_undefined t =
 let point b ty e =
   {
     ints = [ (Large (b, e), Large (b, e)) ];
-    is_int = ty == Structs.Ty.Tint;
+    is_int = ty == Ast.Ty.Tint;
     expl = e;
   }
 
 let is_point { ints = l; expl = e; _ } =
   match l with
   | [ (Large (v1, e1), Large (v2, e2)) ] when Q.equal v1 v2 ->
-      Some (v1, Structs.Ex.union e (Structs.Ex.union e1 e2))
+    Some (v1, Ast.Ex.union e (Ast.Ex.union e1 e2))
   | _ -> None
 
 let finite_size { ints = l; is_int; _ } =
@@ -116,10 +116,10 @@ let finite_size { ints = l; is_int; _ } =
       let acc = ref [] in
       List.iter
         (fun (b1, b2) ->
-          match (b1, b2) with
-          | Minfty, _ | _, Pinfty -> raise Exit
-          | Large (v1, _), Large (v2, _) -> acc := (v1, v2) :: !acc
-          | _, _ -> assert false)
+           match (b1, b2) with
+           | Minfty, _ | _, Pinfty -> raise Exit
+           | Large (v1, _), Large (v2, _) -> acc := (v1, v2) :: !acc
+           | _, _ -> assert false)
         l;
       let res =
         List.fold_left
@@ -148,28 +148,28 @@ let only_borne_sup ({ ints; _ } as t) =
 
 let explain_borne = function
   | Large (_, e) | Strict (_, e) -> e
-  | _ -> Structs.Ex.empty
+  | _ -> Ast.Ex.empty
 
 let add_expl_to_borne b e =
-  if Structs.Ex.is_empty e then b
+  if Ast.Ex.is_empty e then b
   else
     match b with
-    | Large (n, e') -> Large (n, Structs.Ex.union e e')
-    | Strict (n, e') -> Strict (n, Structs.Ex.union e e')
+    | Large (n, e') -> Large (n, Ast.Ex.union e e')
+    | Strict (n, e') -> Strict (n, Ast.Ex.union e e')
     | Pinfty | Minfty -> b
 
 let add_expl_zero i expl =
-  if Structs.Ex.is_empty expl then i
+  if Ast.Ex.is_empty expl then i
   else
     let res =
       List.rev_map
         (fun x ->
-          match x with
-          | Large (c1, e1), Large (c2, e2) when Q.sign c1 = 0 && Q.sign c2 = 0
-            ->
-              ( Large (Q.zero, Structs.Ex.union e1 expl),
-                Large (Q.zero, Structs.Ex.union e2 expl) )
-          | _ -> x)
+           match x with
+           | Large (c1, e1), Large (c2, e2) when Q.sign c1 = 0 && Q.sign c2 = 0
+             ->
+             ( Large (Q.zero, Ast.Ex.union e1 expl),
+               Large (Q.zero, Ast.Ex.union e2 expl) )
+           | _ -> x)
         i.ints
     in
     { i with ints = List.rev res }
@@ -179,22 +179,22 @@ let int_of_borne_inf b =
   | Minfty | Pinfty -> b
   | Large (v, e) -> Large ((if Q.is_int v then v else Q.ceiling v), e)
   | Strict (v, e) ->
-      if Q.is_int v then Large (Q.add v Q.one, e)
-      else
-        let v' = Q.ceiling v in
-        assert (Q.compare v' v > 0);
-        Large (v', e)
+    if Q.is_int v then Large (Q.add v Q.one, e)
+    else
+      let v' = Q.ceiling v in
+      assert (Q.compare v' v > 0);
+      Large (v', e)
 
 let int_of_borne_sup b =
   match b with
   | Minfty | Pinfty -> b
   | Large (v, e) -> Large ((if Q.is_int v then v else Q.floor v), e)
   | Strict (v, e) ->
-      if Q.is_int v then Large (Q.sub v Q.one, e)
-      else
-        let v' = Q.floor v in
-        assert (Q.compare v' v < 0);
-        Large (v', e)
+    if Q.is_int v then Large (Q.sub v Q.one, e)
+    else
+      let v' = Q.floor v in
+      assert (Q.compare v' v < 0);
+      Large (v', e)
 
 let int_bornes (l, u) = (int_of_borne_inf l, int_of_borne_sup u)
 
@@ -205,17 +205,17 @@ let compare_bounds b1 ~is_low1 b2 ~is_low2 =
   | _, Minfty | Pinfty, _ -> 1
   | Large (v1, _), Large (v2, _) -> Q.compare v1 v2
   | Strict (v1, _), Strict (v2, _) ->
-      let c = Q.compare v1 v2 in
-      if c <> 0 then c
-      else if is_low1 == is_low2 then 0 (* bl_bl or bu_bu *)
-      else if is_low1 then 1 (* implies not is_low2 *)
-      else -1 (* implies not is_low1 and is_low2 *)
+    let c = Q.compare v1 v2 in
+    if c <> 0 then c
+    else if is_low1 == is_low2 then 0 (* bl_bl or bu_bu *)
+    else if is_low1 then 1 (* implies not is_low2 *)
+    else -1 (* implies not is_low1 and is_low2 *)
   | Strict (v1, _), Large (v2, _) ->
-      let c = Q.compare v1 v2 in
-      if c <> 0 then c else if is_low1 then 1 else -1
+    let c = Q.compare v1 v2 in
+    if c <> 0 then c else if is_low1 then 1 else -1
   | Large (v1, _), Strict (v2, _) ->
-      let c = Q.compare v1 v2 in
-      if c <> 0 then c else if is_low2 then -1 else 1
+    let c = Q.compare v1 v2 in
+    if c <> 0 then c else if is_low2 then -1 else 1
 
 let zero_endpoint b = match b with Large (v, _) -> Q.is_zero v | _ -> false
 
@@ -225,7 +225,7 @@ let min_of_lower_bounds b1 b2 =
 let max_of_upper_bounds b1 b2 =
   if compare_bounds b1 ~is_low1:false b2 ~is_low2:false >= 0 then b1 else b2
 
-let zero_large = Large (Q.zero, Structs.Ex.empty)
+let zero_large = Large (Q.zero, Ast.Ex.empty)
 
 let low_borne_pos_strict b =
   compare_bounds b ~is_low1:true zero_large ~is_low2:true > 0
@@ -255,7 +255,7 @@ let neg_borne b =
 
 (* TODO: generalize the use of this type and the function joint below
    to other operations on intervals *)
-type kind = Empty of Structs.Ex.t | Int of (borne * borne)
+type kind = Empty of Ast.Ex.t | Int of (borne * borne)
 
 let join l glob_ex =
   (* l should not be empty *)
@@ -266,23 +266,23 @@ let join l glob_ex =
     | [ Empty ex ], [] -> ([], Some ex)
     | Int b :: l, _ -> j_aux l (b :: _done)
     | Empty ex :: l, _ ->
-        let _done =
-          match _done with
-          | [] -> []
-          | (low, up) :: r -> (low, add_expl_to_borne up ex) :: r
-        in
-        let _todo =
-          match l with
-          | [] -> []
-          | Empty ex' :: r -> Empty (Structs.Ex.union ex ex') :: r
-          | Int (low, up) :: r -> Int (add_expl_to_borne low ex, up) :: r
-        in
-        j_aux _todo _done
+      let _done =
+        match _done with
+        | [] -> []
+        | (low, up) :: r -> (low, add_expl_to_borne up ex) :: r
+      in
+      let _todo =
+        match l with
+        | [] -> []
+        | Empty ex' :: r -> Empty (Ast.Ex.union ex ex') :: r
+        | Int (low, up) :: r -> Int (add_expl_to_borne low ex, up) :: r
+      in
+      j_aux _todo _done
   in
   match j_aux l [] with
   | [], None -> assert false
   | l, None -> l
-  | [], Some ex -> raise (NotConsistent (Structs.Ex.union ex glob_ex))
+  | [], Some ex -> raise (NotConsistent (Ast.Ex.union ex glob_ex))
   | _, Some _ -> assert false
 
 let intersect =
@@ -291,34 +291,34 @@ let intersect =
     | [], _ | _, [] -> List.rev acc
     | (_, up1) :: r1, (lo2, _) :: _
       when compare_bounds up1 ~is_low1:false lo2 ~is_low2:true < 0 ->
-        (* No overlap. (lo1, up1) is smaller *)
-        let nexpl = Structs.Ex.union (explain_borne up1) (explain_borne lo2) in
-        step is_int r1 l2 (Empty nexpl :: acc)
+      (* No overlap. (lo1, up1) is smaller *)
+      let nexpl = Ast.Ex.union (explain_borne up1) (explain_borne lo2) in
+      step is_int r1 l2 (Empty nexpl :: acc)
     | (lo1, _) :: _, (_, up2) :: r2
       when compare_bounds lo1 ~is_low1:true up2 ~is_low2:false > 0 ->
-        (* No overlap. (lo2, up2) is smaller *)
-        let nexpl = Structs.Ex.union (explain_borne up2) (explain_borne lo1) in
-        step is_int l1 r2 (Empty nexpl :: acc)
+      (* No overlap. (lo2, up2) is smaller *)
+      let nexpl = Ast.Ex.union (explain_borne up2) (explain_borne lo1) in
+      step is_int l1 r2 (Empty nexpl :: acc)
     | (lo1, up1) :: r1, (lo2, up2) :: r2 ->
-        let cll = compare_bounds lo1 ~is_low1:true lo2 ~is_low2:true in
-        let cuu = compare_bounds up1 ~is_low1:false up2 ~is_low2:false in
-        if cll <= 0 && cuu >= 0 then
-          (* (lo1, up1) subsumes (lo2, up2) *)
-          step is_int l1 r2 (Int (lo2, up2) :: acc) (* ex of lo1 and up1 ? *)
-        else if cll >= 0 && cuu <= 0 then
-          (* (lo2, up2) subsumes (lo1, up1) *)
-          step is_int r1 l2 (Int (lo1, up1) :: acc) (* ex of lo2 and up2 ? *)
-        else if cll <= 0 && cuu <= 0 then
-          (* lo1 <= lo2 <=  up1 <= up2 *)
-          step is_int r1 l2 (Int (lo2, up1) :: acc) (* ex of lo1 and up2 ? *)
-        else if cll >= 0 && cuu >= 0 then
-          (* lo2 <= lo1 <=  up2 <= up1 *)
-          step is_int l1 r2 (Int (lo1, up2) :: acc) (* ex of lo2 and up1 ? *)
-        else assert false
+      let cll = compare_bounds lo1 ~is_low1:true lo2 ~is_low2:true in
+      let cuu = compare_bounds up1 ~is_low1:false up2 ~is_low2:false in
+      if cll <= 0 && cuu >= 0 then
+        (* (lo1, up1) subsumes (lo2, up2) *)
+        step is_int l1 r2 (Int (lo2, up2) :: acc) (* ex of lo1 and up1 ? *)
+      else if cll >= 0 && cuu <= 0 then
+        (* (lo2, up2) subsumes (lo1, up1) *)
+        step is_int r1 l2 (Int (lo1, up1) :: acc) (* ex of lo2 and up2 ? *)
+      else if cll <= 0 && cuu <= 0 then
+        (* lo1 <= lo2 <=  up1 <= up2 *)
+        step is_int r1 l2 (Int (lo2, up1) :: acc) (* ex of lo1 and up2 ? *)
+      else if cll >= 0 && cuu >= 0 then
+        (* lo2 <= lo1 <=  up2 <= up1 *)
+        step is_int l1 r2 (Int (lo1, up2) :: acc) (* ex of lo2 and up1 ? *)
+      else assert false
   in
   fun ({ ints = l1; expl = e1; is_int } as uints1) { ints = l2; expl = e2; _ } ->
     (*l1 and l2 are supposed to be normalized *)
-    let expl = Structs.Ex.union e1 e2 in
+    let expl = Ast.Ex.union e1 e2 in
     let l = step is_int l1 l2 [] in
     let res = { uints1 with ints = join l expl; expl } in
     assert (res.ints != []);
@@ -333,7 +333,7 @@ let new_borne_sup expl b ~is_le uints =
     {
       ints = [ (Minfty, aux b expl) ];
       is_int = uints.is_int;
-      expl = Structs.Ex.empty;
+      expl = Ast.Ex.empty;
     }
     uints
 
@@ -346,7 +346,7 @@ let new_borne_inf expl b ~is_le uints =
     {
       ints = [ (aux b expl, Pinfty) ];
       is_int = uints.is_int;
-      expl = Structs.Ex.empty;
+      expl = Ast.Ex.empty;
     }
     uints
 
@@ -371,16 +371,16 @@ let union_bornes is_int l =
     | [] -> acc
     | [ e ] -> e :: acc
     | (l1, u1) :: ((l2, u2) :: r as r2) ->
-        if compare_bounds u1 ~is_low1:false l2 ~is_low2:true < 0 then
-          match (is_int, u1, l2) with
-          | true, Large (x, _), Large (y, _) when Q.equal (Q.sub y x) Q.one ->
-              aux is_int ((l1, u2) :: r) acc
-          | _ ->
-              (* the only case where we put things in acc *)
-              aux is_int r2 ((l1, u1) :: acc)
-        else if compare_bounds u1 ~is_low1:false u2 ~is_low2:false > 0 then
-          aux is_int ((l1, u1) :: r) acc
-        else aux is_int ((l1, u2) :: r) acc
+      if compare_bounds u1 ~is_low1:false l2 ~is_low2:true < 0 then
+        match (is_int, u1, l2) with
+        | true, Large (x, _), Large (y, _) when Q.equal (Q.sub y x) Q.one ->
+          aux is_int ((l1, u2) :: r) acc
+        | _ ->
+          (* the only case where we put things in acc *)
+          aux is_int r2 ((l1, u1) :: acc)
+      else if compare_bounds u1 ~is_low1:false u2 ~is_low2:false > 0 then
+        aux is_int ((l1, u1) :: r) acc
+      else aux is_int ((l1, u2) :: r) acc
   in
   List.rev (aux is_int l [])
 
@@ -402,16 +402,16 @@ let rev_normalize_int_bounds rl ex n =
   let l =
     List.rev_map
       (fun b ->
-        let b = int_bornes b in
-        match b with
-        | Large (v, ex1), Large (w, ex2) when Q.compare w v < 0 ->
-            Empty (Structs.Ex.union ex1 ex2)
-        | Strict (v, ex1), Large (w, ex2)
-        | Large (v, ex1), Strict (w, ex2)
-        | Strict (v, ex1), Strict (w, ex2)
-          when Q.compare w v <= 0 ->
-            Empty (Structs.Ex.union ex1 ex2)
-        | _ -> Int b)
+         let b = int_bornes b in
+         match b with
+         | Large (v, ex1), Large (w, ex2) when Q.compare w v < 0 ->
+           Empty (Ast.Ex.union ex1 ex2)
+         | Strict (v, ex1), Large (w, ex2)
+         | Large (v, ex1), Strict (w, ex2)
+         | Strict (v, ex1), Strict (w, ex2)
+           when Q.compare w v <= 0 ->
+           Empty (Ast.Ex.union ex1 ex2)
+         | _ -> Int b)
       rl
   in
   if Q.compare n Q.zero > 0 (* !!! this test should be checked *) then join l ex
@@ -421,14 +421,14 @@ let exclude =
   let rec complement l prev acc =
     match l with
     | (b1, b2) :: r ->
-        let bu =
-          match b1 with Strict v -> Large v | Large v -> Strict v | _ -> b1
-        in
-        let bl =
-          match b2 with Strict v -> Large v | Large v -> Strict v | _ -> b2
-        in
-        if bu == Minfty then complement r bl acc
-        else complement r bl ((prev, bu) :: acc)
+      let bu =
+        match b1 with Strict v -> Large v | Large v -> Strict v | _ -> b1
+      in
+      let bl =
+        match b2 with Strict v -> Large v | Large v -> Strict v | _ -> b2
+      in
+      if bu == Minfty then complement r bl acc
+      else complement r bl ((prev, bu) :: acc)
     | [] -> List.rev (if prev == Pinfty then acc else (prev, Pinfty) :: acc)
   in
   fun uints1 uints2 ->
@@ -444,14 +444,14 @@ let add_borne b1 b2 =
   | Minfty, Pinfty | Pinfty, Minfty -> assert false
   | Minfty, _ | _, Minfty -> Minfty
   | Pinfty, _ | _, Pinfty -> Pinfty
-  | Large (v1, e1), Large (v2, e2) -> Large (Q.add v1 v2, Structs.Ex.union e1 e2)
+  | Large (v1, e1), Large (v2, e2) -> Large (Q.add v1 v2, Ast.Ex.union e1 e2)
   | (Large (v1, e1) | Strict (v1, e1)), (Large (v2, e2) | Strict (v2, e2)) ->
-      Strict (Q.add v1 v2, Structs.Ex.union e1 e2)
+    Strict (Q.add v1 v2, Ast.Ex.union e1 e2)
 
 let translate c ((b1, b2) as b) =
   if Q.(equal zero) c then b
   else
-    let tmp = Large (c, Structs.Ex.empty) in
+    let tmp = Large (c, Ast.Ex.empty) in
     (add_borne b1 tmp, add_borne b2 tmp)
 
 let scale_interval_zero n (b1, b2) =
@@ -495,28 +495,28 @@ let scale coef uints = affine_scale ~const:Q.zero ~coef uints
 
 let coerce ty uints =
   match ty with
-  | Structs.Ty.Treal -> { uints with is_int = false }
-  | Structs.Ty.Tint ->
-      if uints.is_int then uints else scale Q.one { uints with is_int = true }
+  | Ast.Ty.Treal -> { uints with is_int = false }
+  | Ast.Ty.Tint ->
+    if uints.is_int then uints else scale Q.one { uints with is_int = true }
   | _ -> assert false
 
 let add_interval is_int l (b1, b2) =
   List.fold_right
     (fun (b1', b2') l ->
-      let l1 = (add_borne b1 b1', add_borne b2 b2') :: l in
-      union_bornes is_int l1)
+       let l1 = (add_borne b1 b1', add_borne b2 b2') :: l in
+       union_bornes is_int l1)
     l []
 
 let add { ints = l1; is_int; expl = e1 } { ints = l2; expl = e2; _ } =
   let l =
     List.fold_left
       (fun l bs ->
-        let i = add_interval is_int l1 bs in
-        i @ l)
+         let i = add_interval is_int l1 bs in
+         i @ l)
       [] l2
   in
   let res =
-    union_intervals { ints = l; is_int; expl = Structs.Ex.union e1 e2 }
+    union_intervals { ints = l; is_int; expl = Ast.Ex.union e1 e2 }
   in
   assert (res.ints != []);
   res
@@ -528,23 +528,23 @@ let merge i1 i2 =
     {
       ints = List.rev_append i1.ints i2.ints;
       is_int = i1.is_int;
-      expl = Structs.Ex.union i1.expl i2.expl;
+      expl = Ast.Ex.union i1.expl i2.expl;
     }
 
 let contains i q =
   List.exists
     (fun (b1, b2) ->
-      (match b1 with
-      | Minfty -> true
-      | Pinfty -> assert false
-      | Large (v, _) -> Q.compare v q <= 0
-      | Strict (v, _) -> Q.compare v q < 0)
-      &&
-      match b2 with
-      | Pinfty -> true
-      | Minfty -> assert false
-      | Large (v, _) -> Q.compare v q >= 0
-      | Strict (v, _) -> Q.compare v q > 0)
+       (match b1 with
+        | Minfty -> true
+        | Pinfty -> assert false
+        | Large (v, _) -> Q.compare v q <= 0
+        | Strict (v, _) -> Q.compare v q < 0)
+       &&
+       match b2 with
+       | Pinfty -> true
+       | Minfty -> assert false
+       | Large (v, _) -> Q.compare v q >= 0
+       | Strict (v, _) -> Q.compare v q > 0)
     i.ints
 
 let doesnt_contain_0 =
@@ -552,25 +552,25 @@ let doesnt_contain_0 =
     match l with
     | [] -> assert false
     | (b1, b2) :: l ->
-        let pos_strict_b1 = low_borne_pos_strict b1 in
-        let pos_strict_b2 = up_borne_pos_strict b2 in
-        if pos_strict_b1 && pos_strict_b2 then
-          (* there is no negative values at all *)
-          Some (Structs.Ex.union (explain_borne b1) (explain_borne b2), [])
-        else (
-          (* we know l does not contain 0. So, these asserts should hold *)
-          assert (not pos_strict_b1);
-          assert (not pos_strict_b2);
-          assert (low_borne_neg_strict b1);
-          assert (up_borne_neg_strict b2);
-          match l with
-          | [] ->
-              (* there is no positive values at all *)
-              Some (Structs.Ex.union (explain_borne b1) (explain_borne b2), [])
-          | (c1, _) :: _ ->
-              if low_borne_pos_strict c1 then
-                Some (Structs.Ex.union (explain_borne b2) (explain_borne c1), [])
-              else explain_no_zero l)
+      let pos_strict_b1 = low_borne_pos_strict b1 in
+      let pos_strict_b2 = up_borne_pos_strict b2 in
+      if pos_strict_b1 && pos_strict_b2 then
+        (* there is no negative values at all *)
+        Some (Ast.Ex.union (explain_borne b1) (explain_borne b2), [])
+      else (
+        (* we know l does not contain 0. So, these asserts should hold *)
+        assert (not pos_strict_b1);
+        assert (not pos_strict_b2);
+        assert (low_borne_neg_strict b1);
+        assert (up_borne_neg_strict b2);
+        match l with
+        | [] ->
+          (* there is no positive values at all *)
+          Some (Ast.Ex.union (explain_borne b1) (explain_borne b2), [])
+        | (c1, _) :: _ ->
+          if low_borne_pos_strict c1 then
+            Some (Ast.Ex.union (explain_borne b2) (explain_borne c1), [])
+          else explain_no_zero l)
   in
   fun int -> if contains int Q.zero then None else explain_no_zero int.ints
 
@@ -595,7 +595,7 @@ let compare_bornes b1 b2 =
   | Large (v1, _), Large (v2, _)
   | Strict (v1, _), Large (v2, _)
   | Large (v1, _), Strict (v2, _) ->
-      Q.compare v1 v2
+    Q.compare v1 v2
 
 let is_strict_smaller =
   let rec aux l1 l2 nb_eq sz_l1 sz_l2 =
@@ -603,29 +603,29 @@ let is_strict_smaller =
     | [], _ -> (true, nb_eq, sz_l1, sz_l2 + List.length l2)
     | _, [] -> (false, nb_eq, sz_l1 + List.length l1, sz_l2)
     | b1 :: r1, b2 :: r2 ->
-        let lo1, up1 = b1 in
-        let lo2, up2 = b2 in
-        let c_l1_l2 = compare_bounds lo1 ~is_low1:true lo2 ~is_low2:true in
-        let c_u1_u2 = compare_bounds up1 ~is_low1:false up2 ~is_low2:false in
-        let c_l1_u2 = compare_bounds lo1 ~is_low1:true up2 ~is_low2:false in
-        let c_u1_l2 = compare_bounds up1 ~is_low1:false lo2 ~is_low2:true in
-        if c_l1_l2 = 0 && c_u1_u2 = 0 then
-          aux r1 r2 (nb_eq + 1) (sz_l1 + 1) (sz_l2 + 1)
-        else if c_l1_l2 >= 0 && c_u1_u2 <= 0 then
-          (* without being equal *)
-          (* b1 \subset b2! look for inclusion of r1 in l2 *)
-          aux r1 l2 nb_eq (sz_l1 + 1) sz_l2
-        else if c_l1_u2 >= 0 then
-          (*ignore b2, and look for inclusion of l1 in r2*)
-          aux l1 r2 nb_eq sz_l1 (sz_l2 + 1)
-        else if c_u1_l2 < 0 then
-          raise Exit (* b1 is not included in any part of l2*)
-        else if c_l1_l2 <= 0 && c_u1_u2 >= 0 then
-          (* without being equal *)
-          raise Exit (*no inclusion, we have b2 \subset b1 !! *)
-        else if (c_l1_l2 < 0 && c_u1_u2 < 0) || (c_l1_l2 > 0 && c_u1_u2 > 0)
-        then raise Exit (* intersection and differences are not empty *)
-        else assert false
+      let lo1, up1 = b1 in
+      let lo2, up2 = b2 in
+      let c_l1_l2 = compare_bounds lo1 ~is_low1:true lo2 ~is_low2:true in
+      let c_u1_u2 = compare_bounds up1 ~is_low1:false up2 ~is_low2:false in
+      let c_l1_u2 = compare_bounds lo1 ~is_low1:true up2 ~is_low2:false in
+      let c_u1_l2 = compare_bounds up1 ~is_low1:false lo2 ~is_low2:true in
+      if c_l1_l2 = 0 && c_u1_u2 = 0 then
+        aux r1 r2 (nb_eq + 1) (sz_l1 + 1) (sz_l2 + 1)
+      else if c_l1_l2 >= 0 && c_u1_u2 <= 0 then
+        (* without being equal *)
+        (* b1 \subset b2! look for inclusion of r1 in l2 *)
+        aux r1 l2 nb_eq (sz_l1 + 1) sz_l2
+      else if c_l1_u2 >= 0 then
+        (*ignore b2, and look for inclusion of l1 in r2*)
+        aux l1 r2 nb_eq sz_l1 (sz_l2 + 1)
+      else if c_u1_l2 < 0 then
+        raise Exit (* b1 is not included in any part of l2*)
+      else if c_l1_l2 <= 0 && c_u1_u2 >= 0 then
+        (* without being equal *)
+        raise Exit (*no inclusion, we have b2 \subset b1 !! *)
+      else if (c_l1_l2 < 0 && c_u1_u2 < 0) || (c_l1_l2 > 0 && c_u1_u2 > 0)
+      then raise Exit (* intersection and differences are not empty *)
+      else assert false
   in
   fun i1 i2 ->
     try
@@ -638,22 +638,22 @@ let mult_borne b1 b2 =
   match (b1, b2) with
   | Minfty, Pinfty | Pinfty, Minfty -> assert false
   | Minfty, b | b, Minfty ->
-      if compare_bornes b (large_borne_of Q.zero Structs.Ex.empty) = 0 then b
-      else if pos_borne b then Minfty
-      else Pinfty
+    if compare_bornes b (large_borne_of Q.zero Ast.Ex.empty) = 0 then b
+    else if pos_borne b then Minfty
+    else Pinfty
   | Pinfty, b | b, Pinfty ->
-      if compare_bornes b (large_borne_of Q.zero Structs.Ex.empty) = 0 then b
-      else if pos_borne b then Pinfty
-      else Minfty
+    if compare_bornes b (large_borne_of Q.zero Ast.Ex.empty) = 0 then b
+    else if pos_borne b then Pinfty
+    else Minfty
   | (Strict (_, e1), Large (v, e2) | Large (v, e1), Strict (_, e2))
     when Q.is_zero v ->
-      Large (Q.zero, Structs.Ex.union e1 e2)
+    Large (Q.zero, Ast.Ex.union e1 e2)
   | Strict (v1, e1), Strict (v2, e2)
   | Strict (v1, e1), Large (v2, e2)
   | Large (v1, e1), Strict (v2, e2) ->
-      Strict (Q.mult v1 v2, Structs.Ex.union e1 e2)
+    Strict (Q.mult v1 v2, Ast.Ex.union e1 e2)
   | Large (v1, e1), Large (v2, e2) ->
-      Large (Q.mult v1 v2, Structs.Ex.union e1 e2)
+    Large (Q.mult v1 v2, Ast.Ex.union e1 e2)
 
 let mult_borne_inf b1 b2 =
   match (b1, b2) with
@@ -671,18 +671,18 @@ let mult_bornes (a, b) (c, d) =
      just one of them is probably incorrect. When a bound is [0,0], put
      the explanation of that bound instead of empty.
      TODO: make a deeper study!!!*)
-  let ex_a_b = Structs.Ex.union (explain_borne a) (explain_borne b) in
-  let ex_c_d = Structs.Ex.union (explain_borne c) (explain_borne d) in
-  let all_ex = Structs.Ex.union ex_a_b ex_c_d in
+  let ex_a_b = Ast.Ex.union (explain_borne a) (explain_borne b) in
+  let ex_c_d = Ast.Ex.union (explain_borne c) (explain_borne d) in
+  let all_ex = Ast.Ex.union ex_a_b ex_c_d in
   match (class_of a b, class_of c d) with
   | P, P -> (mult_borne_inf a c, mult_borne_sup b d, all_ex)
   | P, M -> (mult_borne_inf b c, mult_borne_sup b d, all_ex)
   | P, N -> (mult_borne_inf b c, mult_borne_sup a d, all_ex)
   | M, P -> (mult_borne_inf a d, mult_borne_sup b d, all_ex)
   | M, M ->
-      ( min_of_lower_bounds (mult_borne_inf a d) (mult_borne_inf b c),
-        max_of_upper_bounds (mult_borne_sup a c) (mult_borne_sup b d),
-        all_ex )
+    ( min_of_lower_bounds (mult_borne_inf a d) (mult_borne_inf b c),
+      max_of_upper_bounds (mult_borne_sup a c) (mult_borne_sup b d),
+      all_ex )
   | M, N -> (mult_borne_inf b c, mult_borne_sup a c, all_ex)
   | N, P -> (mult_borne_inf a d, mult_borne_sup b c, all_ex)
   | N, M -> (mult_borne_inf a d, mult_borne_sup a c, all_ex)
@@ -697,7 +697,7 @@ let rec power_borne_sup p b =
   match p with 1 -> b | p -> mult_borne_sup b (power_borne_sup (p - 1) b)
 
 let max_merge b1 b2 =
-  let ex = Structs.Ex.union (explain_borne b1) (explain_borne b2) in
+  let ex = Ast.Ex.union (explain_borne b1) (explain_borne b2) in
   let max = max_of_upper_bounds b1 b2 in
   match max with
   | Minfty | Pinfty -> max
@@ -709,9 +709,9 @@ let power_bornes p (b1, b2) =
     match p with
     | 0 -> assert false
     | p when p mod 2 = 0 ->
-        (* max_merge to have explanations !!! *)
-        let m = max_merge (power_borne_sup p b1) (power_borne_sup p b2) in
-        (Large (Q.zero, Structs.Ex.empty), m)
+      (* max_merge to have explanations !!! *)
+      let m = max_merge (power_borne_sup p b1) (power_borne_sup p b2) in
+      (Large (Q.zero, Ast.Ex.empty), m)
     | _ -> (power_borne_inf p b1, power_borne_sup p b2)
   else if pos_borne b1 && pos_borne b2 then
     (power_borne_inf p b1, power_borne_sup p b2)
@@ -727,26 +727,26 @@ let int_div_of_borne_inf min_f b =
   | Minfty | Pinfty -> b
   | Large (v, e) -> Large ((if Q.is_int v then v else (*Q.floor*) min_f v), e)
   | Strict (v, e) ->
-      (* this case really happens ?? *)
-      if Q.is_int v then Large (Q.add v Q.one, e)
-      else
-        let v' = (*Q.floor*) min_f v in
-        (* correct ? *)
-        assert (Q.compare v' v > 0);
-        Large (v', e)
+    (* this case really happens ?? *)
+    if Q.is_int v then Large (Q.add v Q.one, e)
+    else
+      let v' = (*Q.floor*) min_f v in
+      (* correct ? *)
+      assert (Q.compare v' v > 0);
+      Large (v', e)
 
 let int_div_of_borne_sup max_f b =
   match b with
   | Minfty | Pinfty -> b
   | Large (v, e) -> Large ((if Q.is_int v then v else (*Q.floor*) max_f v), e)
   | Strict (v, e) ->
-      (* this case really happens ?? *)
-      if Q.is_int v then Large (Q.sub v Q.one, e)
-      else
-        let v' = (*Q.floor*) max_f v in
-        (* correct ? *)
-        assert (Q.compare v' v < 0);
-        Large (v', e)
+    (* this case really happens ?? *)
+    if Q.is_int v then Large (Q.sub v Q.one, e)
+    else
+      let v' = (*Q.floor*) max_f v in
+      (* correct ? *)
+      assert (Q.compare v' v < 0);
+      Large (v', e)
 
 (* we use int_div_bornes for division of integer intervals instead of
    int_bornes because the div op is Euclidean division  is this case *)
@@ -758,21 +758,21 @@ let mult u1 u2 =
   let resl, expl =
     List.fold_left
       (fun (l', expl) b1 ->
-        List.fold_left
-          (fun (l, ex) b2 ->
-            let bl, bu, ex' = mult_bornes b1 b2 in
-            let bl = add_expl_to_borne bl ex' in
-            let bu = add_expl_to_borne bu ex' in
-            ((bl, bu) :: l, Structs.Ex.union ex ex'))
-          (l', expl) u2.ints)
-      ([], Structs.Ex.empty) u1.ints
+         List.fold_left
+           (fun (l, ex) b2 ->
+              let bl, bu, ex' = mult_bornes b1 b2 in
+              let bl = add_expl_to_borne bl ex' in
+              let bu = add_expl_to_borne bu ex' in
+              ((bl, bu) :: l, Ast.Ex.union ex ex'))
+           (l', expl) u2.ints)
+      ([], Ast.Ex.empty) u1.ints
   in
   let res =
     union_intervals
       {
         ints = resl;
         is_int = u1.is_int;
-        expl = Structs.Ex.union expl (Structs.Ex.union u1.expl u2.expl);
+        expl = Ast.Ex.union expl (Ast.Ex.union u1.expl u2.expl);
       }
   in
   assert (res.ints != []);
@@ -795,13 +795,13 @@ let root_default_borne is_int x n =
       match s with
       | None -> Minfty
       | Some s ->
-          let s = sign s in
-          if is_int then
-            let cs = Q.ceiling s in
-            let cs2 = Q.power cs n in
-            if Q.compare v cs2 <= 0 then Large (cs, e)
-            else Large (Q.add cs Q.one, e)
-          else Large (s, e))
+        let s = sign s in
+        if is_int then
+          let cs = Q.ceiling s in
+          let cs2 = Q.power cs n in
+          if Q.compare v cs2 <= 0 then Large (cs, e)
+          else Large (Q.add cs Q.one, e)
+        else Large (s, e))
 
 let root_exces_borne is_int x n =
   match x with
@@ -815,13 +815,13 @@ let root_exces_borne is_int x n =
       match s with
       | None -> Pinfty
       | Some s ->
-          let s = sign s in
-          if is_int then
-            let cs = Q.floor s in
-            let cs2 = Q.power cs n in
-            if Q.compare v cs2 >= 0 then Large (cs, e)
-            else Large (Q.sub cs Q.one, e)
-          else Large (s, e))
+        let s = sign s in
+        if is_int then
+          let cs = Q.floor s in
+          let cs2 = Q.power cs n in
+          if Q.compare v cs2 >= 0 then Large (cs, e)
+          else Large (Q.sub cs Q.one, e)
+        else Large (s, e))
 
 let sqrt_interval is_int (l, ex) (b1, b2) =
   let l1 = minus_borne (root_exces_borne is_int b2 2) in
@@ -833,8 +833,8 @@ let sqrt_interval is_int (l, ex) (b1, b2) =
   if c1 > 0 then
     if c2 > 0 then
       ( l,
-        Structs.Ex.union ex
-          (Structs.Ex.union (explain_borne b1) (explain_borne b2)) )
+        Ast.Ex.union ex
+          (Ast.Ex.union (explain_borne b1) (explain_borne b2)) )
     else ((l2, u2) :: l, ex)
   else if c2 > 0 then ((l1, u1) :: l, ex)
   else (union_bornes is_int [ (l1, u1); (l2, u2) ] @ l, ex)
@@ -850,7 +850,7 @@ let sqrt { ints = l; is_int; expl } =
 let root_interval is_int (b1, b2) n =
   let u, l = (root_default_borne is_int b1 n, root_exces_borne is_int b2 n) in
   if compare_bornes u l <= 0 then Int (u, l)
-  else Empty (Structs.Ex.union (explain_borne b1) (explain_borne b2))
+  else Empty (Ast.Ex.union (explain_borne b1) (explain_borne b2))
 
 let rec root n ({ ints = l; is_int; expl } as u) =
   Util.Options.tool_req 4 "TR-Arith-Axiomes root";
@@ -866,8 +866,8 @@ let inv_borne_inf b is_int ~other =
   match b with
   | Pinfty -> assert false
   | Minfty ->
-      if is_int then Large (Q.zero, explain_borne other)
-      else Strict (Q.zero, explain_borne other)
+    if is_int then Large (Q.zero, explain_borne other)
+    else Strict (Q.zero, explain_borne other)
   | (Strict (c, _) | Large (c, _)) when Q.sign c = 0 -> Pinfty
   | Strict (v, e) -> Strict (Q.div Q.one v, e)
   | Large (v, e) -> Large (Q.div Q.one v, e)
@@ -876,8 +876,8 @@ let inv_borne_sup b is_int ~other =
   match b with
   | Minfty -> assert false
   | Pinfty ->
-      if is_int then Large (Q.zero, explain_borne other)
-      else Strict (Q.zero, explain_borne other)
+    if is_int then Large (Q.zero, explain_borne other)
+    else Strict (Q.zero, explain_borne other)
   | (Strict (c, _) | Large (c, _)) when Q.sign c = 0 -> Minfty
   | Strict (v, e) -> Strict (Q.div Q.one v, e)
   | Large (v, e) -> Large (Q.div Q.one v, e)
@@ -889,17 +889,17 @@ let inv ({ ints = l; is_int; _ } as u) =
   match doesnt_contain_0 u with
   | None -> { u with ints = [ (Minfty, Pinfty) ] }
   | Some (ex, _) ->
-      let l' =
-        List.fold_left
-          (fun acc (l, u) ->
-            let l = add_expl_to_borne l ex in
-            let u = add_expl_to_borne u ex in
-            inv_bornes (l, u) is_int :: acc)
-          [] l
-      in
-      assert (l' != []);
-      (* ! SHOULD NOT try to simplify here if is_int is true *)
-      union_intervals { u with ints = l' }
+    let l' =
+      List.fold_left
+        (fun acc (l, u) ->
+           let l = add_expl_to_borne l ex in
+           let u = add_expl_to_borne u ex in
+           inv_bornes (l, u) is_int :: acc)
+        [] l
+    in
+    assert (l' != []);
+    (* ! SHOULD NOT try to simplify here if is_int is true *)
+    union_intervals { u with ints = l' }
 
 type sign_of_interval = Zero | Pos | Neg | Mixed
 
@@ -911,18 +911,18 @@ let sign_of_interval { ints; _ } =
       | Pinfty, _ | _, Minfty -> assert false
       | Minfty, Pinfty -> Mixed
       | Large (v, _), Large (v', _) ->
-          if Q.compare v Q.zero > 0 then Pos
-          else if Q.compare v' Q.zero < 0 then Neg
-          else if Q.is_zero v && Q.is_zero v' then Zero
-          else Mixed
+        if Q.compare v Q.zero > 0 then Pos
+        else if Q.compare v' Q.zero < 0 then Neg
+        else if Q.is_zero v && Q.is_zero v' then Zero
+        else Mixed
       | (Strict (v, _) | Large (v, _)), (Strict (v', _) | Large (v', _)) ->
-          if Q.compare v Q.zero >= 0 then Pos
-          else if Q.compare v' Q.zero <= 0 then Neg
-          else Mixed
+        if Q.compare v Q.zero >= 0 then Pos
+        else if Q.compare v' Q.zero <= 0 then Neg
+        else Mixed
       | (Strict (v, _) | Large (v, _)), Pinfty ->
-          if Q.compare v Q.zero >= 0 then Pos else Mixed
+        if Q.compare v Q.zero >= 0 then Pos else Mixed
       | Minfty, (Strict (v', _) | Large (v', _)) ->
-          if Q.compare v' Q.zero <= 0 then Neg else Mixed)
+        if Q.compare v' Q.zero <= 0 then Neg else Mixed)
 
 let div i1 i2 =
   Util.Options.tool_req 4 "TR-Arith-Axiomes div";
@@ -951,12 +951,12 @@ let div i1 i2 =
 
 let abs =
   let zero_inf_r =
-    new_borne_inf Structs.Ex.empty Q.zero ~is_le:true
-      (undefined Structs.Ty.Treal)
+    new_borne_inf Ast.Ex.empty Q.zero ~is_le:true
+      (undefined Ast.Ty.Treal)
   in
   let zero_inf_i =
-    new_borne_inf Structs.Ex.empty Q.zero ~is_le:true
-      (undefined Structs.Ty.Tint)
+    new_borne_inf Ast.Ex.empty Q.zero ~is_le:true
+      (undefined Ast.Ty.Tint)
   in
   fun i ->
     let xx = if i.is_int then zero_inf_i else zero_inf_r in
@@ -967,49 +967,49 @@ let mk_closed l u llarge ularge lexp uexp ty =
   let ub = if ularge then Large (u, uexp) else Strict (u, uexp) in
   {
     ints = [ (lb, ub) ];
-    is_int = ty == Structs.Ty.Tint;
-    expl = Structs.Ex.union lexp uexp;
+    is_int = ty == Ast.Ty.Tint;
+    expl = Ast.Ex.union lexp uexp;
   }
 
-type bnd = (Util.Numbers.Q.t * Util.Numbers.Q.t) option * Structs.Ex.t
+type bnd = (Util.Numbers.Q.t * Util.Numbers.Q.t) option * Ast.Ex.t
 
 let bnd_of_borne b ex0 low =
   match b with
   | Pinfty when not low -> (None, ex0)
   | Minfty when low -> (None, ex0)
   | Pinfty | Minfty -> assert false
-  | Large (c, ex) -> (Some (c, Q.zero), Structs.Ex.union ex0 ex)
+  | Large (c, ex) -> (Some (c, Q.zero), Ast.Ex.union ex0 ex)
   | Strict (c, ex) ->
-      (Some (c, if low then Q.one else Q.m_one), Structs.Ex.union ex0 ex)
+    (Some (c, if low then Q.one else Q.m_one), Ast.Ex.union ex0 ex)
 
 let bounds_of env =
   let ex = env.expl in
   match env.ints with
   | [] -> [ ((None, ex), (None, ex)) ]
   | l ->
-      List.rev
-        (List.rev_map
-           (fun (b1, b2) -> (bnd_of_borne b1 ex true, bnd_of_borne b2 ex false))
-           l)
+    List.rev
+      (List.rev_map
+         (fun (b1, b2) -> (bnd_of_borne b1 ex true, bnd_of_borne b2 ex false))
+         l)
 
 let add_explanation i ex =
-  if Structs.Ex.is_empty ex then i
+  if Ast.Ex.is_empty ex then i
   else
     let rl =
       List.rev_map
         (fun (l, u) -> (add_expl_to_borne l ex, add_expl_to_borne u ex))
         i.ints
     in
-    { i with ints = List.rev rl; expl = Structs.Ex.union i.expl ex }
+    { i with ints = List.rev rl; expl = Ast.Ex.union i.expl ex }
 
 let equal i1 i2 =
   try
     List.iter2
       (fun (b1, c1) (b2, c2) ->
-        if
-          compare_bounds b1 ~is_low1:true b2 ~is_low2:true <> 0
-          || compare_bounds c1 ~is_low1:false c2 ~is_low2:false <> 0
-        then raise Exit)
+         if
+           compare_bounds b1 ~is_low1:true b2 ~is_low2:true <> 0
+           || compare_bounds c1 ~is_low1:false c2 ~is_low2:false <> 0
+         then raise Exit)
       i1.ints i2.ints;
     true
   with Exit | Invalid_argument _ -> false
@@ -1021,19 +1021,19 @@ let max_bound { ints; _ } =
   match List.rev ints with [] -> assert false | (_, b) :: _ -> b
 
 type interval_matching =
-  ((Q.t * bool) option * (Q.t * bool) option * Structs.Ty.t) Structs.Var.Map.t
+  ((Q.t * bool) option * (Q.t * bool) option * Ast.Ty.t) Ast.Var.Map.t
 
-module MV = Structs.Var.Map
+module MV = Ast.Var.Map
 
 let is_question_mark =
   let qm = Util.Hstring.make "?" in
-  fun s -> Util.Hstring.equal qm (Structs.Var.view s).Structs.Var.hs
+  fun s -> Util.Hstring.equal qm (Ast.Var.view s).Ast.Var.hs
 
 let consistent_bnds low up =
   match (low, up) with
   | Some (q_low, str_low), Some (q_up, str_up) ->
-      let c = Q.compare q_up q_low in
-      c > 0 || (c = 0 && (not str_low) && not str_up)
+    let c = Q.compare q_up q_low in
+    c > 0 || (c = 0 && (not str_low) && not str_up)
   | _ -> true
 
 let new_up_bound idoms s ty q is_strict =
@@ -1044,11 +1044,11 @@ let new_up_bound idoms s ty q is_strict =
     match old_up with
     | None -> Some (q, is_strict)
     | Some (r, str) ->
-        let c = Q.compare r q in
-        if c < 0 then old_up
-        else if c > 0 then Some (q, is_strict)
-        else if is_strict == str || is_strict then old_up
-        else Some (q, is_strict)
+      let c = Q.compare r q in
+      if c < 0 then old_up
+      else if c > 0 then Some (q, is_strict)
+      else if is_strict == str || is_strict then old_up
+      else Some (q, is_strict)
   in
   if new_up == old_up then idoms
   else if consistent_bnds old_low new_up then
@@ -1063,11 +1063,11 @@ let new_low_bound idoms s ty q is_strict =
     match old_low with
     | None -> Some (q, is_strict)
     | Some (r, str) ->
-        let c = Q.compare r q in
-        if c > 0 then old_low
-        else if c < 0 then Some (q, is_strict)
-        else if is_strict == str || is_strict then old_low
-        else Some (q, is_strict)
+      let c = Q.compare r q in
+      if c > 0 then old_low
+      else if c < 0 then Some (q, is_strict)
+      else if is_strict == str || is_strict then old_low
+      else Some (q, is_strict)
   in
   if new_low == old_low then idoms
   else if consistent_bnds new_low old_up then
@@ -1077,43 +1077,43 @@ let new_low_bound idoms s ty q is_strict =
 let new_var idoms s ty =
   if MV.mem s idoms then idoms else MV.add s (None, None, ty) idoms
 
-let match_interval_upper { Structs.Sy.sort; is_open; kind; is_lower } i imatch =
+let match_interval_upper { Ast.Sy.sort; is_open; kind; is_lower } i imatch =
   assert (not is_lower);
   match (kind, max_bound i) with
-  | Structs.Sy.VarBnd s, _ when is_question_mark s -> imatch (* ? var *)
-  | Structs.Sy.VarBnd _, Minfty -> assert false
-  | Structs.Sy.VarBnd s, Pinfty -> new_var imatch s sort
-  | Structs.Sy.VarBnd s, Strict (v, _) -> new_low_bound imatch s sort v false
-  | Structs.Sy.VarBnd s, Large (v, _) -> new_low_bound imatch s sort v is_open
-  | Structs.Sy.ValBnd _, Minfty -> assert false
-  | Structs.Sy.ValBnd _, Pinfty -> raise Exit
-  | Structs.Sy.ValBnd vl, Strict (v, _) ->
-      let c = Q.compare v vl in
-      if c > 0 then raise Exit;
-      imatch
-  | Structs.Sy.ValBnd vl, Large (v, _) ->
-      let c = Q.compare v vl in
-      if c > 0 || (c = 0 && is_open) then raise Exit;
-      imatch
+  | Ast.Sy.VarBnd s, _ when is_question_mark s -> imatch (* ? var *)
+  | Ast.Sy.VarBnd _, Minfty -> assert false
+  | Ast.Sy.VarBnd s, Pinfty -> new_var imatch s sort
+  | Ast.Sy.VarBnd s, Strict (v, _) -> new_low_bound imatch s sort v false
+  | Ast.Sy.VarBnd s, Large (v, _) -> new_low_bound imatch s sort v is_open
+  | Ast.Sy.ValBnd _, Minfty -> assert false
+  | Ast.Sy.ValBnd _, Pinfty -> raise Exit
+  | Ast.Sy.ValBnd vl, Strict (v, _) ->
+    let c = Q.compare v vl in
+    if c > 0 then raise Exit;
+    imatch
+  | Ast.Sy.ValBnd vl, Large (v, _) ->
+    let c = Q.compare v vl in
+    if c > 0 || (c = 0 && is_open) then raise Exit;
+    imatch
 
-let match_interval_lower { Structs.Sy.sort; is_open; kind; is_lower } i imatch =
+let match_interval_lower { Ast.Sy.sort; is_open; kind; is_lower } i imatch =
   assert is_lower;
   match (kind, min_bound i) with
-  | Structs.Sy.VarBnd s, _ when is_question_mark s -> imatch (* ? var *)
-  | Structs.Sy.VarBnd _, Pinfty -> assert false
-  | Structs.Sy.VarBnd s, Minfty -> new_var imatch s sort
-  | Structs.Sy.VarBnd s, Strict (v, _) -> new_up_bound imatch s sort v false
-  | Structs.Sy.VarBnd s, Large (v, _) -> new_up_bound imatch s sort v is_open
-  | Structs.Sy.ValBnd _, Minfty -> raise Exit
-  | Structs.Sy.ValBnd _, Pinfty -> assert false
-  | Structs.Sy.ValBnd vl, Strict (v, _) ->
-      let c = Q.compare v vl in
-      if c < 0 then raise Exit;
-      imatch
-  | Structs.Sy.ValBnd vl, Large (v, _) ->
-      let c = Q.compare v vl in
-      if c < 0 || (c = 0 && is_open) then raise Exit;
-      imatch
+  | Ast.Sy.VarBnd s, _ when is_question_mark s -> imatch (* ? var *)
+  | Ast.Sy.VarBnd _, Pinfty -> assert false
+  | Ast.Sy.VarBnd s, Minfty -> new_var imatch s sort
+  | Ast.Sy.VarBnd s, Strict (v, _) -> new_up_bound imatch s sort v false
+  | Ast.Sy.VarBnd s, Large (v, _) -> new_up_bound imatch s sort v is_open
+  | Ast.Sy.ValBnd _, Minfty -> raise Exit
+  | Ast.Sy.ValBnd _, Pinfty -> assert false
+  | Ast.Sy.ValBnd vl, Strict (v, _) ->
+    let c = Q.compare v vl in
+    if c < 0 then raise Exit;
+    imatch
+  | Ast.Sy.ValBnd vl, Large (v, _) ->
+    let c = Q.compare v vl in
+    if c < 0 || (c = 0 && is_open) then raise Exit;
+    imatch
 
 let match_interval lb ub i accu =
   try Some (match_interval_upper ub i (match_interval_lower lb i accu))

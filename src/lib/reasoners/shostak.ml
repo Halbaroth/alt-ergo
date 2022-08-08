@@ -27,11 +27,11 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 open Format
 open Util.Options
 open Sig
-module H = Hashtbl.Make (Structs.Expr)
+module H = Hashtbl.Make (Ast.Expr)
 
 (*** Combination module of Shostak theories ***)
 
@@ -56,7 +56,7 @@ module rec CX : sig
   val embed7 : X7.t -> r
 end = struct
   type rview =
-    | Term of Structs.Expr.t
+    | Term of Ast.Expr.t
     | Ac of AC.t
     | X1 of X1.t
     | X2 of X2.t
@@ -86,7 +86,7 @@ end = struct
         | X6 x -> 6 + (10 * X6.hash x)
         | X7 x -> 7 + (10 * X7.hash x)
         | Ac ac -> 9 + (10 * AC.hash ac)
-        | Term t -> 8 + (10 * Structs.Expr.hash t)
+        | Term t -> 8 + (10 * Ast.Expr.hash t)
       in
       abs res
 
@@ -99,7 +99,7 @@ end = struct
       | X5 x, X5 y -> X5.equal x y
       | X6 x, X6 y -> X6.equal x y
       | X7 x, X7 y -> X7.equal x y
-      | Term x, Term y -> Structs.Expr.equal x y
+      | Term x, Term y -> Ast.Expr.equal x y
       | Ac x, Ac y -> AC.equal x y
       | _ -> false
 
@@ -126,9 +126,9 @@ end = struct
     | [] -> assert false
     | [ (x, 1) ] -> x
     | l ->
-        let sort = List.fast_sort (fun (x, _) (y, _) -> CX.str_cmp x y) in
-        let ac = { t with Sig.l = List.rev (sort l) } in
-        hcons { v = Ac ac; id = -1000 (* dummy *) }
+      let sort = List.fast_sort (fun (x, _) (y, _) -> CX.str_cmp x y) in
+      let ac = { t with Sig.l = List.rev (sort l) } in
+      hcons { v = Ac ac; id = -1000 (* dummy *) }
 
   let term_embed t = hcons { v = Term t; id = -1000 (* dummy *) }
   let extract1 = function { v = X1 r; _ } -> Some r | _ -> None
@@ -152,8 +152,8 @@ end = struct
     | Ac _ -> (None, false (* SYLVAIN : TODO *))
     | Term t -> (Some t, true)
 
-  let top () = term_embed Structs.Expr.vrai
-  let bot () = term_embed Structs.Expr.faux
+  let top () = term_embed Ast.Expr.vrai
+  let bot () = term_embed Ast.Expr.faux
 
   let type_info = function
     | { v = X1 t; _ } -> X1.type_info t
@@ -164,7 +164,7 @@ end = struct
     | { v = X6 t; _ } -> X6.type_info t
     | { v = X7 t; _ } -> X7.type_info t
     | { v = Ac x; _ } -> AC.type_info x
-    | { v = Term t; _ } -> Structs.Expr.type_info t
+    | { v = Term t; _ } -> Ast.Expr.type_info t
 
   (* Xi < Term < Ac *)
   let theory_num x =
@@ -192,7 +192,7 @@ end = struct
       | X5 _, X5 _ -> X5.compare a b
       | X6 _, X6 _ -> X6.compare a b
       | X7 _, X7 _ -> X7.compare a b
-      | Term x, Term y -> Structs.Expr.compare x y
+      | Term x, Term y -> Ast.Expr.compare x y
       | Ac x, Ac y -> AC.compare x y
       | va, vb -> compare_tag va vb
 
@@ -201,7 +201,7 @@ end = struct
        let equal a b = CX.compare a b = 0
 
        let hash r = match r.v with
-       | Term  t -> Structs.Expr.hash t
+       | Term  t -> Ast.Expr.hash t
        | Ac x -> AC.hash x
        | X1 x -> X1.hash x
        | X2 x -> X2.hash x
@@ -227,10 +227,10 @@ end = struct
   *)
 
   module SX = Set.Make (struct
-    type t = r
+      type t = r
 
-    let compare = CX.hash_cmp
-  end)
+      let compare = CX.hash_cmp
+    end)
 
   let leaves r =
     match r.v with
@@ -259,10 +259,10 @@ end = struct
       | Term _ -> if equal p r then v else r
 
   let make t =
-    let { Structs.Expr.f = sb; ty; _ } =
-      match Structs.Expr.term_view t with
-      | Structs.Expr.Not_a_term _ -> assert false
-      | Structs.Expr.Term tt -> tt
+    let { Ast.Expr.f = sb; ty; _ } =
+      match Ast.Expr.term_view t with
+      | Ast.Expr.Not_a_term _ -> assert false
+      | Ast.Expr.Term tt -> tt
     in
     let not_restricted = not (get_restricted ()) in
     match
@@ -284,7 +284,7 @@ end = struct
     | false, false, false, false, false, false, true, false -> X7.make t
     | false, false, false, false, false, false, false, true -> AC.make t
     | false, false, false, false, false, false, false, false ->
-        (term_embed t, [])
+      (term_embed t, [])
     | _ -> assert false
 
   let fully_interpreted sb ty =
@@ -300,21 +300,21 @@ end = struct
         AC.is_mine_symb sb ty )
     with
     | true, false, false, false, false, false, false, false ->
-        X1.fully_interpreted sb
+      X1.fully_interpreted sb
     | false, true, false, false, false, false, false, false ->
-        X2.fully_interpreted sb
+      X2.fully_interpreted sb
     | false, false, true, false, false, false, false, false ->
-        X3.fully_interpreted sb
+      X3.fully_interpreted sb
     | false, false, false, true, false, false, false, false ->
-        X4.fully_interpreted sb
+      X4.fully_interpreted sb
     | false, false, false, false, true, false, false, false ->
-        X5.fully_interpreted sb
+      X5.fully_interpreted sb
     | false, false, false, false, false, true, false, false ->
-        X6.fully_interpreted sb
+      X6.fully_interpreted sb
     | false, false, false, false, false, false, true, false ->
-        X7.fully_interpreted sb
+      X7.fully_interpreted sb
     | false, false, false, false, false, false, false, true ->
-        AC.fully_interpreted sb
+      AC.fully_interpreted sb
     | false, false, false, false, false, false, false, false -> false
     | _ -> assert false
 
@@ -322,7 +322,7 @@ end = struct
     X1.is_mine_symb sb ty
     || (not (get_restricted ()))
        && (X2.is_mine_symb sb ty || X3.is_mine_symb sb ty
-         || X4.is_mine_symb sb ty || X5.is_mine_symb sb ty)
+           || X4.is_mine_symb sb ty || X5.is_mine_symb sb ty)
 
   let is_a_leaf r = match r.v with Term _ | Ac _ -> true | _ -> false
 
@@ -366,7 +366,7 @@ end = struct
         | X5 t -> fprintf fmt "%a" X5.print t
         | X6 t -> fprintf fmt "%a" X6.print t
         | X7 t -> fprintf fmt "%a" X7.print t
-        | Term t -> fprintf fmt "%a" Structs.Expr.print t
+        | Term t -> fprintf fmt "%a" Ast.Expr.print t
         | Ac t -> fprintf fmt "%a" AC.print t
       else
         match r.v with
@@ -377,7 +377,7 @@ end = struct
         | X5 t -> fprintf fmt "X5(%s):[%a]" X5.name X5.print t
         | X6 t -> fprintf fmt "X6(%s):[%a]" X6.name X6.print t
         | X7 t -> fprintf fmt "X7(%s):[%a]" X7.name X7.print t
-        | Term t -> fprintf fmt "FT:[%a]" Structs.Expr.print t
+        | Term t -> fprintf fmt "FT:[%a]" Ast.Expr.print t
         | Ac t -> fprintf fmt "Ac:[%a]" AC.print t
 
     let print_sbt msg sbs =
@@ -418,9 +418,9 @@ end = struct
       assert (
         (not (Util.Options.get_enable_assertions ()))
         ||
-        if not (Structs.Ty.compare tya tyb = 0) then (
-          print_err "@[<v 0>@ Tya = %a  and @ Tyb = %a@]" Structs.Ty.print tya
-            Structs.Ty.print tyb;
+        if not (Ast.Ty.compare tya tyb = 0) then (
+          print_err "@[<v 0>@ Tya = %a  and @ Tyb = %a@]" Ast.Ty.print tya
+            Ast.Ty.print tyb;
           false)
         else true)
   end
@@ -445,14 +445,14 @@ end = struct
     let aux r acc =
       match r.v with
       | Ac ({ l = args; _ } as ac) ->
-          let args, acc =
-            List.fold_left
-              (fun (args, acc) (r, i) ->
-                let r, acc = abstract_selectors r acc in
-                ((r, i) :: args, acc))
-              ([], acc) args
-          in
-          (ac_embed { ac with l = AC.compact args }, acc)
+        let args, acc =
+          List.fold_left
+            (fun (args, acc) (r, i) ->
+               let r, acc = abstract_selectors r acc in
+               ((r, i) :: args, acc))
+            ([], acc) args
+        in
+        (ac_embed { ac with l = AC.compact args }, acc)
       | _ -> abstract_selectors r acc
     in
     let a', acc = aux a [] in
@@ -474,12 +474,12 @@ end = struct
     let sbs =
       List.filter
         (fun (p, _) ->
-          match p.v with
-          | Ac _ -> true
-          | Term _ -> SX.mem p original
-          | _ ->
-              Util.Printer.print_err "%a" CX.print p;
-              assert false)
+           match p.v with
+           | Ac _ -> true
+           | Term _ -> SX.mem p original
+           | _ ->
+             Util.Printer.print_err "%a" CX.print p;
+             assert false)
         sbs
     in
     Debug.print_sbt "Triangular and cleaned" sbs;
@@ -503,33 +503,33 @@ end = struct
   let rec solve_list pb =
     match pb.eqs with
     | [] ->
-        Debug.print_sbt "Should be triangular and cleaned" pb.sbt;
-        pb.sbt
+      Debug.print_sbt "Should be triangular and cleaned" pb.sbt;
+      pb.sbt
     | (a, b) :: eqs ->
-        let pb = { pb with eqs } in
-        Debug.solve_one a b;
-        let ra = apply_subst_right a pb.sbt in
-        let rb = apply_subst_right b pb.sbt in
-        if CX.equal ra rb then solve_list pb
-        else
-          let tya = CX.type_info ra in
-          let tyb = CX.type_info rb in
-          Debug.assert_have_mem_types tya tyb;
-          let pb =
-            match tya with
-            | Structs.Ty.Tint | Structs.Ty.Treal -> X1.solve ra rb pb
-            | Structs.Ty.Trecord _ -> X2.solve ra rb pb
-            | Structs.Ty.Tbitv _ -> X3.solve ra rb pb
-            | Structs.Ty.Tsum _ -> X5.solve ra rb pb
-            (*| Structs.Ty.Tunit           -> pb *)
-            | Structs.Ty.Tadt _ when not (Util.Options.get_disable_adts ()) ->
-                X6.solve ra rb pb
-            | _ -> solve_uninterpreted ra rb pb
-          in
-          (solve_list pb
-           [@ocaml.ppwarning
-             "TODO: a simple way of handling equalities with void and unit is \
-              to add this case is the solver!"])
+      let pb = { pb with eqs } in
+      Debug.solve_one a b;
+      let ra = apply_subst_right a pb.sbt in
+      let rb = apply_subst_right b pb.sbt in
+      if CX.equal ra rb then solve_list pb
+      else
+        let tya = CX.type_info ra in
+        let tyb = CX.type_info rb in
+        Debug.assert_have_mem_types tya tyb;
+        let pb =
+          match tya with
+          | Ast.Ty.Tint | Ast.Ty.Treal -> X1.solve ra rb pb
+          | Ast.Ty.Trecord _ -> X2.solve ra rb pb
+          | Ast.Ty.Tbitv _ -> X3.solve ra rb pb
+          | Ast.Ty.Tsum _ -> X5.solve ra rb pb
+          (*| Ast.Ty.Tunit           -> pb *)
+          | Ast.Ty.Tadt _ when not (Util.Options.get_disable_adts ()) ->
+            X6.solve ra rb pb
+          | _ -> solve_uninterpreted ra rb pb
+        in
+        (solve_list pb
+         [@ocaml.ppwarning
+           "TODO: a simple way of handling equalities with void and unit is \
+            to add this case is the solver!"])
 
   let solve_abstracted oa ob a b sbt =
     Debug.debug_abstraction_result oa ob a b sbt;
@@ -547,30 +547,30 @@ end = struct
       let sbs = solve_abstracted a b a' b' acc in
       List.fast_sort
         (fun (p1, _) (p2, _) ->
-          let c = CX.str_cmp p2 p1 in
-          assert (c <> 0);
-          c)
+           let c = CX.str_cmp p2 p1 in
+           assert (c <> 0);
+           c)
         sbs
 
   let assign_value r distincts eq =
     let opt =
       match (r.v, type_info r) with
-      | _, Structs.Ty.Tint | _, Structs.Ty.Treal ->
-          X1.assign_value r distincts eq
-      | _, Structs.Ty.Trecord _ -> X2.assign_value r distincts eq
-      | _, Structs.Ty.Tbitv _ -> X3.assign_value r distincts eq
-      | _, Structs.Ty.Tfarray _ -> X4.assign_value r distincts eq
-      | _, Structs.Ty.Tsum _ -> X5.assign_value r distincts eq
-      | _, Structs.Ty.Tadt _ when not (Util.Options.get_disable_adts ()) ->
-          X6.assign_value r distincts eq
+      | _, Ast.Ty.Tint | _, Ast.Ty.Treal ->
+        X1.assign_value r distincts eq
+      | _, Ast.Ty.Trecord _ -> X2.assign_value r distincts eq
+      | _, Ast.Ty.Tbitv _ -> X3.assign_value r distincts eq
+      | _, Ast.Ty.Tfarray _ -> X4.assign_value r distincts eq
+      | _, Ast.Ty.Tsum _ -> X5.assign_value r distincts eq
+      | _, Ast.Ty.Tadt _ when not (Util.Options.get_disable_adts ()) ->
+        X6.assign_value r distincts eq
       | Term t, ty ->
-          (* case disable_adts() handled here *)
-          if
-            Structs.Expr.const_term t
-            || List.exists (fun (t, _) -> Structs.Expr.const_term t) eq
-          then None
-          else Some (Structs.Expr.fresh_name ty, false)
-            (* false <-> not a case-split *)
+        (* case disable_adts() handled here *)
+        if
+          Ast.Expr.const_term t
+          || List.exists (fun (t, _) -> Ast.Expr.const_term t) eq
+        then None
+        else Some (Ast.Expr.fresh_name ty, false)
+      (* false <-> not a case-split *)
       | _ -> assert false
     in
     if get_debug_interpretation () then
@@ -578,57 +578,57 @@ end = struct
         ~function_name:"assign_value" "assign value to representative %a : %s"
         print r
         (match opt with
-        | None -> asprintf "None"
-        | Some (res, _is_cs) -> asprintf "%a" Structs.Expr.print res);
+         | None -> asprintf "None"
+         | Some (res, _is_cs) -> asprintf "%a" Ast.Expr.print res);
     opt
 
   let choose_adequate_model t rep l =
     let r, pprint =
-      match Structs.Expr.type_info t with
-      | Structs.Ty.Tint | Structs.Ty.Treal -> X1.choose_adequate_model t rep l
-      | Structs.Ty.Tbitv _ -> X3.choose_adequate_model t rep l
-      | Structs.Ty.Tsum _ -> X5.choose_adequate_model t rep l
-      | Structs.Ty.Tadt _ when not (Util.Options.get_disable_adts ()) ->
-          X6.choose_adequate_model t rep l
-      | Structs.Ty.Trecord _ -> X2.choose_adequate_model t rep l
-      | Structs.Ty.Tfarray _ -> X4.choose_adequate_model t rep l
+      match Ast.Expr.type_info t with
+      | Ast.Ty.Tint | Ast.Ty.Treal -> X1.choose_adequate_model t rep l
+      | Ast.Ty.Tbitv _ -> X3.choose_adequate_model t rep l
+      | Ast.Ty.Tsum _ -> X5.choose_adequate_model t rep l
+      | Ast.Ty.Tadt _ when not (Util.Options.get_disable_adts ()) ->
+        X6.choose_adequate_model t rep l
+      | Ast.Ty.Trecord _ -> X2.choose_adequate_model t rep l
+      | Ast.Ty.Tfarray _ -> X4.choose_adequate_model t rep l
       | _ ->
-          let acc =
-            List.fold_left
-              (fun acc (s, r) ->
-                if Structs.Expr.const_term s then
-                  match acc with
-                  | Some (s', _) when Structs.Expr.compare s' s > 0 -> acc
-                  | _ -> Some (s, r)
-                else acc)
-              None l
-          in
-          let r =
-            match acc with
-            | Some (_, r) -> r
-            | None -> (
-                match term_extract rep with
-                | Some t, true when Structs.Expr.const_term t -> rep
-                | _ ->
-                    let print_aux fmt (t, r) =
-                      fprintf fmt "> impossible case: %a -- %a@ "
-                        Structs.Expr.print t print r
-                    in
-                    if get_debug_interpretation () then
-                      Util.Printer.print_dbg ~module_name:"Shostak"
-                        ~function_name:"choose_adequate_model"
-                        "@[<v 2>What to choose for term %a with rep %a?%a@]"
-                        Structs.Expr.print t print rep
-                        (Util.Printer.pp_list_no_space print_aux)
-                        l;
-                    assert false)
-          in
-          (r, asprintf "%a" print r (* it's a EUF constant *))
+        let acc =
+          List.fold_left
+            (fun acc (s, r) ->
+               if Ast.Expr.const_term s then
+                 match acc with
+                 | Some (s', _) when Ast.Expr.compare s' s > 0 -> acc
+                 | _ -> Some (s, r)
+               else acc)
+            None l
+        in
+        let r =
+          match acc with
+          | Some (_, r) -> r
+          | None -> (
+              match term_extract rep with
+              | Some t, true when Ast.Expr.const_term t -> rep
+              | _ ->
+                let print_aux fmt (t, r) =
+                  fprintf fmt "> impossible case: %a -- %a@ "
+                    Ast.Expr.print t print r
+                in
+                if get_debug_interpretation () then
+                  Util.Printer.print_dbg ~module_name:"Shostak"
+                    ~function_name:"choose_adequate_model"
+                    "@[<v 2>What to choose for term %a with rep %a?%a@]"
+                    Ast.Expr.print t print rep
+                    (Util.Printer.pp_list_no_space print_aux)
+                    l;
+                assert false)
+        in
+        (r, asprintf "%a" print r (* it's a EUF constant *))
     in
     if get_debug_interpretation () then
       Util.Printer.print_dbg ~module_name:"Shostak"
         ~function_name:"choose_adequate_model" "%a selected as a model for %a"
-        print r Structs.Expr.print t;
+        print r Ast.Expr.print t;
     (r, pprint)
 end
 
@@ -645,52 +645,52 @@ and X1 : (Sig.SHOSTAK with type t = TX1.t and type r = CX.r) =
     end)
 
 and X2 : (Sig.SHOSTAK with type r = CX.r and type t = CX.r Records.abstract) =
-Records.Shostak (struct
-  include CX
+  Records.Shostak (struct
+    include CX
 
-  let extract = extract2
-  let embed = embed2
-end)
+    let extract = extract2
+    let embed = embed2
+  end)
 
 and X3 : (Sig.SHOSTAK with type r = CX.r and type t = CX.r Bitv.abstract) =
-Bitv.Shostak (struct
-  include CX
+  Bitv.Shostak (struct
+    include CX
 
-  let extract = extract3
-  let embed = embed3
-end)
+    let extract = extract3
+    let embed = embed3
+  end)
 
 and X4 : (Sig.SHOSTAK with type r = CX.r and type t = CX.r Arrays.abstract) =
-Arrays.Shostak (struct
-  include CX
+  Arrays.Shostak (struct
+    include CX
 
-  let extract = extract4
-  let embed = embed4
-end)
+    let extract = extract4
+    let embed = embed4
+  end)
 
 and X5 : (Sig.SHOSTAK with type r = CX.r and type t = CX.r Enum.abstract) =
-Enum.Shostak (struct
-  include CX
+  Enum.Shostak (struct
+    include CX
 
-  let extract = extract5
-  let embed = embed5
-end)
+    let extract = extract5
+    let embed = embed5
+  end)
 
 and X6 : (Sig.SHOSTAK with type r = CX.r and type t = CX.r Adt.abstract) =
-Adt.Shostak (struct
-  include CX
+  Adt.Shostak (struct
+    include CX
 
-  let extract = extract6
-  let embed = embed6
-end)
+    let extract = extract6
+    let embed = embed6
+  end)
 
 and X7 : (Sig.SHOSTAK with type r = CX.r and type t = CX.r Ite.abstract) =
-Ite.Shostak (struct
-  include CX
+  Ite.Shostak (struct
+    include CX
 
-  let extract = extract7
-  let embed = embed7
-end)
+    let extract = extract7
+    let embed = embed7
+  end)
 
 (* Its signature is not Sig.SHOSTAK because it does not provide a solver *)
 and AC : (Ac.S with type r = CX.r) = Ac.Make (CX)
@@ -703,9 +703,9 @@ module Combine = struct
     fun t ->
       match H.find_opt cache t with
       | None ->
-          let res = make t in
-          H.add cache t res;
-          res
+        let res = make t in
+        H.add cache t res;
+        res
       | Some res -> res
 end
 
@@ -721,28 +721,28 @@ module Ac = AC
 
 (** map of semantic values using Combine.hash_cmp *)
 module MXH = Map.Make (struct
-  type t = Combine.r
+    type t = Combine.r
 
-  let compare = Combine.hash_cmp
-end)
+    let compare = Combine.hash_cmp
+  end)
 
 (** set of semantic values using Combine.hash_cmp *)
 module SXH = Set.Make (struct
-  type t = Combine.r
+    type t = Combine.r
 
-  let compare = Combine.hash_cmp
-end)
+    let compare = Combine.hash_cmp
+  end)
 
 (** map of semantic values using structural compare Combine.str_cmp *)
 module MXS = Map.Make (struct
-  type t = Combine.r
+    type t = Combine.r
 
-  let compare = Combine.hash_cmp
-end)
+    let compare = Combine.hash_cmp
+  end)
 
 (** set of semantic values using structural compare Combine.str_cmp *)
 module SXS = Set.Make (struct
-  type t = Combine.r
+    type t = Combine.r
 
-  let compare = Combine.hash_cmp
-end)
+    let compare = Combine.hash_cmp
+  end)

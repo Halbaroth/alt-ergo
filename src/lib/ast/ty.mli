@@ -42,16 +42,16 @@ type t =
   | Tvar of tvar  (** Type variables *)
   | Tbitv of int  (** Bitvectors of a given length *)
   | Text of t list * Util.Hstring.t
-      (** Abstract types applied to arguments. [Text (args, s)] is
+  (** Abstract types applied to arguments. [Text (args, s)] is
       the application of the abstract type constructor [s] to
       arguments [args]. *)
   | Tfarray of t * t
-      (** Functional arrays. [TFarray (src,dst)] maps values of type [src]
+  (** Functional arrays. [TFarray (src,dst)] maps values of type [src]
       to values of type [dst]. *)
   | Tsum of Util.Hstring.t * Util.Hstring.t list
-      (** Enumeration, with its name, and the list of its constructors. *)
+  (** Enumeration, with its name, and the list of its constructors. *)
   | Tadt of Util.Hstring.t * t list
-      (** Algebraic types applied to arguments. [Tadt (s, args)] is
+  (** Algebraic types applied to arguments. [Tadt (s, args)] is
       the application of the datatype constructor [s] to
       arguments [args]. *)
   | Trecord of trecord  (** Record type. *)
@@ -59,7 +59,7 @@ type t =
 and tvar = {
   v : int;  (** Unique identifier *)
   mutable value : t option;
-      (** Pointer to the current value of the type variable. *)
+  (** Pointer to the current value of the type variable. *)
 }
 (** Type variables.
     The [value] field is mutated during unification,
@@ -70,10 +70,10 @@ and trecord = {
   mutable args : t list;  (** Arguments passed to the record constructor *)
   name : Util.Hstring.t;  (** Name of the record type *)
   mutable lbs : (Util.Hstring.t * t) list;
-      (** List of fields of the record. Each field has a name,
+  (** List of fields of the record. Each field has a name,
       and an associated type. *)
   record_constr : Util.Hstring.t;
-      (** record constructor. Useful is case it's a specialization of an
+  (** record constructor. Useful is case it's a specialization of an
       algeberaic datatype. Default value is "\{__[name]" *)
 }
 (** Record types. *)
@@ -81,8 +81,8 @@ and trecord = {
 type adt_constr = {
   constr : Util.Hstring.t;  (** constructor of an ADT type *)
   destrs : (Util.Hstring.t * t) list;
-      (** the list of destructors associated with the constructor and
-        their respective types *)
+  (** the list of destructors associated with the constructor and
+      their respective types *)
 }
 
 (** bodies of types definitions. Currently, bodies are inlined in the

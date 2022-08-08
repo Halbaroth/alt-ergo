@@ -27,7 +27,7 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 open Format
 open Util.Options
 open Sig
@@ -36,7 +36,7 @@ open Matching_types
 module Z = Util.Numbers.Z
 module Q = Util.Numbers.Q
 
-module L = Structs.Xliteral
+module L = Ast.Xliteral
 
 module I = Intervals
 
@@ -52,7 +52,7 @@ module MP0 = Map.Make(P)
 module SP = Set.Make(P)
 module SX = Shostak.SXH
 module MX0 = Shostak.MXH
-module MPL = Structs.Expr.Map
+module MPL = Ast.Expr.Map
 
 module Oracle = OracleContainer.Make(P)
 
@@ -89,16 +89,16 @@ let is_alien x =
 module SimVar = struct
   type t = X.r
   let compare = X.hash_cmp
-  let is_int r = X.type_info r == Structs.Ty.Tint
+  let is_int r = X.type_info r == Ast.Ty.Tint
   let print fmt x =
     if is_alien x then fprintf fmt "%a" X.print x
     else fprintf fmt "s!%d" (X.hash x) (* slake vars *)
 end
 
-module Sim = OcplibSimplex.Basic.Make(SimVar)(Util.Numbers.Q)(Structs.Ex)
+module Sim = OcplibSimplex.Basic.Make(SimVar)(Util.Numbers.Q)(Ast.Ex)
 
 type used_by = {
-  pow : Structs.Expr.Set.t;
+  pow : Ast.Expr.Set.t;
 }
 
 type t = {
@@ -109,13 +109,13 @@ type t = {
   known_eqs : SX.t;
   improved_p : SP.t;
   improved_x : SX.t;
-  classes : Structs.Expr.Set.t list;
+  classes : Ast.Expr.Set.t list;
   size_splits : Q.t;
   int_sim : Sim.Core.t;
   rat_sim : Sim.Core.t;
   new_uf : Uf.t;
-  th_axioms : (Structs.Expr.th_elt * Structs.Ex.t) Structs.Expr.Map.t;
-  linear_dep : Structs.Expr.Set.t Structs.Expr.Map.t;
+  th_axioms : (Ast.Expr.th_elt * Ast.Ex.t) Ast.Expr.Map.t;
+  linear_dep : Ast.Expr.Set.t Ast.Expr.Map.t;
   syntactic_matching :
     (Matching_types.trigger_info * Matching_types.gsubst list) list list;
 }
@@ -133,8 +133,8 @@ module Sim_Wrap = struct
       if get_debug_fm () then
         Util.Printer.print_dbg
           ~module_name:"IntervalCalculus" ~function_name:"check_unsat_result"
-          "simplex derived unsat: %a" Structs.Ex.print ex;
-      raise (Structs.Ex.Inconsistent (ex, env.classes))
+          "simplex derived unsat: %a" Ast.Ex.print ex;
+      raise (Ast.Ex.Inconsistent (ex, env.classes))
 
   let solve env _i =
     let int_sim = Sim.Solve.solve env.int_sim in
@@ -163,7 +163,7 @@ module Sim_Wrap = struct
     try
       let bnd, expl, large = func i in
       Some (bnd, if large then Q.zero else q), expl
-    with I.No_finite_bound -> None, Structs.Ex.empty
+    with I.No_finite_bound -> None, Ast.Ex.empty
 
   let same_bnds _old _new =
     match _old, _new with
@@ -220,7 +220,7 @@ module Sim_Wrap = struct
       [LR.mkv_eq r1 r2, true, Th_util.CS (Th_util.Th_arith, s)]
     in
     let aux_1 uf x (info,_) acc =
-      assert (X.type_info x == Structs.Ty.Tint);
+      assert (X.type_info x == Ast.Ty.Tint);
       match finite_non_point_dom info with
       | Some s when
           (Sim.Core.equals_optimum info.Sim.Core.value info.Sim.Core.mini ||
@@ -237,7 +237,7 @@ module Sim_Wrap = struct
     in
     let aux_2 env uf x (info,_) acc =
       let v, _ = info.Sim.Core.value in
-      assert (X.type_info x == Structs.Ty.Tint);
+      assert (X.type_info x == Ast.Ty.Tint);
       match finite_non_point_dom info with
       | Some s when Q.is_int v && Uf.is_normalized uf x ->
         let fnd1, cont1 =
@@ -299,7 +299,7 @@ module Sim_Wrap = struct
         ~module_name:"IntervalCalculus" ~function_name:"infer_best_bounds"
         "#infer bounds for %a" P.print p;
     let ty = P.type_info p in
-    let sim = if ty == Structs.Ty.Tint then env.int_sim else env.rat_sim in
+    let sim = if ty == Ast.Ty.Tint then env.int_sim else env.rat_sim in
     let i = I.undefined ty in
     let lp, c = P.to_list p in
     assert (Q.is_zero c);
@@ -333,7 +333,7 @@ module MP = struct
       let ty = P.type_info p in
       let polynomes = MP0.add p i polynomes in
       let improved_p = SP.add p env.improved_p in
-      if ty == Structs.Ty.Tint then
+      if ty == Ast.Ty.Tint then
         {env with
          polynomes; improved_p;
          int_sim = Sim_Wrap.add_if_better p old i env.int_sim}
@@ -377,7 +377,7 @@ module MX = struct
       let ty = X.type_info x in
       let monomes = MX0.add x e monomes in
       let improved_x = SX.add x env.improved_x in
-      if ty == Structs.Ty.Tint then
+      if ty == Ast.Ty.Tint then
         {env with
          monomes; improved_x;
          int_sim = Sim_Wrap.add_if_better (poly_of x) old i env.int_sim}
@@ -481,7 +481,7 @@ let generic_add x j use is_mon env =
     let p, c = P.separate_constant p0 in
     let p, c0, d = P.normal_form_pos p in
     assert (Q.sign d <> 0 && Q.sign c0 = 0);
-    let j = I.add j (I.point (Q.minus c) ty Structs.Ex.empty) in
+    let j = I.add j (I.point (Q.minus c) ty Ast.Ex.empty) in
     let j = I.scale (Q.inv d) j in
     try MP.n_add p j (MP.n_find p env.polynomes) env
     with Not_found -> MP.n_add p j (I.undefined ty) env
@@ -504,7 +504,7 @@ module Debug = struct
         "@[<v 2>%s We assume: %a@,explanations: %a@]"
         (if query then "[query]" else "")
         LR.print (LR.make a)
-        Structs.Ex.print expl
+        Ast.Ex.print expl
 
   let print_use fmt use =
     SX.iter (fprintf fmt "%a, " X.print) use
@@ -517,7 +517,7 @@ module Debug = struct
       MPL.iter
         (fun a { Oracle.ple0 = p; is_le = is_le; _ } ->
            print_dbg ~flushed:false ~header:false "%a%s0  |  %a@ "
-             P.print p (if is_le then "<=" else "<") Structs.Expr.print a
+             P.print p (if is_le then "<=" else "<") Ast.Expr.print a
         )env.inequations;
       print_dbg ~flushed:false ~header:false
         "------------ FM: monomes ----------------------------@ ";
@@ -543,7 +543,7 @@ module Debug = struct
       let print fmt (ra, _, ex, _) =
         fprintf fmt "@,%a %a"
           LR.print (LR.make ra)
-          Structs.Ex.print ex
+          Ast.Ex.print ex
       in
       print_dbg
         ~module_name:"IntervalCalculus" ~function_name:"implied_equalities"
@@ -568,7 +568,7 @@ module Debug = struct
       print_dbg
         ~module_name:"IntervalCalculus"
         ~function_name:"inconsistent_interval"
-        "interval inconsistent %a" Structs.Ex.print expl
+        "interval inconsistent %a" Ast.Ex.print expl
 
   let added_inequation kind ineq =
     if get_debug_fm () then begin
@@ -649,8 +649,8 @@ let empty classes = {
     Sim.Solve.solve
       (Sim.Core.empty ~is_int:true ~check_invs:false ~debug:0);
 
-  th_axioms = Structs.Expr.Map.empty;
-  linear_dep = Structs.Expr.Map.empty;
+  th_axioms = Ast.Expr.Map.empty;
+  linear_dep = Ast.Expr.Map.empty;
   syntactic_matching = [];
 }
 
@@ -672,7 +672,7 @@ let mult_bornes_vars vars env ty =
     in
     List.fold_left
       (fun ui (yi,n) -> I.mult ui (I.power n yi))
-      (I.point Q.one ty Structs.Ex.empty) l
+      (I.point Q.one ty Ast.Ex.empty) l
   with Not_found -> I.undefined ty
 
 (** computes the interval of a polynome from those of its monomes.
@@ -690,8 +690,8 @@ let intervals_from_monomes ?(monomes_inited=true) env p =
              assert (not monomes_inited);
              I.undefined (X.type_info x), SX.empty
          in
-         I.add (I.scale a (I.coerce Structs.Ty.Treal i_x)) i
-      ) (I.point v Structs.Ty.Treal Structs.Ex.empty) pl
+         I.add (I.scale a (I.coerce Ast.Ty.Treal i_x)) i
+      ) (I.point v Ast.Ty.Treal Ast.Ex.empty) pl
   in
   I.coerce (P.type_info p) rational_interval
 
@@ -703,7 +703,7 @@ let cannot_be_equal_to_zero env p ip =
     match X.solve (alien_of p) z with
     | [] -> None (* p is equal to zero *)
     | _ -> I.doesnt_contain_0 ip
-  with Util.Util.Unsolvable -> Some (Structs.Ex.empty, env.classes)
+  with Util.Util.Unsolvable -> Some (Ast.Ex.empty, env.classes)
 
 
 let rec init_monomes_of_poly are_eq env p use_p expl =
@@ -723,7 +723,7 @@ and init_alien are_eq expl p (normal_p, c, d) ty use_x env =
     try
       let old_i = MP.n_find normal_p env.polynomes in
       let old_i = I.scale d
-          (I.add old_i (I.point c ty Structs.Ex.empty)) in
+          (I.add old_i (I.point c ty Ast.Ex.empty)) in
       I.intersect i old_i
     with Not_found -> i
   in
@@ -733,7 +733,7 @@ and update_monome are_eq expl use_x env x =
   let ty = X.type_info x in
   let ui, env = match  X.ac_extract x with
     | Some { h; l; _ }
-      when Structs.Sy.equal h (Structs.Sy.Op Structs.Sy.Mult) ->
+      when Ast.Sy.equal h (Ast.Sy.Op Ast.Sy.Mult) ->
       let use_x = SX.singleton x in
       let env =
         List.fold_left
@@ -751,20 +751,20 @@ and update_monome are_eq expl use_x env x =
       | Some t, _ ->
         let use_x = SX.singleton x in
         begin
-          match Structs.Expr.term_view t with
-          | Structs.Expr.Not_a_term _ -> assert false
-          | Structs.Expr.Term { Structs.Expr.f = (Structs.Sy.Op Structs.Sy.Div); xs = [a; b]; _ } ->
+          match Ast.Expr.term_view t with
+          | Ast.Expr.Not_a_term _ -> assert false
+          | Ast.Expr.Term { Ast.Expr.f = (Ast.Sy.Op Ast.Sy.Div); xs = [a; b]; _ } ->
             let ra, ea =
               let (ra, _) as e = Uf.find env.new_uf a in
               if List.filter (X.equal x) (X.leaves ra) == [] then e
-              else fst (X.make a), Structs.Ex.empty (*otherwise, we loop*)
+              else fst (X.make a), Ast.Ex.empty (*otherwise, we loop*)
             in
             let rb, eb =
               let (rb, _) as e = Uf.find env.new_uf b in
               if List.filter (X.equal x) (X.leaves rb) == [] then e
-              else fst (X.make b), Structs.Ex.empty (*otherwise, we loop*)
+              else fst (X.make b), Ast.Ex.empty (*otherwise, we loop*)
             in
-            let expl = Structs.Ex.union expl (Structs.Ex.union ea eb) in
+            let expl = Ast.Ex.union expl (Ast.Ex.union ea eb) in
             let pa = poly_of ra in
             let pb = poly_of rb in
             let (pa', ca, da) as npa = P.normal_form_pos pa in
@@ -778,14 +778,14 @@ and update_monome are_eq expl use_x env x =
             let ia, ib = match cannot_be_equal_to_zero env pb ib with
               | Some (ex, _) when Q.equal ca cb
                                && P.compare pa' pb' = 0 ->
-                let expl = Structs.Ex.union ex expl in
+                let expl = Ast.Ex.union ex expl in
                 I.point da ty expl, I.point db ty expl
               | Some (ex, _) ->
                 begin
                   match are_eq a b with
                   | Some (ex_eq, _) ->
-                    let expl = Structs.Ex.union ex expl in
-                    let expl = Structs.Ex.union ex_eq expl in
+                    let expl = Ast.Ex.union ex expl in
+                    let expl = Ast.Ex.union ex_eq expl in
                     I.point Q.one ty expl,
                     I.point Q.one ty expl
                   | None -> ia, ib
@@ -811,7 +811,7 @@ let rec tighten_ac are_eq x env expl =
   try
     match X.ac_extract x with
     | Some { h; l = [x,n]; _ }
-      when Structs.Sy.equal h (Structs.Sy.Op Structs.Sy.Mult) && n mod 2 = 0  ->
+      when Ast.Sy.equal h (Ast.Sy.Op Ast.Sy.Mult) && n mod 2 = 0  ->
       let env =
         if is_alien x then
           (* identity *)
@@ -829,7 +829,7 @@ let rec tighten_ac are_eq x env expl =
       in
       env
     | Some { h; l = [x,n]; _ } when
-        Structs.Sy.equal h (Structs.Sy.Op Structs.Sy.Mult) && n > 2 ->
+        Ast.Sy.equal h (Ast.Sy.Op Ast.Sy.Mult) && n > 2 ->
       let env =
         if is_alien x then
           let u = I.root n u in
@@ -880,7 +880,7 @@ let update_monomes_from_poly p i env =
             (I.add i
                (I.scale (Q.minus d)
                   (I.add inp
-                     (I.point c ty Structs.Ex.empty)))) in
+                     (I.point c ty Ast.Ex.empty)))) in
         let old_ix, ux = MX.n_find x env.monomes in
         let ix = I.intersect old_ix new_ix in
         MX.n_add x (ix, ux) old_ix env
@@ -900,12 +900,12 @@ let update_polynomes_intervals env =
 let update_non_lin_monomes_intervals are_eq env =
   MX.fold
     (fun x (_, use_x) env ->
-       tighten_non_lin are_eq x use_x env Structs.Ex.empty
+       tighten_non_lin are_eq x use_x env Ast.Ex.empty
     ) env.monomes env
 
 let find_one_eq x u =
   match I.is_point u with
-  | Some (v, ex) when X.type_info x != Structs.Ty.Tint || Q.is_int v ->
+  | Some (v, ex) when X.type_info x != Ast.Ty.Tint || Q.is_int v ->
     let eq =
       LR.mkv_eq x (alien_of (P.create [] v (X.type_info x))) in
     Some (eq, None, ex, Th_util.Other)
@@ -918,7 +918,7 @@ let find_eq eqs x u env =
     begin
       match X.ac_extract x with
       | Some { h; l = [y,_]; _ }
-        when Structs.Sy.equal h (Structs.Sy.Op Structs.Sy.Mult) ->
+        when Ast.Sy.equal h (Ast.Sy.Op Ast.Sy.Mult) ->
         let neweqs = try
             let u, _, _ = generic_find y env in
             match find_one_eq y u with
@@ -974,7 +974,7 @@ let update_intervals are_eq env eqs expl (a, x, v) is_le =
   let (u0, use_x0) as ixx = MX.n_find x env.monomes in
   let uints, use_x =
     match X.ac_extract x with
-    | Some { h; l; _ } when Structs.Sy.equal h (Structs.Sy.Op Structs.Sy.Mult) ->
+    | Some { h; l; _ } when Ast.Sy.equal h (Ast.Sy.Op Ast.Sy.Mult) ->
       let m = mult_bornes_vars l env (X.type_info x) in
       I.intersect m u0, use_x0
     | _ -> ixx
@@ -1065,7 +1065,7 @@ let add_inequations are_eq acc x_opt lin =
        match ineq_status ineq with
        | Bottom           ->
          Debug.added_inequation "Bottom" ineq;
-         raise (Structs.Ex.Inconsistent (expl, env.classes))
+         raise (Ast.Ex.Inconsistent (expl, env.classes))
 
        | Trivial_eq       ->
          Debug.added_inequation "Trivial_eq" ineq;
@@ -1124,7 +1124,7 @@ let split_problem env ineqs aliens =
          match ineq_status ineq with
          | Trivial_eq | Trivial_ineq _ -> (acc, all_lvs)
          | Bottom ->
-           raise (Structs.Ex.Inconsistent (ineq.Oracle.expl, env.classes))
+           raise (Ast.Ex.Inconsistent (ineq.Oracle.expl, env.classes))
          | _ ->
            let lvs =
              List.fold_left (fun acc e -> SX.add e acc) SX.empty (aliens p)
@@ -1213,13 +1213,13 @@ let update_linear_dep env rclass_of ineqs =
     List.fold_left
       (fun st { Oracle.ple0; _ } ->
          List.fold_left
-           (fun st (_, x) -> Structs.Expr.Set.union st (rclass_of x))
+           (fun st (_, x) -> Ast.Expr.Set.union st (rclass_of x))
            st (fst (P.to_list ple0))
-      )Structs.Expr.Set.empty ineqs
+      )Ast.Expr.Set.empty ineqs
   in
   let linear_dep =
-    Structs.Expr.Set.fold
-      (fun t linear_dep -> Structs.Expr.Map.add t terms linear_dep) terms env.linear_dep
+    Ast.Expr.Set.fold
+      (fun t linear_dep -> Ast.Expr.Map.add t terms linear_dep) terms env.linear_dep
   in
   {env with linear_dep}
 
@@ -1236,7 +1236,7 @@ let refine_x_bounds ix env rels is_low =
          let b, ex_b, is_le = I.borne_inf ip in (* invariant, see above *)
          let b = Q.div b m_cx in
          let func = if is_low then I.new_borne_inf else I.new_borne_sup in
-         func (Structs.Ex.union ineq_ex ex_b) b ~is_le ix
+         func (Ast.Ex.union ineq_ex ex_b) b ~is_le ix
        with I.No_finite_bound -> ix
     )rels ix
 
@@ -1269,7 +1269,7 @@ let refine_p_bounds ip _p env rels is_low =
          let b = Q.mult cx bx in
          let b = Q.add (Q.div b md0) mc0 in (* final bnd of p0 *)
          let func = if is_low then I.new_borne_inf else I.new_borne_sup in
-         func (Structs.Ex.union ineq_ex ex_b) b ~is_le ip
+         func (Ast.Ex.union ineq_ex ex_b) b ~is_le ip
        with Exit | I.No_finite_bound -> ip
     )rels ip
 
@@ -1328,14 +1328,14 @@ let fm uf are_eq rclass_of env eqs =
   res
 
 let is_num r =
-  let ty = X.type_info r in ty == Structs.Ty.Tint || ty == Structs.Ty.Treal
+  let ty = X.type_info r in ty == Ast.Ty.Tint || ty == Ast.Ty.Treal
 
 let add_disequality are_eq env eqs p expl =
   let ty = P.type_info p in
   match P.to_list p with
   | ([], v) ->
     if Q.sign v = 0 then
-      raise (Structs.Ex.Inconsistent (expl, env.classes));
+      raise (Ast.Ex.Inconsistent (expl, env.classes));
     env, eqs
   | ([a, x], v) ->
     let b = Q.div (Q.minus v) a in
@@ -1370,7 +1370,7 @@ let add_equality are_eq env eqs p expl =
   match P.to_list p with
   | ([], v) ->
     if Q.sign v <> 0 then
-      raise (Structs.Ex.Inconsistent (expl, env.classes));
+      raise (Ast.Ex.Inconsistent (expl, env.classes));
     env, eqs
 
   | ([a, x], v) ->
@@ -1406,13 +1406,13 @@ let add_equality are_eq env eqs p expl =
 
 let normal_form a = match a with
   | L.Builtin (false, L.LE, [r1; r2])
-    when X.type_info r1 == Structs.Ty.Tint ->
-    let pred_r1 = P.sub (poly_of r1) (P.create [] Q.one Structs.Ty.Tint) in
+    when X.type_info r1 == Ast.Ty.Tint ->
+    let pred_r1 = P.sub (poly_of r1) (P.create [] Q.one Ast.Ty.Tint) in
     LR.mkv_builtin true L.LE [r2; alien_of pred_r1]
 
   | L.Builtin (true, L.LT, [r1; r2]) when
-      X.type_info r1 == Structs.Ty.Tint ->
-    let pred_r2 = P.sub (poly_of r2) (P.create [] Q.one Structs.Ty.Tint) in
+      X.type_info r1 == Ast.Ty.Tint ->
+    let pred_r2 = P.sub (poly_of r2) (P.create [] Q.one Ast.Ty.Tint) in
     LR.mkv_builtin true L.LE [r1; alien_of pred_r2]
 
   | L.Builtin (false, L.LE, [r1; r2]) ->
@@ -1543,7 +1543,7 @@ let calc_pow a b ty uf =
             alien_of (P.create [] res ty)
           | None -> raise Exit
       in
-      Some (res,Structs.Ex.union expl_a expl_b)
+      Some (res,Ast.Ex.union expl_a expl_b)
     | None -> None
   with Exit -> None
 
@@ -1553,10 +1553,10 @@ let update_used_by_pow env r1 p2 orig  eqs =
     if orig != Th_util.Subst then raise Exit;
     if P.is_const p2 == None then raise Exit;
     let s = (MX0.find r1 env.used_by).pow in
-    Structs.Expr.Set.fold (fun t eqs ->
-        match Structs.Expr.term_view t with
-        | Structs.Expr.Term
-            { Structs.Expr.f = (Structs.Sy.Op Structs.Sy.Pow); xs = [a; b]; ty; _ } ->
+    Ast.Expr.Set.fold (fun t eqs ->
+        match Ast.Expr.term_view t with
+        | Ast.Expr.Term
+            { Ast.Expr.f = (Ast.Sy.Op Ast.Sy.Pow); xs = [a; b]; ty; _ } ->
           begin
             match calc_pow a b ty env.new_uf with
               None -> eqs
@@ -1596,7 +1596,7 @@ let assume ~query env uf la =
                Oracle.create_ineq p1 p2 (n == L.LE) root expl in
              begin
                match ineq_status ineq with
-               | Bottom -> raise (Structs.Ex.Inconsistent (expl, env.classes))
+               | Bottom -> raise (Ast.Ex.Inconsistent (expl, env.classes))
                | Trivial_eq | Trivial_ineq _ ->
                  {env with inequations=remove_ineq root env.inequations},
                  eqs, new_ineqs,
@@ -1607,7 +1607,7 @@ let assume ~query env uf la =
                  let env =
                    init_monomes_of_poly
                      are_eq env ineq.Oracle.ple0 SX.empty
-                     Structs.Ex.empty
+                     Ast.Ex.empty
                  in
                  let env =
                    update_ple0
@@ -1624,13 +1624,13 @@ let assume ~query env uf la =
                match P.is_const p with
                | Some c ->
                  if Q.is_zero c then (* bottom *)
-                   raise (Structs.Ex.Inconsistent (expl, env.classes))
+                   raise (Ast.Ex.Inconsistent (expl, env.classes))
                  else (* trivial *)
                    let rm = match root with Some a -> a::rm | None -> rm in
                    env, eqs, new_ineqs, rm
                | None ->
                  let env = init_monomes_of_poly are_eq env p SX.empty
-                     Structs.Ex.empty
+                     Ast.Ex.empty
                  in
                  let env, eqs = add_disequality are_eq env eqs p expl in
                  env, eqs, new_ineqs, rm
@@ -1642,7 +1642,7 @@ let assume ~query env uf la =
              let p2 = poly_of r2 in
              let p = P.sub p1 p2 in
              let env = init_monomes_of_poly are_eq env p SX.empty
-                 Structs.Ex.empty
+                 Ast.Ex.empty
              in
              let env, eqs = add_equality are_eq env eqs p expl in
              let env = tighten_eq_bounds env r1 r2 p1 p2 orig expl in
@@ -1653,7 +1653,7 @@ let assume ~query env uf la =
 
          with I.NotConsistent expl ->
            Debug.inconsistent_interval expl ;
-           raise (Structs.Ex.Inconsistent (expl, env.classes))
+           raise (Ast.Ex.Inconsistent (expl, env.classes))
       )
       (env, [], false, []) la
 
@@ -1682,7 +1682,7 @@ let assume ~query env uf la =
       env, {Sig_rel.assume = to_assume; remove = to_remove}
   with I.NotConsistent expl ->
     Debug.inconsistent_interval expl ;
-    raise (Structs.Ex.Inconsistent (expl, env.classes))
+    raise (Ast.Ex.Inconsistent (expl, env.classes))
 
 
 let assume ~query env uf la =
@@ -1699,7 +1699,7 @@ let query env uf a_ex =
   try
     ignore(assume ~query:true env uf [a_ex]);
     None
-  with Structs.Ex.Inconsistent (expl, classes) -> Some (expl, classes)
+  with Ast.Ex.Inconsistent (expl, classes) -> Some (expl, classes)
 
 
 let assume env uf la =
@@ -1806,10 +1806,10 @@ let default_case_split env uf ~for_model =
     if x is computable when its subterms values are known.
     This is currently only done for power *)
 let add_used_by t r env =
-  match Structs.Expr.term_view t with
-  | Structs.Expr.Not_a_term _ -> assert false
-  | Structs.Expr.Term
-      { Structs.Expr.f = (Structs.Sy.Op Structs.Sy.Pow); xs = [a; b]; ty; _ } ->
+  match Ast.Expr.term_view t with
+  | Ast.Expr.Not_a_term _ -> assert false
+  | Ast.Expr.Term
+      { Ast.Expr.f = (Ast.Sy.Op Ast.Sy.Pow); xs = [a; b]; ty; _ } ->
     begin
       match calc_pow a b ty env.new_uf with
       | Some (res,ex) ->
@@ -1823,12 +1823,12 @@ let add_used_by t r env =
         let rb = Uf.make env.new_uf b in
         let sra =
           try (MX0.find ra env.used_by).pow
-          with Not_found -> Structs.Expr.Set.empty in
-        let used_by_ra = MX0.add ra {pow = (Structs.Expr.Set.add t sra)} env.used_by in
+          with Not_found -> Ast.Expr.Set.empty in
+        let used_by_ra = MX0.add ra {pow = (Ast.Expr.Set.add t sra)} env.used_by in
         let srb =
           try (MX0.find rb used_by_ra).pow
-          with Not_found -> Structs.Expr.Set.empty in
-        let used_by_rb = MX0.add rb {pow = (Structs.Expr.Set.add t srb)} used_by_ra in
+          with Not_found -> Ast.Expr.Set.empty in
+        let used_by_rb = MX0.add rb {pow = (Ast.Expr.Set.add t srb)} used_by_ra in
         {env with used_by = used_by_rb}, []
     end
   | _ -> env, []
@@ -1836,7 +1836,7 @@ let add_used_by t r env =
 
 let add =
   let are_eq t1 t2 =
-    if Structs.Expr.equal t1 t2 then Some (Structs.Ex.empty, []) else None
+    if Ast.Expr.equal t1 t2 then Some (Ast.Ex.empty, []) else None
   in
   fun env new_uf r t ->
     Debug.env env;
@@ -1846,13 +1846,13 @@ let add =
       Debug.add p;
       if is_num r then
         let env =
-          init_monomes_of_poly are_eq env p SX.empty Structs.Ex.empty
+          init_monomes_of_poly are_eq env p SX.empty Ast.Ex.empty
         in
         add_used_by t r env
       else env, []
     with I.NotConsistent expl ->
       Debug.inconsistent_interval expl;
-      raise (Structs.Ex.Inconsistent (expl, env.classes))
+      raise (Ast.Ex.Inconsistent (expl, env.classes))
 
 (*
     let extract_improved env =
@@ -1869,7 +1869,7 @@ let print_model fmt env rs = match rs with
     List.iter (fun (t, r) ->
         let p = poly_of r in
         let ty = P.type_info p in
-        if ty == Structs.Ty.Tint || ty == Structs.Ty.Treal then
+        if ty == Ast.Ty.Tint || ty == Ast.Ty.Treal then
           let p', c, d = P.normal_form_pos p in
           let pu' =
             try MP.n_find p' env.polynomes
@@ -1884,12 +1884,12 @@ let print_model fmt env rs = match rs with
             let u =
               I.scale d
                 (I.add u'
-                   (I.point c ty Structs.Ex.empty)) in
-            fprintf fmt "\n %a ∈ %a" Structs.Expr.print t I.pretty_print u
+                   (I.point c ty Ast.Ex.empty)) in
+            fprintf fmt "\n %a ∈ %a" Ast.Expr.print t I.pretty_print u
       ) rs;
     fprintf fmt "\n@."
 
-let new_terms _ = Structs.Expr.Set.empty
+let new_terms _ = Ast.Expr.Set.empty
 
 let case_split_union_of_intervals =
   let aux acc uf i z =
@@ -1923,7 +1923,7 @@ let case_split_union_of_intervals =
 let int_constraints_from_map_intervals =
   let aux p xp i uf acc =
     if Uf.is_normalized uf xp && I.is_point i == None
-       && P.type_info p == Structs.Ty.Tint
+       && P.type_info p == Ast.Ty.Tint
     then (p, I.bounds_of i) :: acc
     else acc
   in
@@ -2001,7 +2001,7 @@ let model_from_simplex sim is_int env uf =
     (* when splitting on union of intervals, FM does not include
        related ineqs when crossing. So, we may miss some bounds/deductions,
        and FM-Simplex may fail to find a model *)
-    raise (Structs.Ex.Inconsistent(Lazy.force ex, env.classes))
+    raise (Ast.Ex.Inconsistent(Lazy.force ex, env.classes))
 
   | Sim.Core.Sat sol ->
     let {Sim.Core.main_vars; slake_vars; int_sol} = Lazy.force sol in
@@ -2009,7 +2009,7 @@ let model_from_simplex sim is_int env uf =
       if int_sol || not is_int then main_vars, slake_vars
       else round_to_integers main_vars, round_to_integers slake_vars
     in
-    let fct = if is_int then Structs.Expr.int else Structs.Expr.real in
+    let fct = if is_int then Ast.Expr.int else Ast.Expr.real in
     List.fold_left
       (fun acc (v, q) ->
          assert (not is_int || Q.is_int q);
@@ -2026,7 +2026,7 @@ let model_from_simplex sim is_int env uf =
                "[%s simplex] %a = %a"
                (if is_int then "integer" else "rational")
                X.print v X.print r;
-           (v, r, Structs.Ex.empty) :: acc
+           (v, r, Ast.Ex.empty) :: acc
       )[] (List.rev main_vars)
 
 
@@ -2067,7 +2067,7 @@ let case_split env uf ~for_model =
 let best_interval_of optimized env p =
   (* p is supposed to be in normal_form_pos *)
   match P.is_const p with
-  | Some c -> env, I.point c (P.type_info p) Structs.Ex.empty
+  | Some c -> env, I.point c (P.type_info p) Ast.Ex.empty
   | None ->
     let i =
       try let i, _, _ = generic_find (alien_of p) env in i
@@ -2088,14 +2088,14 @@ let best_interval_of optimized env p =
           [@ocaml.ppwarning "TODO: find an example triggering this case!"]
           Util.Printer.print_wrn
             "TODO: should check that this is correct !!!";
-          Structs.Errors.warning_as_error ()
+          Ast.Errors.warning_as_error ()
         end;
-        raise (Structs.Ex.Inconsistent (expl, env.classes))
+        raise (Ast.Ex.Inconsistent (expl, env.classes))
 
 let mk_const_term ty s =
   match ty with
-  | Structs.Ty.Tint -> Structs.Expr.int (Q.to_string s)
-  | Structs.Ty.Treal -> Structs.Expr.real (Q.to_string s)
+  | Ast.Ty.Tint -> Ast.Expr.int (Q.to_string s)
+  | Ast.Ty.Treal -> Ast.Expr.real (Q.to_string s)
   | _ -> assert false
 
 let integrate_mapsTo_bindings sbs maps_to =
@@ -2103,9 +2103,9 @@ let integrate_mapsTo_bindings sbs maps_to =
     let sbs =
       List.fold_left
         (fun ((sbt, sty) as sbs) (x, tx) ->
-           let x = Structs.Sy.Var x in
-           assert (not (Structs.Sy.Map.mem x sbt));
-           let t = Structs.Expr.apply_subst sbs tx in
+           let x = Ast.Sy.Var x in
+           assert (not (Ast.Sy.Map.mem x sbt));
+           let t = Ast.Expr.apply_subst sbs tx in
            let mk, _ = X.make t in
            match P.is_const (poly_of mk) with
            | None ->
@@ -2115,11 +2115,11 @@ let integrate_mapsTo_bindings sbs maps_to =
                  ~function_name:"integrate_maps_to_bindings"
                  "bad semantic trigger %a |-> %a@,\
                   left-hand side is not a constant!"
-                 Structs.Sy.print x Structs.Expr.print tx;
+                 Ast.Sy.print x Ast.Expr.print tx;
              raise Exit
            | Some c ->
-             let tc = mk_const_term (Structs.Expr.type_info t) c in
-             Structs.Sy.Map.add x tc sbt, sty
+             let tc = mk_const_term (Ast.Expr.type_info t) c in
+             Ast.Sy.Map.add x tc sbt, sty
         )sbs maps_to
     in
     Some sbs
@@ -2129,13 +2129,13 @@ let extend_with_domain_substitution =
   (* TODO : add the ability to modify the value of epsilon ? *)
   let eps = Q.div_2exp Q.one 1076 in
   let aux idoms sbt =
-    Structs.Var.Map.fold
+    Ast.Var.Map.fold
       (fun v_hs (lv, uv, ty) sbt ->
-         let s = Util.Hstring.view (Structs.Var.view v_hs).Structs.Var.hs in
+         let s = Util.Hstring.view (Ast.Var.view v_hs).Ast.Var.hs in
          match s.[0] with
          | '?' -> sbt
          | _ ->
-           let lb_var = Structs.Sy.var v_hs in
+           let lb_var = Ast.Sy.var v_hs in
            let lb_val = match lv, uv with
              | None, None -> raise Exit
              | Some (q1, false), Some (q2, false) when Q.equal q1 q2 ->
@@ -2146,7 +2146,7 @@ let extend_with_domain_substitution =
                  "[Error] %a <= %a <= %a@,\
                   Which value should we choose?"
                  Q.print q1
-                 Structs.Sy.print lb_var
+                 Ast.Sy.print lb_var
                  Q.print q2;
                assert (Q.compare q2 q1 >= 0);
                assert false
@@ -2157,7 +2157,7 @@ let extend_with_domain_substitution =
              | None, Some (q, is_strict) -> (* hs < q or hs <= q *)
                mk_const_term ty (if is_strict then Q.sub q eps else q)
            in
-           Structs.Sy.Map.add lb_var lb_val sbt
+           Ast.Sy.Map.add lb_var lb_val sbt
       ) idoms sbt
   in
   fun (sbt, sbty) idoms ->
@@ -2173,8 +2173,8 @@ let terms_linear_dep { linear_dep ; _ } lt =
   | [] | [_] -> true
   | e::l ->
     try
-      let st = Structs.Expr.Map.find e linear_dep in
-      List.for_all (fun t -> Structs.Expr.Set.mem t st) l
+      let st = Ast.Expr.Map.find e linear_dep in
+      List.for_all (fun t -> Ast.Expr.Set.mem t st) l
     with Not_found -> false
 
 exception Sem_match_fails of t
@@ -2185,49 +2185,49 @@ let domain_matching _lem_name tr sbt env uf optimized =
       List.fold_left
         (fun (idoms, maps_to, env, uf) s ->
            match s with
-           | Structs.Expr.MapsTo (x, t) ->
+           | Ast.Expr.MapsTo (x, t) ->
              (* this will be done in the latest phase *)
              idoms, (x, t) :: maps_to, env, uf
 
-           | Structs.Expr.Interval (t, lb, ub) ->
-             let tt = Structs.Expr.apply_subst sbt t in
-             assert (Structs.Expr.is_ground tt);
+           | Ast.Expr.Interval (t, lb, ub) ->
+             let tt = Ast.Expr.apply_subst sbt t in
+             assert (Ast.Expr.is_ground tt);
              let uf, _ = Uf.add uf tt in
              let rr, _ex = Uf.find uf tt in
              let p = poly_of rr in
              let p', c', d = P.normal_form_pos p in
              let env, i' = best_interval_of optimized env p' in
-             let ic = I.point c' (P.type_info p') Structs.Ex.empty in
+             let ic = I.point c' (P.type_info p') Ast.Ex.empty in
              let i = I.scale d (I.add i' ic) in
              begin match I.match_interval lb ub i idoms with
                | None -> raise (Sem_match_fails env)
                | Some idoms -> idoms, maps_to, env, uf
              end
 
-           | Structs.Expr.NotTheoryConst t ->
-             let tt = Structs.Expr.apply_subst sbt t in
+           | Ast.Expr.NotTheoryConst t ->
+             let tt = Ast.Expr.apply_subst sbt t in
              let uf, _ = Uf.add uf tt in
              if X.leaves (fst (Uf.find uf tt)) == [] ||
                 X.leaves (fst (X.make tt)) == [] then
                raise (Sem_match_fails env);
              idoms, maps_to, env, uf
 
-           | Structs.Expr.IsTheoryConst t ->
-             let tt = Structs.Expr.apply_subst sbt t in
+           | Ast.Expr.IsTheoryConst t ->
+             let tt = Ast.Expr.apply_subst sbt t in
              let uf, _ = Uf.add uf tt in
              let r, _ = X.make tt in
              if X.leaves r != [] then raise (Sem_match_fails env);
              idoms, maps_to, env, uf
 
-           | Structs.Expr.LinearDependency (x, y) ->
-             let x = Structs.Expr.apply_subst sbt x in
-             let y = Structs.Expr.apply_subst sbt y in
+           | Ast.Expr.LinearDependency (x, y) ->
+             let x = Ast.Expr.apply_subst sbt x in
+             let y = Ast.Expr.apply_subst sbt y in
              if not (terms_linear_dep env [x;y]) then
                raise (Sem_match_fails env);
              let uf, _ = Uf.add uf x in
              let uf, _ = Uf.add uf y in
              idoms, maps_to, env, uf
-        )(Structs.Var.Map.empty, [], env, uf) tr.Structs.Expr.semantic
+        )(Ast.Var.Map.empty, [], env, uf) tr.Ast.Expr.semantic
     in
     env, Some (idoms, maps_to)
   with Sem_match_fails env -> env, None
@@ -2244,28 +2244,28 @@ let semantic_matching lem_name tr sbt env uf optimized =
 
 let record_this_instance f accepted lorig =
   if Util.Options.get_profiling() then
-    match Structs.Expr.form_view lorig with
-    | Structs.Expr.Lemma { Structs.Expr.name; loc; _ } ->
-      Structs.Profiling.new_instance_of name f loc accepted
-    | Structs.Expr.Unit _ | Structs.Expr.Clause _ | Structs.Expr.Literal _ | Structs.Expr.Skolem _
-    | Structs.Expr.Let _ | Structs.Expr.Iff _ | Structs.Expr.Xor _ | Structs.Expr.Not_a_form -> assert false
+    match Ast.Expr.form_view lorig with
+    | Ast.Expr.Lemma { Ast.Expr.name; loc; _ } ->
+      Ast.Profiling.new_instance_of name f loc accepted
+    | Ast.Expr.Unit _ | Ast.Expr.Clause _ | Ast.Expr.Literal _ | Ast.Expr.Skolem _
+    | Ast.Expr.Let _ | Ast.Expr.Iff _ | Ast.Expr.Xor _ | Ast.Expr.Not_a_form -> assert false
 
 let profile_produced_terms menv lorig nf s trs =
   if Util.Options.get_profiling() then
     let st0 =
-      List.fold_left (fun st t -> Structs.Expr.sub_terms st (Structs.Expr.apply_subst s t))
-        Structs.Expr.Set.empty trs
+      List.fold_left (fun st t -> Ast.Expr.sub_terms st (Ast.Expr.apply_subst s t))
+        Ast.Expr.Set.empty trs
     in
-    let name, loc, _ = match Structs.Expr.form_view lorig with
-      | Structs.Expr.Lemma { Structs.Expr.name; main; loc; _ } -> name, loc, main
-      | Structs.Expr.Unit _ | Structs.Expr.Clause _ | Structs.Expr.Literal _ | Structs.Expr.Skolem _
-      | Structs.Expr.Let _ | Structs.Expr.Iff _ | Structs.Expr.Xor _ | Structs.Expr.Not_a_form -> assert false
+    let name, loc, _ = match Ast.Expr.form_view lorig with
+      | Ast.Expr.Lemma { Ast.Expr.name; main; loc; _ } -> name, loc, main
+      | Ast.Expr.Unit _ | Ast.Expr.Clause _ | Ast.Expr.Literal _ | Ast.Expr.Skolem _
+      | Ast.Expr.Let _ | Ast.Expr.Iff _ | Ast.Expr.Xor _ | Ast.Expr.Not_a_form -> assert false
     in
-    let st1 = Structs.Expr.max_ground_terms_rec_of_form nf in
-    let diff = Structs.Expr.Set.diff st1 st0 in
+    let st1 = Ast.Expr.max_ground_terms_rec_of_form nf in
+    let diff = Ast.Expr.Set.diff st1 st0 in
     let info, _ = EM.terms_info menv in
-    let _new = Structs.Expr.Set.filter (fun t -> not (Structs.Expr.Map.mem t info)) diff in
-    Structs.Profiling.register_produced_terms name loc st0 st1 diff _new
+    let _new = Ast.Expr.Set.filter (fun t -> not (Ast.Expr.Map.mem t info)) diff in
+    Ast.Profiling.register_produced_terms name loc st0 st1 diff _new
 
 let new_facts_for_axiom
     ~do_syntactic_matching menv uf selector optimized substs accu =
@@ -2285,18 +2285,18 @@ let new_facts_for_axiom
                   Here, we'll try to extends subst 's' to conver variables
                   appearing in semantic triggers
                 *)
-          let lem_name = Structs.Expr.name_of_lemma orig in
+          let lem_name = Ast.Expr.name_of_lemma orig in
           let s = sbs, sty in
           if get_debug_fpa () >= 2 then
             Util.Printer.print_dbg ~flushed:false
               ~module_name:"IntervalCalculus"
               ~function_name:"new_facts_for_axiom"
               "try to extend synt sbt %a of ax %a@ "
-              (Structs.Sy.Map.print Structs.Expr.print) sbs Structs.Expr.print orig;
-          match tr.Structs.Expr.guard with
+              (Ast.Sy.Map.print Ast.Expr.print) sbs Ast.Expr.print orig;
+          match tr.Ast.Expr.guard with
           | Some _ -> assert false (*guards not supported for TH axioms*)
 
-          | None when tr.Structs.Expr.semantic == [] && not do_syntactic_matching ->
+          | None when tr.Ast.Expr.semantic == [] && not do_syntactic_matching ->
             (* pure syntactic insts already generated *)
             env, acc
 
@@ -2320,21 +2320,21 @@ let new_facts_for_axiom
                 Util.Printer.print_dbg
                   ~header:false
                   "semantic matching succeeded:@ %a"
-                  (Structs.Sy.Map.print Structs.Expr.print) (fst sbs);
-              let nf = Structs.Expr.apply_subst sbs f in
+                  (Ast.Sy.Map.print Ast.Expr.print) (fst sbs);
+              let nf = Ast.Expr.apply_subst sbs f in
               (* incrementality/push. Although it's not supported for
                  theories *)
-              let nf = Structs.Expr.mk_imp trigger_increm_guard nf 0 in
+              let nf = Ast.Expr.mk_imp trigger_increm_guard nf 0 in
               let accepted = selector nf orig in
               record_this_instance nf accepted lorig;
               if accepted then begin
                 let hyp =
-                  List.map (fun f -> Structs.Expr.apply_subst sbs f) tr.Structs.Expr.hyp
+                  List.map (fun f -> Ast.Expr.apply_subst sbs f) tr.Ast.Expr.hyp
                 in
                 let p =
-                  { Structs.Expr.ff = nf;
-                    origin_name = Structs.Expr.name_of_lemma lorig;
-                    trigger_depth = tr.Structs.Expr.t_depth;
+                  { Ast.Expr.ff = nf;
+                    origin_name = Ast.Expr.name_of_lemma lorig;
+                    trigger_depth = tr.Ast.Expr.t_depth;
                     gdist = -1;
                     hdist = -1;
                     nb_reductions = 0;
@@ -2348,12 +2348,12 @@ let new_facts_for_axiom
                     theory_elim = false;
                   }
                 in
-                profile_produced_terms menv lorig nf s tr.Structs.Expr.content;
+                profile_produced_terms menv lorig nf s tr.Ast.Expr.content;
                 let dep =
                   if not (Util.Options.get_unsat_core() || Util.Options.get_profiling())
                   then
                     dep
-                  else Structs.Ex.union dep (Structs.Ex.singleton (Structs.Ex.Dep lorig))
+                  else Ast.Ex.union dep (Ast.Ex.singleton (Ast.Ex.Dep lorig))
                 in
                 env, (hyp, p, dep) :: acc
               end
@@ -2374,10 +2374,10 @@ let syntactic_matching menv env uf _selector =
     }
   in
   let synt_match =
-    Structs.Expr.Map.fold
+    Ast.Expr.Map.fold
       (fun f (_th_ax, dep) accu ->
          (* currently, No diff between propagators and case-split axs *)
-         let forms = Structs.Expr.Map.singleton f (Structs.Expr.vrai, 0 (*0 = age *), dep) in
+         let forms = Ast.Expr.Map.singleton f (Ast.Expr.vrai, 0 (*0 = age *), dep) in
          let menv = EM.add_triggers mconf menv forms in
          let res = EM.query mconf menv uf in
          if get_debug_fpa () >= 2 then begin
@@ -2387,7 +2387,7 @@ let syntactic_matching menv env uf _selector =
              ~module_name:"IntervalCalculus"
              ~function_name:"syntactic_matching"
              "syntactic matching of Ax %s: got %d substs"
-             (Structs.Expr.name_of_lemma f) !cpt
+             (Ast.Expr.name_of_lemma f) !cpt
          end;
          res:: accu
       )env.th_axioms []
@@ -2425,66 +2425,66 @@ let separate_semantic_triggers =
   let is_theory_const = Util.Hstring.make "is_theory_constant" in
   let linear_dep = Util.Hstring.make "linear_dependency" in
   fun th_form ->
-    let { Structs.Expr.user_trs; _ } as q =
-      match Structs.Expr.form_view th_form with
-      | Structs.Expr.Lemma q -> q
-      | Structs.Expr.Unit _ | Structs.Expr.Clause _ | Structs.Expr.Literal _ | Structs.Expr.Skolem _
-      | Structs.Expr.Let _ | Structs.Expr.Iff _ | Structs.Expr.Xor _ | Structs.Expr.Not_a_form -> assert false
+    let { Ast.Expr.user_trs; _ } as q =
+      match Ast.Expr.form_view th_form with
+      | Ast.Expr.Lemma q -> q
+      | Ast.Expr.Unit _ | Ast.Expr.Clause _ | Ast.Expr.Literal _ | Ast.Expr.Skolem _
+      | Ast.Expr.Let _ | Ast.Expr.Iff _ | Ast.Expr.Xor _ | Ast.Expr.Not_a_form -> assert false
     in
     let r_triggers =
       List.rev_map
         (fun tr ->
            (* because sem-triggers will be set by theories *)
-           assert (tr.Structs.Expr.semantic == []);
+           assert (tr.Ast.Expr.semantic == []);
            let syn, sem =
              List.fold_left
                (fun (syn, sem) t ->
-                  match Structs.Expr.term_view t with
-                  | Structs.Expr.Not_a_term _ -> assert false
-                  | Structs.Expr.Term { Structs.Expr.f = Structs.Sy.In (lb, ub); xs = [x]; _ } ->
-                    syn, (Structs.Expr.Interval (x, lb, ub)) :: sem
+                  match Ast.Expr.term_view t with
+                  | Ast.Expr.Not_a_term _ -> assert false
+                  | Ast.Expr.Term { Ast.Expr.f = Ast.Sy.In (lb, ub); xs = [x]; _ } ->
+                    syn, (Ast.Expr.Interval (x, lb, ub)) :: sem
 
-                  | Structs.Expr.Term { Structs.Expr.f = Structs.Sy.MapsTo x; xs = [t]; _ } ->
-                    syn, (Structs.Expr.MapsTo (x, t)) :: sem
+                  | Ast.Expr.Term { Ast.Expr.f = Ast.Sy.MapsTo x; xs = [t]; _ } ->
+                    syn, (Ast.Expr.MapsTo (x, t)) :: sem
 
-                  | Structs.Expr.Term { Structs.Expr.f = Structs.Sy.Name (hs,_); xs = [x]; _ }
+                  | Ast.Expr.Term { Ast.Expr.f = Ast.Sy.Name (hs,_); xs = [x]; _ }
                     when Util.Hstring.equal hs not_theory_const ->
-                    syn, (Structs.Expr.NotTheoryConst x) :: sem
+                    syn, (Ast.Expr.NotTheoryConst x) :: sem
 
-                  | Structs.Expr.Term { Structs.Expr.f = Structs.Sy.Name (hs,_); xs = [x]; _ }
+                  | Ast.Expr.Term { Ast.Expr.f = Ast.Sy.Name (hs,_); xs = [x]; _ }
                     when Util.Hstring.equal hs is_theory_const ->
-                    syn, (Structs.Expr.IsTheoryConst x) :: sem
+                    syn, (Ast.Expr.IsTheoryConst x) :: sem
 
-                  | Structs.Expr.Term { Structs.Expr.f = Structs.Sy.Name (hs,_); xs = [x;y]; _ }
+                  | Ast.Expr.Term { Ast.Expr.f = Ast.Sy.Name (hs,_); xs = [x;y]; _ }
                     when Util.Hstring.equal hs linear_dep ->
-                    syn, (Structs.Expr.LinearDependency(x,y)) :: sem
+                    syn, (Ast.Expr.LinearDependency(x,y)) :: sem
 
                   | _ -> t::syn, sem
-               )([], []) (List.rev tr.Structs.Expr.content)
+               )([], []) (List.rev tr.Ast.Expr.content)
            in
-           {tr with Structs.Expr.content = syn; semantic = sem}
+           {tr with Ast.Expr.content = syn; semantic = sem}
         )user_trs
     in
-    Structs.Expr.mk_forall
-      q.Structs.Expr.name q.Structs.Expr.loc q.Structs.Expr.binders (List.rev r_triggers) q.Structs.Expr.main
-      (Structs.Expr.id th_form) ~toplevel:true ~decl_kind:Structs.Expr.Dtheory
+    Ast.Expr.mk_forall
+      q.Ast.Expr.name q.Ast.Expr.loc q.Ast.Expr.binders (List.rev r_triggers) q.Ast.Expr.main
+      (Ast.Expr.id th_form) ~toplevel:true ~decl_kind:Ast.Expr.Dtheory
 
 let assume_th_elt t th_elt dep =
-  let { Structs.Expr.axiom_kind; ax_form; th_name; extends; _ } = th_elt in
+  let { Ast.Expr.axiom_kind; ax_form; th_name; extends; _ } = th_elt in
   let kd_str =
     if axiom_kind == Util.Util.Propagator then "Th propagator" else "Th CS"
   in
   match extends with
   | Util.Util.NIA | Util.Util.NRA | Util.Util.FPA ->
     let th_form = separate_semantic_triggers ax_form in
-    let th_elt = {th_elt with Structs.Expr.ax_form} in
+    let th_elt = {th_elt with Ast.Expr.ax_form} in
     if get_debug_fpa () >= 2 then
       Util.Printer.print_dbg
         ~module_name:"IntervalCalculus" ~function_name:"assume_th_elt"
         "[Theory %s][%s] %a"
-        th_name kd_str Structs.Expr.print th_form;
-    assert (not (Structs.Expr.Map.mem th_form t.th_axioms));
-    {t with th_axioms = Structs.Expr.Map.add th_form (th_elt, dep) t.th_axioms}
+        th_name kd_str Ast.Expr.print th_form;
+    assert (not (Ast.Expr.Map.mem th_form t.th_axioms));
+    {t with th_axioms = Ast.Expr.Map.add th_form (th_elt, dep) t.th_axioms}
 
   | _ -> t
 

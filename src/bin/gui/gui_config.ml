@@ -54,16 +54,16 @@ let load () =
   let rec read () =
     try
       (match String.split_on_char ':' (input_line ic) with
-      | [ "window_width"; value ] -> window_width := int_of_string value
-      | [ "window_height"; value ] -> window_height := int_of_string value
-      | [ "indent_size"; value ] -> indent_size := int_of_string value
-      | [ "max_indent"; value ] -> max_indent := int_of_string value
-      | [ "max_indents"; value ] -> max_indents := int_of_string value
-      | [ "font_family"; value ] -> font_family := value
-      | [ "font_size"; value ] -> font_size := int_of_string value
-      | [ "style"; value ] -> style := value
-      | [ "wrap"; value ] -> wrap := bool_of_string value
-      | _ -> ());
+       | [ "window_width"; value ] -> window_width := int_of_string value
+       | [ "window_height"; value ] -> window_height := int_of_string value
+       | [ "indent_size"; value ] -> indent_size := int_of_string value
+       | [ "max_indent"; value ] -> max_indent := int_of_string value
+       | [ "max_indents"; value ] -> max_indents := int_of_string value
+       | [ "font_family"; value ] -> font_family := value
+       | [ "font_size"; value ] -> font_size := int_of_string value
+       | [ "style"; value ] -> style := value
+       | [ "wrap"; value ] -> wrap := bool_of_string value
+       | _ -> ());
       read ()
     with End_of_file -> ()
   in

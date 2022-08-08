@@ -27,19 +27,19 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 
 module type S = sig
   type t
 
   exception Sat of t
-  exception Unsat of Structs.Ex.t
+  exception Unsat of Ast.Ex.t
   exception I_dont_know of t
 
   val empty : unit -> t
   (** the empty sat-solver context *)
 
-  val empty_with_inst : (Structs.Expr.t -> bool) -> t
+  val empty_with_inst : (Ast.Expr.t -> bool) -> t
 
   val push : t -> int -> t
   (** [push env n] add n new assertion levels.
@@ -53,19 +53,19 @@ module type S = sig
       Internally, the guard g introduced in the push correponsding to this pop
       will be propagated to false (at level 0) *)
 
-  val assume : t -> Structs.Expr.gformula -> Structs.Ex.t -> t
+  val assume : t -> Ast.Expr.gformula -> Ast.Ex.t -> t
   (** [assume env f] assume a new formula [f] in [env]. Raises Unsat if
       [f] is unsatisfiable in [env] *)
 
-  val assume_th_elt : t -> Structs.Expr.th_elt -> Structs.Ex.t -> t
+  val assume_th_elt : t -> Ast.Expr.th_elt -> Ast.Ex.t -> t
   (** [assume env f exp] assume a new formula [f] with the explanation [exp]
       in the theories environment of [env]. *)
 
   val pred_def :
-    t -> Structs.Expr.t -> string -> Structs.Ex.t -> Util.Loc.t -> t
+    t -> Ast.Expr.t -> string -> Ast.Ex.t -> Util.Loc.t -> t
   (** [pred_def env f] assume a new predicate definition [f] in [env]. *)
 
-  val unsat : t -> Structs.Expr.gformula -> Structs.Ex.t
+  val unsat : t -> Ast.Expr.gformula -> Ast.Ex.t
   (** [unsat env f size] checks the unsatisfiability of [f] in
       [env]. Raises I_dont_know when the proof tree's height reaches
       [size]. Raises Sat if [f] is satisfiable in [env] *)

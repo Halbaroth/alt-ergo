@@ -40,22 +40,22 @@ let load verbose p msg =
     loadfile p;
     if verbose then Printer.print_dbg ~header:false "Success!"
   with Error m1 -> (
-    if verbose then (
-      Printer.print_dbg ~header:false "@, Loading the %s in plugin %S failed!"
-        msg p;
-      Printer.print_err ">> Failure message: %s" (error_message m1));
-    let pp = Format.sprintf "%s/%s" Config.pluginsdir p in
-    if verbose then
-      Printer.print_dbg ~flushed:false ~module_name:"Dynlink"
-        "Loading the %s in %S... with prefix %S..." msg p Config.pluginsdir;
-    try
-      loadfile pp;
-      if verbose then Printer.print_dbg ~header:false "Success!"
-    with Error m2 ->
-      if not verbose then
-        Printer.print_err
-          "@, Loading the %s in plugin %S failed!@,>> Failure message: %s" msg p
-          (error_message m1))
+      if verbose then (
+        Printer.print_dbg ~header:false "@, Loading the %s in plugin %S failed!"
+          msg p;
+        Printer.print_err ">> Failure message: %s" (error_message m1));
+      let pp = Format.sprintf "%s/%s" Config.pluginsdir p in
+      if verbose then
+        Printer.print_dbg ~flushed:false ~module_name:"Dynlink"
+          "Loading the %s in %S... with prefix %S..." msg p Config.pluginsdir;
+      try
+        loadfile pp;
+        if verbose then Printer.print_dbg ~header:false "Success!"
+      with Error m2 ->
+        if not verbose then
+          Printer.print_err
+            "@, Loading the %s in plugin %S failed!@,>> Failure message: %s" msg p
+            (error_message m1))
 (*Errors.run_error
   (Dynlink_error
      (Format.sprintf

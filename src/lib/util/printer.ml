@@ -125,23 +125,23 @@ let pp_smt clean_print =
   in
   sprintf
     (if smt && !clean_print then (
-     clean_print := false;
-     "@,; ")
-    else "")
+        clean_print := false;
+        "@,; ")
+     else "")
 
 let pp_std_smt () =
   match (!clean_dbg_print, !clean_wrn_print) with
   | true, true -> ()
   | false, true ->
-      clean_dbg_print := true;
-      fprintf (Options.get_fmt_std ()) "@,"
+    clean_dbg_print := true;
+    fprintf (Options.get_fmt_std ()) "@,"
   | true, false ->
-      clean_wrn_print := true;
-      fprintf (Options.get_fmt_std ()) "@,"
+    clean_wrn_print := true;
+    fprintf (Options.get_fmt_std ()) "@,"
   | false, false ->
-      clean_dbg_print := true;
-      clean_wrn_print := true;
-      fprintf (Options.get_fmt_std ()) "@,"
+    clean_dbg_print := true;
+    clean_wrn_print := true;
+    fprintf (Options.get_fmt_std ()) "@,"
 
 let add_smt formatter =
   let old_fs = Format_shims.pp_get_formatter_out_functions formatter () in
@@ -170,8 +170,8 @@ let force_new_line formatter =
 let init_output_format () =
   match Options.get_output_format () with
   | Smtlib2 ->
-      add_smt (Options.get_fmt_wrn ());
-      add_smt (Options.get_fmt_dbg ())
+    add_smt (Options.get_fmt_wrn ());
+    add_smt (Options.get_fmt_dbg ())
   | Native | Why3 | Unknown _ -> ()
 
 (************** Printers *************)
@@ -257,7 +257,7 @@ let print_status_loc fmt loc =
   match loc with
   | None -> ()
   | Some loc ->
-      if Options.get_answers_with_locs () then fprintf fmt "%a " Loc.report loc
+    if Options.get_answers_with_locs () then fprintf fmt "%a " Loc.report loc
 
 let print_status_value fmt (v, color) =
   if Options.get_output_with_colors () then

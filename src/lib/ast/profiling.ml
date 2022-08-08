@@ -467,7 +467,7 @@ let print_initial_info fmt =
     in
     List.iter
       (fun (id, descr, _, _, _) ->
-        fprintf fmt "%s : %s@." (string_resize id max) descr)
+         fprintf fmt "%s : %s@." (string_resize id max) descr)
       columns)
 
 let stats_limit, timers_limit =
@@ -481,12 +481,12 @@ let stats_limit, timers_limit =
   let tmp_t = ref "" in
   List.iter
     (fun (_, _, sz, opt, _) ->
-      match opt with
-      | Some true -> aux tmp_s sz
-      | Some false -> aux tmp_t sz
-      | _ ->
-          aux tmp_s sz;
-          aux tmp_t sz)
+       match opt with
+       | Some true -> aux tmp_s sz
+       | Some false -> aux tmp_t sz
+       | _ ->
+         aux tmp_s sz;
+         aux tmp_t sz)
     columns;
   (!tmp_s ^ "|", !tmp_t ^ "|")
 
@@ -499,9 +499,9 @@ let print_header header fmt =
     fprintf fmt "%s@." (if pp_stats then stats_limit else timers_limit);
     List.iter
       (fun (id, _, sz, opt, _) ->
-        match opt with
-        | Some b when b != pp_stats -> ()
-        | _ -> fprintf fmt "|%s" (string_resize id sz))
+         match opt with
+         | Some b when b != pp_stats -> ()
+         | _ -> fprintf fmt "|%s" (string_resize id sz))
       columns;
     fprintf fmt "|@.";
     fprintf fmt "%s@." (if pp_stats then stats_limit else timers_limit));
@@ -512,9 +512,9 @@ let print_stats header steps fmt timers =
   let gtime = Util.Options.Time.value () in
   List.iter
     (fun (_, _, sz, opt, func) ->
-      match opt with
-      | Some false -> ()
-      | _ -> fprintf fmt "|%s" (func steps gtime timers sz))
+       match opt with
+       | Some false -> ()
+       | _ -> fprintf fmt "|%s" (func steps gtime timers sz))
     columns;
   fprintf fmt "|@."
 
@@ -524,9 +524,9 @@ let print_timers header steps fmt timers =
   let gtime = Util.Options.Time.value () in
   List.iter
     (fun (_, _, sz, opt, func) ->
-      match opt with
-      | Some true -> ()
-      | _ -> fprintf fmt "|%s" (func steps gtime timers sz))
+       match opt with
+       | Some true -> ()
+       | _ -> fprintf fmt "|%s" (func steps gtime timers sz))
     columns;
   fprintf fmt "|@."
 
@@ -561,38 +561,38 @@ let print_instances_generation forced _steps fmt _timers =
     let insts =
       MS.fold
         (fun name ii acc ->
-          let f1 = float_of_int ii.kept in
-          let f2 = float_of_int ii.ignored in
-          let ratio = f1 /. (f1 +. f2) in
-          let all_card = Expr.Set.cardinal ii.all_insts in
-          (name, ii, all_card, ratio) :: acc)
+           let f1 = float_of_int ii.kept in
+           let f2 = float_of_int ii.ignored in
+           let ratio = f1 /. (f1 +. f2) in
+           let all_card = Expr.Set.cardinal ii.all_insts in
+           (name, ii, all_card, ratio) :: acc)
         !(state.instances_map) []
     in
     let insts =
       List.fast_sort
         (fun (_, i1, c1, _) (_, i2, c2, _) ->
-          (i1.decided - i2.decided) @@ (c1 - c2) @@ (i1.kept - i2.kept)
-          @@ (i1.confl - i2.confl) @@ (i1.ignored - i2.ignored)
-          @@ (Expr.Set.cardinal i1._new - Expr.Set.cardinal i2._new))
+           (i1.decided - i2.decided) @@ (c1 - c2) @@ (i1.kept - i2.kept)
+           @@ (i1.confl - i2.confl) @@ (i1.ignored - i2.ignored)
+           @@ (Expr.Set.cardinal i1._new - Expr.Set.cardinal i2._new))
         insts
     in
     List.iter
       (fun (name, i, card, r) ->
-        fprintf fmt "ratio kept/all: %s| " (float_resize r 8);
-        fprintf fmt "<> insts: %s| " (int_resize card 5);
-        fprintf fmt "kept: %s| " (int_resize i.kept 7);
-        fprintf fmt "ignored: %s| " (int_resize i.ignored 7);
-        fprintf fmt "decided: %s| " (int_resize i.decided 4);
-        fprintf fmt "conflicted: %s| " (int_resize i.confl 4);
-        fprintf fmt "consumed: %s| "
-          (int_resize (Expr.Set.cardinal i.consumed) 5);
-        fprintf fmt "produced: %s| "
-          (int_resize (Expr.Set.cardinal i.produced) 5);
-        fprintf fmt "new: %s|| " (int_resize (Expr.Set.cardinal i._new) 5);
-        fprintf fmt "%s" (string_resize name 30);
-        (*fprintf fmt "%s | " (string_resize name 30);
-          fprintf fmt "%a@." report3 i.loc (* too long *) *)
-        fprintf fmt "@.")
+         fprintf fmt "ratio kept/all: %s| " (float_resize r 8);
+         fprintf fmt "<> insts: %s| " (int_resize card 5);
+         fprintf fmt "kept: %s| " (int_resize i.kept 7);
+         fprintf fmt "ignored: %s| " (int_resize i.ignored 7);
+         fprintf fmt "decided: %s| " (int_resize i.decided 4);
+         fprintf fmt "conflicted: %s| " (int_resize i.confl 4);
+         fprintf fmt "consumed: %s| "
+           (int_resize (Expr.Set.cardinal i.consumed) 5);
+         fprintf fmt "produced: %s| "
+           (int_resize (Expr.Set.cardinal i.produced) 5);
+         fprintf fmt "new: %s|| " (int_resize (Expr.Set.cardinal i._new) 5);
+         fprintf fmt "%s" (string_resize name 30);
+         (*fprintf fmt "%s | " (string_resize name 30);
+           fprintf fmt "%a@." report3 i.loc (* too long *) *)
+         fprintf fmt "@.")
       insts;
     (*if forced then
       let () = fprintf fmt "digraph v{@." in
@@ -644,10 +644,10 @@ let print_call_tree _forced _steps fmt timers =
   let stack = Util.Timers.get_stack timers in
   List.iter
     (fun (k, f, id) ->
-      fprintf fmt "(%s, %s, %s) --> "
-        (string_resize (Util.Timers.string_of_ty_module k) 5)
-        (string_resize (Util.Timers.string_of_ty_function f) 10)
-        (int_resize id 7))
+       fprintf fmt "(%s, %s, %s) --> "
+         (string_resize (Util.Timers.string_of_ty_module k) 5)
+         (string_resize (Util.Timers.string_of_ty_function f) 10)
+         (int_resize id 7))
     (List.rev stack);
   let m, f, id = Util.Timers.current_timer timers in
   fprintf fmt "(%s, %s, %s)@."
@@ -680,9 +680,9 @@ let line_of_module arr fmt f =
   let cpt = ref 0. in
   List.iter
     (fun m ->
-      let v = arr.(Util.Timers.mtag m).(Util.Timers.ftag f) in
-      cpt := !cpt +. v;
-      fprintf fmt "| %a  " float_print v)
+       let v = arr.(Util.Timers.mtag m).(Util.Timers.ftag f) in
+       cpt := !cpt +. v;
+       fprintf fmt "| %a  " float_print v)
     Util.Timers.all_modules;
   fprintf fmt "| %a        |@." float_print !cpt
 
@@ -704,7 +704,7 @@ let timers_table forced fmt timers =
   fprintf fmt "              ";
   List.iter
     (fun f ->
-      fprintf fmt "| %s" (string_resize (Util.Timers.string_of_ty_module f) 9))
+       fprintf fmt "| %s" (string_resize (Util.Timers.string_of_ty_module f) 9))
     Util.Timers.all_modules;
   fprintf fmt "|@.";
   for _ = 0 to 206 do

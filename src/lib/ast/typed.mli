@@ -93,10 +93,10 @@ and 'a tt_desc =
   | TTprefix of Sy.t * 'a atterm  (** Prefix symbol application *)
   | TTapp of Sy.t * 'a atterm list  (** Arbitrary symbol application *)
   | TTmapsTo of Var.t * 'a atterm
-      (** Used in semantic triggers for floating point arithmetic.
+  (** Used in semantic triggers for floating point arithmetic.
       See sources/preludes/fpa-theory-2017-01-04-16h00.ae *)
   | TTinInterval of 'a atterm * Sy.bound * Sy.bound
-      (** Represent floating point intervals (used for triggers in Floating
+  (** Represent floating point intervals (used for triggers in Floating
       point arithmetic theory).
       [TTinInterval (lower, l_strict, t, upper, u_strict)] is a constraint
       stating that term [t] is in the interval [lower, upper],
@@ -105,26 +105,26 @@ and 'a tt_desc =
   | TTget of 'a atterm * 'a atterm  (** Get operation on arrays *)
   | TTset of 'a atterm * 'a atterm * 'a atterm  (** Set operation on arrays *)
   | TTextract of 'a atterm * 'a atterm * 'a atterm
-      (** Extract a sub-bitvector *)
+  (** Extract a sub-bitvector *)
   | TTconcat of 'a atterm * 'a atterm
   (* Concatenation of bitvectors *)
   | TTdot of 'a atterm * Util.Hstring.t  (** Field access on structs/records *)
   | TTrecord of (Util.Hstring.t * 'a atterm) list  (** Record creation. *)
   | TTlet of (Sy.t * 'a atterm) list * 'a atterm
-      (** Let-bindings. Accept a list of mutually recursive le-bindings. *)
+  (** Let-bindings. Accept a list of mutually recursive le-bindings. *)
   (* TODO: check that mutually recursive let-bindings are allowed ? *)
   | TTnamed of Util.Hstring.t * 'a atterm  (** Attach a label to a term. *)
   | TTite of 'a atform * 'a atterm * 'a atterm
-      (** Conditional branching, of the form
+  (** Conditional branching, of the form
       [TTite (condition, then_branch, else_branch)]. *)
   | TTproject of bool * 'a atterm * Util.Hstring.t
-      (** Field (conditional) access on ADTs. The boolean is true when the
+  (** Field (conditional) access on ADTs. The boolean is true when the
       projection is 'guarded' and cannot be simplified (because
       functions are total) *)
   | TTmatch of 'a atterm * (pattern * 'a atterm) list
-      (** pattern matching on ADTs *)
+  (** pattern matching on ADTs *)
   | TTform of 'a atform
-      (** formulas inside terms: simple way to add them without making a
+  (** formulas inside terms: simple way to add them without making a
       lot of changes *)
 (* TODO: replace tuples by records (possible inline records to
          avoid polluting the namespace ?) with explicit field names. *)
@@ -137,34 +137,34 @@ and 'a tatom =
   | TAfalse  (** The [false] atom *)
   | TAeq of 'a atterm list  (** Equality of a set of typed terms. *)
   | TAdistinct of 'a atterm list
-      (** Disequality. All terms in the set are pairwise distinct. *)
+  (** Disequality. All terms in the set are pairwise distinct. *)
   | TAneq of 'a atterm list
-      (** Equality negation: at least two elements in the list
+  (** Equality negation: at least two elements in the list
       are not equal. *)
   | TAle of 'a atterm list
-      (** Arithmetic ordering: lesser or equal. Chained on lists of terms. *)
+  (** Arithmetic ordering: lesser or equal. Chained on lists of terms. *)
   | TAlt of 'a atterm list
-      (** Strict arithmetic ordering: less than. Chained on lists of terms. *)
+  (** Strict arithmetic ordering: less than. Chained on lists of terms. *)
   | TApred of 'a atterm * bool
-      (** Term predicate, negated if the boolean is true.
+  (** Term predicate, negated if the boolean is true.
       [TApred (t, negated)] is satisfied iff [t <=> not negated] *)
   | TTisConstr of 'a atterm * Util.Hstring.t
-      (** Test if the given term's head symbol is identitical to the
+  (** Test if the given term's head symbol is identitical to the
       provided ADT consturctor *)
 
 (** Typed atoms. *)
 
 and 'a quant_form = {
   qf_bvars : (Sy.t * Ty.t) list;
-      (** Variables that are quantified by this formula. *)
+  (** Variables that are quantified by this formula. *)
   qf_upvars : (Sy.t * Ty.t) list;
-      (** Free variables that occur in the formula. *)
+  (** Free variables that occur in the formula. *)
   qf_triggers : ('a atterm list * bool) list;
-      (** Triggers associated wiht the formula.
+  (** Triggers associated wiht the formula.
       For each trigger, the boolean specifies whether the trigger
       was given in the input file (compared to inferred). *)
   qf_hyp : 'a atform list;
-      (** Hypotheses of axioms with semantic triggers in FPA theory. Typically,
+  (** Hypotheses of axioms with semantic triggers in FPA theory. Typically,
       these hypotheses reduce to TRUE after instantiation *)
   qf_form : 'a atform;  (** The quantified formula. *)
 }
@@ -179,11 +179,11 @@ and 'a tform =
   | TFforall of 'a quant_form  (** Universal quantification. *)
   | TFexists of 'a quant_form  (** Existencial quantification. *)
   | TFlet of (Sy.t * Ty.t) list * (Sy.t * 'a tlet_kind) list * 'a atform
-      (** Let binding.
+  (** Let binding.
       TODO: what is in the first list ? *)
   | TFnamed of Util.Hstring.t * 'a atform  (** Attach a name to a formula. *)
   | TFmatch of 'a atterm * (pattern * 'a atform) list
-      (** pattern matching on ADTs *)
+  (** pattern matching on ADTs *)
 
 (** Typed formulas. *)
 
@@ -206,7 +206,7 @@ type 'a rwt_rule = {
 (** Goal sort. Used in typed declarations. *)
 type goal_sort =
   | Cut
-      (** Introduce a cut in a goal. Once the cut proved,
+  (** Introduce a cut in a goal. Once the cut proved,
       it's added as a hypothesis. *)
   | Check  (** Check if some intermediate assertion is prouvable *)
   | Thm  (** The goal to be proved *)
@@ -236,34 +236,34 @@ type 'a atdecl = ('a tdecl, 'a) annoted
 and 'a tdecl =
   | TTheory of
       Util.Loc.t * string * Util.Util.theories_extensions * 'a atdecl list
-      (** Theory declarations. The list of declarations in a Theory may
+  (** Theory declarations. The list of declarations in a Theory may
       only contain Axioms. *)
   | TAxiom of Util.Loc.t * string * Util.Util.axiom_kind * 'a atform
-      (** New axiom that can be used in proofs. *)
+  (** New axiom that can be used in proofs. *)
   | TRewriting of Util.Loc.t * string * 'a atterm rwt_rule list
-      (** New rewrite rule that can be used. *)
+  (** New rewrite rule that can be used. *)
   | TGoal of Util.Loc.t * goal_sort * string * 'a atform
-      (** New goal to prove. *)
+  (** New goal to prove. *)
   | TLogic of Util.Loc.t * string list * tlogic_type
-      (** Function (or predicate) type declaration. *)
+  (** Function (or predicate) type declaration. *)
   | TPredicate_def of Util.Loc.t * string * (string * Ty.t) list * 'a atform
-      (** Predicate definition.
+  (** Predicate definition.
       [TPredicate_def (loc, name, vars, body)] defines a predicate
       [fun vars => body]. *)
   | TFunction_def of
       Util.Loc.t * string * (string * Ty.t) list * Ty.t * 'a atform
-      (** Predicate definition.
+  (** Predicate definition.
       [TPredicate_def (loc, name, vars, ret, body)] defines a function
       [fun vars => body], where body has type [ret]. *)
   | TTypeDecl of Util.Loc.t * Ty.t
-      (** New type declaration. [TTypeDecl (loc, vars, t, body)]
+  (** New type declaration. [TTypeDecl (loc, vars, t, body)]
       declares a type [t], with parameters [vars], and with
       contents [body]. This new type may either be abstract,
       a record type, or an enumeration. *)
   | TPush of Util.Loc.t * int
-      (** [push (loc,n)] pushs n new assertions levels onto the assertion stack *)
+  (** [push (loc,n)] pushs n new assertions levels onto the assertion stack *)
   | TPop of Util.Loc.t * int
-      (** [pop (loc,n)] pops n assertions levels from the assertion stack *)
+  (** [pop (loc,n)] pops n assertions levels from the assertion stack *)
 
 (** Typed declarations. *)
 (* TODO: wrap this in a record to factorize away

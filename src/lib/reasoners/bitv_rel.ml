@@ -27,7 +27,7 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 
 type t = unit
 
@@ -37,10 +37,10 @@ let query _ _ _ = None
 let case_split _ _ ~for_model:_ = []
 let add env _ _ _ = (env, [])
 let print_model _ _ _ = ()
-let new_terms _ = Structs.Expr.Set.empty
+let new_terms _ = Ast.Expr.Set.empty
 let instantiate ~do_syntactic_matching:_ _ env _ _ = (env, [])
 
 let assume_th_elt t th_elt _ =
-  match th_elt.Structs.Expr.extends with
+  match th_elt.Ast.Expr.extends with
   | Util.Util.Bitv -> failwith "This Theory does not support theories extension"
   | _ -> t

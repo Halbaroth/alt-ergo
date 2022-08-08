@@ -27,7 +27,7 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 
 (* We put an ml file for the module type, to avoid issues when
    building the lib *)
@@ -36,12 +36,12 @@ module type S = sig
   type t
 
   exception Sat of t
-  exception Unsat of Structs.Ex.t
+  exception Unsat of Ast.Ex.t
   exception I_dont_know of t
 
   (* the empty sat-solver context *)
   val empty : unit -> t
-  val empty_with_inst : (Structs.Expr.t -> bool) -> t
+  val empty_with_inst : (Ast.Expr.t -> bool) -> t
 
   val push : t -> int -> t
   (** [push env n] add n new assertion levels.
@@ -57,17 +57,17 @@ module type S = sig
 
   (* [assume env f] assume a new formula [f] in [env]. Raises Unsat if
      [f] is unsatisfiable in [env] *)
-  val assume : t -> Structs.Expr.gformula -> Structs.Ex.t -> t
-  val assume_th_elt : t -> Structs.Expr.th_elt -> Structs.Ex.t -> t
+  val assume : t -> Ast.Expr.gformula -> Ast.Ex.t -> t
+  val assume_th_elt : t -> Ast.Expr.th_elt -> Ast.Ex.t -> t
 
   (* [pred_def env f] assume a new predicate definition [f] in [env]. *)
   val pred_def :
-    t -> Structs.Expr.t -> string -> Structs.Ex.t -> Util.Loc.t -> t
+    t -> Ast.Expr.t -> string -> Ast.Ex.t -> Util.Loc.t -> t
 
   (* [unsat env f size] checks the unsatisfiability of [f] in
      [env]. Raises I_dont_know when the proof tree's height reaches
      [size]. Raises Sat if [f] is satisfiable in [env] *)
-  val unsat : t -> Structs.Expr.gformula -> Structs.Ex.t
+  val unsat : t -> Ast.Expr.gformula -> Ast.Ex.t
   val print_model : header:bool -> Format.formatter -> t -> unit
   val reset_refs : unit -> unit
 end

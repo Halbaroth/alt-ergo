@@ -63,7 +63,7 @@ type pattern =
       name : Util.Hstring.t;
       args : (Var.t * Util.Hstring.t * Ty.t) list;
     }
-      (** A pattern case which is a constructor. [name] is the name of
+  (** A pattern case which is a constructor. [name] is the name of
       constructor. [args] contains the variables bound by this pattern
       with their correponsing destructors and types *)
   | Var of Var.t  (** a pattern that is a variable (or underscore) *)
@@ -79,7 +79,7 @@ and 'a tt_desc =
   | TTapp of Sy.t * 'a atterm list
   | TTmapsTo of Var.t * 'a atterm
   | TTinInterval of 'a atterm * Sy.bound * Sy.bound
-    (* bool = true <-> interval is_open *)
+  (* bool = true <-> interval is_open *)
   | TTget of 'a atterm * 'a atterm
   | TTset of 'a atterm * 'a atterm * 'a atterm
   | TTextract of 'a atterm * 'a atterm * 'a atterm
@@ -201,64 +201,64 @@ let rec print_term fmt t =
   | TTvar s -> fprintf fmt "%a" Sy.print s
   | TTapp (s, l) -> fprintf fmt "%a(%a)" Sy.print s print_term_list l
   | TTinfix (t1, s, t2) ->
-      fprintf fmt "%a %a %a" print_term t1 Sy.print s print_term t2
+    fprintf fmt "%a %a %a" print_term t1 Sy.print s print_term t2
   | TTprefix (s, t') -> fprintf fmt "%a %a" Sy.print s print_term t'
   | TTget (t1, t2) -> fprintf fmt "%a[%a]" print_term t1 print_term t2
   | TTset (t1, t2, t3) ->
-      fprintf fmt "%a[%a<-%a]" print_term t1 print_term t2 print_term t3
+    fprintf fmt "%a[%a<-%a]" print_term t1 print_term t2 print_term t3
   | TTextract (t1, t2, t3) ->
-      fprintf fmt "%a^{%a,%a}" print_term t1 print_term t2 print_term t3
+    fprintf fmt "%a^{%a,%a}" print_term t1 print_term t2 print_term t3
   | TTconcat (t1, t2) -> fprintf fmt "%a @ %a" print_term t1 print_term t2
   | TTdot (t1, s) -> fprintf fmt "%a.%s" print_term t1 (Util.Hstring.view s)
   | TTrecord l ->
-      fprintf fmt "{ ";
-      List.iter
-        (fun (s, t) -> fprintf fmt "%s = %a" (Util.Hstring.view s) print_term t)
-        l;
-      fprintf fmt " }"
+    fprintf fmt "{ ";
+    List.iter
+      (fun (s, t) -> fprintf fmt "%s = %a" (Util.Hstring.view s) print_term t)
+      l;
+    fprintf fmt " }"
   | TTlet (binders, t2) ->
-      fprintf fmt "let %a in %a" print_term_binders binders print_term t2
+    fprintf fmt "let %a in %a" print_term_binders binders print_term t2
   | TTnamed (_, t) -> fprintf fmt "%a" print_term t
   | TTinInterval (e, i, j) ->
-      fprintf fmt "%a in %a, %a" print_term e Sy.print_bound i Sy.print_bound j
+    fprintf fmt "%a in %a, %a" print_term e Sy.print_bound i Sy.print_bound j
   | TTmapsTo (x, e) -> fprintf fmt "%a |-> %a" Var.print x print_term e
   | TTite (cond, t1, t2) ->
-      fprintf fmt "(if %a then %a else %a)" print_formula cond print_term t1
-        print_term t2
+    fprintf fmt "(if %a then %a else %a)" print_formula cond print_term t1
+      print_term t2
   | TTproject (grded, t1, s) ->
-      fprintf fmt "%a#%s%s" print_term t1
-        (if grded then "" else "!")
-        (Util.Hstring.view s)
+    fprintf fmt "%a#%s%s" print_term t1
+      (if grded then "" else "!")
+      (Util.Hstring.view s)
   | TTform f -> fprintf fmt "%a" print_formula f
   | TTmatch (e, cases) ->
-      let pp_vars fmt l =
-        match l with
-        | [] -> ()
-        | [ (e, _, _) ] -> Var.print fmt e
-        | (e, _, _) :: l ->
-            fprintf fmt "(%a" Var.print e;
-            List.iter (fun (e, _, _) -> fprintf fmt ", %a" Var.print e) l;
-            fprintf fmt ")"
-      in
-      fprintf fmt "match %a with\n" print_term e;
-      List.iter
-        (fun (p, v) ->
-          match p with
-          | Constr { name = n; args = l } ->
-              fprintf fmt "| %a %a -> %a\n" Util.Hstring.print n pp_vars l
-                print_term v
-          | Var x -> fprintf fmt "| %a -> %a\n" Var.print x print_term v)
-        cases;
-      fprintf fmt "end@."
+    let pp_vars fmt l =
+      match l with
+      | [] -> ()
+      | [ (e, _, _) ] -> Var.print fmt e
+      | (e, _, _) :: l ->
+        fprintf fmt "(%a" Var.print e;
+        List.iter (fun (e, _, _) -> fprintf fmt ", %a" Var.print e) l;
+        fprintf fmt ")"
+    in
+    fprintf fmt "match %a with\n" print_term e;
+    List.iter
+      (fun (p, v) ->
+         match p with
+         | Constr { name = n; args = l } ->
+           fprintf fmt "| %a %a -> %a\n" Util.Hstring.print n pp_vars l
+             print_term v
+         | Var x -> fprintf fmt "| %a -> %a\n" Var.print x print_term v)
+      cases;
+    fprintf fmt "end@."
 
 and print_term_binders fmt l =
   match l with
   | [] -> assert false
   | (sy, t) :: l ->
-      fprintf fmt "%a = %a" Sy.print sy print_term t;
-      List.iter
-        (fun (sy, t) -> fprintf fmt ", %a = %a" Sy.print sy print_term t)
-        l
+    fprintf fmt "%a = %a" Sy.print sy print_term t;
+    List.iter
+      (fun (sy, t) -> fprintf fmt ", %a = %a" Sy.print sy print_term t)
+      l
 
 and print_term_list fmt = List.iter (fprintf fmt "%a," print_term)
 
@@ -271,10 +271,10 @@ and print_atom fmt a =
   | TAle [ t1; t2 ] -> fprintf fmt "%a <= %a" print_term t1 print_term t2
   | TAlt [ t1; t2 ] -> fprintf fmt "%a < %a" print_term t1 print_term t2
   | TApred (t, negated) ->
-      if negated then fprintf fmt "(not (%a))" print_term t
-      else print_term fmt t
+    if negated then fprintf fmt "(not (%a))" print_term t
+    else print_term fmt t
   | TTisConstr (t1, s) ->
-      fprintf fmt "%a ? %s" print_term t1 (Util.Hstring.view s)
+    fprintf fmt "%a ? %s" print_term t1 (Util.Hstring.view s)
   | TAdistinct l -> fprintf fmt "distinct(%a)" print_term_list l
   | _ -> assert false
 
@@ -286,22 +286,22 @@ and print_formula fmt f =
   | TFatom a -> print_atom fmt a
   | TFop (OPnot, [ f ]) -> fprintf fmt "not %a" print_formula f
   | TFop (OPif, [ cond; f1; f2 ]) ->
-      fprintf fmt "if %a then %a else %a" print_formula cond print_formula f1
-        print_formula f2
+    fprintf fmt "if %a then %a else %a" print_formula cond print_formula f1
+      print_formula f2
   | TFop (op, [ f1; f2 ]) ->
-      fprintf fmt "%a %s %a" print_formula f1 (string_of_op op) print_formula f2
+    fprintf fmt "%a %s %a" print_formula f1 (string_of_op op) print_formula f2
   | TFforall { qf_bvars = l; qf_triggers = t; qf_form = f; _ } ->
-      fprintf fmt "forall %a [%a]. %a" print_binders l print_triggers t
-        print_formula f
+    fprintf fmt "forall %a [%a]. %a" print_binders l print_triggers t
+      print_formula f
   | TFlet (_, binders, f) ->
-      List.iter
-        (fun (sy, let_e) ->
-          fprintf fmt " let %a = " Sy.print sy;
-          match let_e with
-          | TletTerm t -> fprintf fmt "%a in@." print_term t
-          | TletForm f -> fprintf fmt "%a in@." print_formula f)
-        binders;
-      fprintf fmt "%a" print_formula f
+    List.iter
+      (fun (sy, let_e) ->
+         fprintf fmt " let %a = " Sy.print sy;
+         match let_e with
+         | TletTerm t -> fprintf fmt "%a in@." print_term t
+         | TletForm f -> fprintf fmt "%a in@." print_formula f)
+      binders;
+    fprintf fmt "%a" print_formula f
   | _ -> fprintf fmt "(formula pprint not implemented)"
 
 (*

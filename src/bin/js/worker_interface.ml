@@ -549,215 +549,215 @@ let options_to_json opt =
 let options_from_json options =
   match Json.from_string (Js.to_string options) with
   | Ok opts ->
-      let ( dbg_opt1,
-            ( dbg_opt2,
-              ( dbg_opt3,
-                ( all_opt1,
-                  ( all_opt2,
-                    (all_opt3, (all_opt4, (all_opt5, (all_opt6, all_opt7)))) )
-                ) ) ) ) =
-        Json.destruct options_encoding opts
-      in
-      let ( debug,
-            debug_ac,
-            debug_adt,
-            debug_arith,
-            debug_arrays,
-            debug_bitv,
-            debug_cc,
-            debug_combine,
-            debug_constr,
-            debug_explanations ) =
-        dbg_opt1
-      in
-      let ( debug_fm,
-            debug_fpa,
-            debug_gc,
-            debug_interpretation,
-            debug_ite,
-            debug_matching,
-            debug_sat,
-            debug_split,
-            debug_sum,
-            debug_triggers ) =
-        dbg_opt2
-      in
-      let ( debug_types,
-            debug_typing,
-            debug_uf,
-            debug_unsat_core,
-            debug_use,
-            debug_warnings ) =
-        dbg_opt3
-      in
-      let ( rule,
-            case_split_policy,
-            enable_adts_cs,
-            max_split,
-            replay,
-            replay_all_used_context,
-            replay_used_context,
-            save_used_context ) =
-        all_opt1
-      in
-      let ( answers_with_loc,
-            frontend,
-            input_format,
-            parse_only,
-            parsers,
-            preludes,
-            type_only,
-            type_smt2 ) =
-        all_opt2
-      in
-      let ( disable_weaks,
-            enable_assertions,
-            age_bound,
-            fm_cross_limit,
-            steps_bound,
-            interpretation,
-            output_format,
-            unsat_core ) =
-        all_opt3
-      in
-      let ( verbose,
-            instantiation_heuristic,
-            instantiate_after_backjump,
-            max_multi_triggers_size,
-            nb_triggers,
-            no_ematching,
-            no_user_triggers,
-            normalize_instances,
-            triggers_var ) =
-        all_opt4
-      in
-      let ( arith_matching,
-            bottom_classes,
-            cdcl_tableaux_inst,
-            cdcl_tableaux_th,
-            disable_flat_formulas_simplification,
-            enable_restarts,
-            minimal_bj,
-            no_backjumping,
-            no_backward,
-            no_decisions ) =
-        all_opt5
-      in
-      let ( no_decisions_on,
-            no_sat_learning,
-            sat_solver,
-            tableaux_cdcl,
-            disable_ites,
-            inline_lets,
-            rewriting,
-            term_like_pp,
-            disable_adts,
-            no_ac ) =
-        all_opt6
-      in
-      let ( no_contracongru,
-            no_fm,
-            no_nla,
-            no_tcp,
-            no_theory,
-            restricted,
-            tighten_vars,
-            use_fpa,
-            timers,
-            file ) =
-        all_opt7
-      in
-      {
-        debug;
-        debug_ac;
-        debug_adt;
-        debug_arith;
-        debug_arrays;
-        debug_bitv;
-        debug_cc;
-        debug_combine;
-        debug_constr;
-        debug_explanations;
-        debug_fm;
-        debug_fpa;
-        debug_gc;
-        debug_interpretation;
-        debug_ite;
-        debug_matching;
-        debug_sat;
-        debug_split;
-        debug_sum;
-        debug_triggers;
-        debug_types;
-        debug_typing;
-        debug_uf;
-        debug_unsat_core;
-        debug_use;
-        debug_warnings;
-        rule;
-        case_split_policy;
-        enable_adts_cs;
-        max_split;
-        replay;
-        replay_all_used_context;
-        replay_used_context;
-        save_used_context;
-        answers_with_loc;
-        frontend;
-        input_format;
-        parse_only;
-        parsers;
-        preludes;
-        type_only;
-        type_smt2;
-        disable_weaks;
-        enable_assertions;
-        age_bound;
-        fm_cross_limit;
-        steps_bound;
-        interpretation;
-        output_format;
-        unsat_core;
-        verbose;
-        instantiation_heuristic;
-        instantiate_after_backjump;
-        max_multi_triggers_size;
-        nb_triggers;
-        no_ematching;
-        no_user_triggers;
-        normalize_instances;
-        triggers_var;
-        arith_matching;
-        bottom_classes;
-        cdcl_tableaux_inst;
-        cdcl_tableaux_th;
-        disable_flat_formulas_simplification;
-        enable_restarts;
-        minimal_bj;
-        no_backjumping;
-        no_backward;
-        no_decisions;
-        no_decisions_on;
-        no_sat_learning;
-        sat_solver;
-        tableaux_cdcl;
-        disable_ites;
-        inline_lets;
-        rewriting;
-        term_like_pp;
-        disable_adts;
-        no_ac;
-        no_contracongru;
-        no_fm;
-        no_nla;
-        no_tcp;
-        no_theory;
-        restricted;
-        tighten_vars;
-        use_fpa;
-        timers;
-        file;
-      }
+    let ( dbg_opt1,
+          ( dbg_opt2,
+            ( dbg_opt3,
+              ( all_opt1,
+                ( all_opt2,
+                  (all_opt3, (all_opt4, (all_opt5, (all_opt6, all_opt7)))) )
+              ) ) ) ) =
+      Json.destruct options_encoding opts
+    in
+    let ( debug,
+          debug_ac,
+          debug_adt,
+          debug_arith,
+          debug_arrays,
+          debug_bitv,
+          debug_cc,
+          debug_combine,
+          debug_constr,
+          debug_explanations ) =
+      dbg_opt1
+    in
+    let ( debug_fm,
+          debug_fpa,
+          debug_gc,
+          debug_interpretation,
+          debug_ite,
+          debug_matching,
+          debug_sat,
+          debug_split,
+          debug_sum,
+          debug_triggers ) =
+      dbg_opt2
+    in
+    let ( debug_types,
+          debug_typing,
+          debug_uf,
+          debug_unsat_core,
+          debug_use,
+          debug_warnings ) =
+      dbg_opt3
+    in
+    let ( rule,
+          case_split_policy,
+          enable_adts_cs,
+          max_split,
+          replay,
+          replay_all_used_context,
+          replay_used_context,
+          save_used_context ) =
+      all_opt1
+    in
+    let ( answers_with_loc,
+          frontend,
+          input_format,
+          parse_only,
+          parsers,
+          preludes,
+          type_only,
+          type_smt2 ) =
+      all_opt2
+    in
+    let ( disable_weaks,
+          enable_assertions,
+          age_bound,
+          fm_cross_limit,
+          steps_bound,
+          interpretation,
+          output_format,
+          unsat_core ) =
+      all_opt3
+    in
+    let ( verbose,
+          instantiation_heuristic,
+          instantiate_after_backjump,
+          max_multi_triggers_size,
+          nb_triggers,
+          no_ematching,
+          no_user_triggers,
+          normalize_instances,
+          triggers_var ) =
+      all_opt4
+    in
+    let ( arith_matching,
+          bottom_classes,
+          cdcl_tableaux_inst,
+          cdcl_tableaux_th,
+          disable_flat_formulas_simplification,
+          enable_restarts,
+          minimal_bj,
+          no_backjumping,
+          no_backward,
+          no_decisions ) =
+      all_opt5
+    in
+    let ( no_decisions_on,
+          no_sat_learning,
+          sat_solver,
+          tableaux_cdcl,
+          disable_ites,
+          inline_lets,
+          rewriting,
+          term_like_pp,
+          disable_adts,
+          no_ac ) =
+      all_opt6
+    in
+    let ( no_contracongru,
+          no_fm,
+          no_nla,
+          no_tcp,
+          no_theory,
+          restricted,
+          tighten_vars,
+          use_fpa,
+          timers,
+          file ) =
+      all_opt7
+    in
+    {
+      debug;
+      debug_ac;
+      debug_adt;
+      debug_arith;
+      debug_arrays;
+      debug_bitv;
+      debug_cc;
+      debug_combine;
+      debug_constr;
+      debug_explanations;
+      debug_fm;
+      debug_fpa;
+      debug_gc;
+      debug_interpretation;
+      debug_ite;
+      debug_matching;
+      debug_sat;
+      debug_split;
+      debug_sum;
+      debug_triggers;
+      debug_types;
+      debug_typing;
+      debug_uf;
+      debug_unsat_core;
+      debug_use;
+      debug_warnings;
+      rule;
+      case_split_policy;
+      enable_adts_cs;
+      max_split;
+      replay;
+      replay_all_used_context;
+      replay_used_context;
+      save_used_context;
+      answers_with_loc;
+      frontend;
+      input_format;
+      parse_only;
+      parsers;
+      preludes;
+      type_only;
+      type_smt2;
+      disable_weaks;
+      enable_assertions;
+      age_bound;
+      fm_cross_limit;
+      steps_bound;
+      interpretation;
+      output_format;
+      unsat_core;
+      verbose;
+      instantiation_heuristic;
+      instantiate_after_backjump;
+      max_multi_triggers_size;
+      nb_triggers;
+      no_ematching;
+      no_user_triggers;
+      normalize_instances;
+      triggers_var;
+      arith_matching;
+      bottom_classes;
+      cdcl_tableaux_inst;
+      cdcl_tableaux_th;
+      disable_flat_formulas_simplification;
+      enable_restarts;
+      minimal_bj;
+      no_backjumping;
+      no_backward;
+      no_decisions;
+      no_decisions_on;
+      no_sat_learning;
+      sat_solver;
+      tableaux_cdcl;
+      disable_ites;
+      inline_lets;
+      rewriting;
+      term_like_pp;
+      disable_adts;
+      no_ac;
+      no_contracongru;
+      no_fm;
+      no_nla;
+      no_tcp;
+      no_theory;
+      restricted;
+      tighten_vars;
+      use_fpa;
+      timers;
+      file;
+    }
   | Error _e -> assert false
 
 type used_axiom = Used | Unused | Unknown
@@ -846,25 +846,25 @@ let init_results () =
 let results_encoding =
   conv
     (fun {
-           worker_id;
-           status;
-           results;
-           errors;
-           warnings;
-           debugs;
-           statistics;
-           model;
-           unsat_core;
-         } ->
-      ( worker_id,
-        status,
-        results,
-        errors,
-        warnings,
-        debugs,
-        statistics,
-        model,
-        unsat_core ))
+       worker_id;
+       status;
+       results;
+       errors;
+       warnings;
+       debugs;
+       statistics;
+       model;
+       unsat_core;
+     } ->
+       ( worker_id,
+         status,
+         results,
+         errors,
+         warnings,
+         debugs,
+         statistics,
+         model,
+         unsat_core ))
     (fun ( worker_id,
            status,
            results,

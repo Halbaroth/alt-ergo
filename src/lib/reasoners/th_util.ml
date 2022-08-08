@@ -27,9 +27,9 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 
-type answer = (Structs.Ex.t * Structs.Expr.Set.t list) option
+type answer = (Ast.Ex.t * Ast.Expr.Set.t list) option
 type theory = Th_arith | Th_sum | Th_adt | Th_arrays | Th_UF
 
 type lit_origin =

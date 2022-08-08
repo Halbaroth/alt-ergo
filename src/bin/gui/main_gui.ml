@@ -46,8 +46,8 @@ let () =
 module SatCont = (val Sat_solver.get_current () : Sat_solver_sig.SatContainer)
 
 module TH = (val if Options.get_no_theory () then
-                   (module Theory.Main_Empty : Theory.S)
-                 else (module Theory.Main_Default : Theory.S) : Theory.S)
+                (module Theory.Main_Empty : Theory.S)
+              else (module Theory.Main_Default : Theory.S) : Theory.S)
 
 module SAT = SatCont.Make (TH)
 module FE = Frontend.Make (SAT)
@@ -139,8 +139,8 @@ let save_session envs =
   in
   List.iter
     (fun env ->
-      output_value session_cout env.resulting_ids;
-      output_value session_cout env.actions)
+       output_value session_cout env.resulting_ids;
+       output_value session_cout env.actions)
     envs;
   close_out session_cout
 
@@ -438,23 +438,23 @@ let reset_timers timers_model =
 let refresh_instances ({ istore; _ } as inst_model) () =
   Hashtbl.iter
     (fun id (r, n, name, limit) ->
-      let row, upd_info =
-        match !r with
-        | Some row -> (row, false)
-        | None ->
-            let row = istore#append () in
-            r := Some row;
-            (row, true)
-      in
-      let nb = !n in
-      inst_model.max <- max inst_model.max nb;
-      if upd_info then (
-        istore#set ~row ~column:inst_model.icol_icon `INFO;
-        istore#set ~row ~column:inst_model.icol_desc name;
-        let slimit = if !limit >= 0 then string_of_int !limit else "∞" in
-        istore#set ~row ~column:inst_model.icol_limit slimit);
-      istore#set ~row ~column:inst_model.icol_number nb;
-      istore#set ~row ~column:inst_model.icol_tag id)
+       let row, upd_info =
+         match !r with
+         | Some row -> (row, false)
+         | None ->
+           let row = istore#append () in
+           r := Some row;
+           (row, true)
+       in
+       let nb = !n in
+       inst_model.max <- max inst_model.max nb;
+       if upd_info then (
+         istore#set ~row ~column:inst_model.icol_icon `INFO;
+         istore#set ~row ~column:inst_model.icol_desc name;
+         let slimit = if !limit >= 0 then string_of_int !limit else "∞" in
+         istore#set ~row ~column:inst_model.icol_limit slimit);
+       istore#set ~row ~column:inst_model.icol_number nb;
+       istore#set ~row ~column:inst_model.icol_tag id)
     inst_model.h;
   true
 
@@ -465,7 +465,7 @@ let add_inst ({ h; _ } as inst_model) orig =
     | Expr.Lemma { Expr.name = n; _ } when Stdlib.( <> ) n "" -> n
     | Expr.Lemma _ | Expr.Unit _ | Expr.Clause _ | Expr.Literal _
     | Expr.Skolem _ | Expr.Let _ | Expr.Iff _ | Expr.Xor _ ->
-        string_of_int id
+      string_of_int id
     | Expr.Not_a_form -> assert false
   in
   let r, n, limit, to_add =
@@ -501,74 +501,74 @@ let update_status image label buttonclean env s steps =
   in
   match s with
   | FE.Unsat (d, dep) ->
-      let time = Options.Time.value () in
-      if not satmode then Printer.print_std "%a" Loc.report d.st_loc;
-      if satmode then Printer.print_std "@{<C.F_Red>unsat@}"
-      else Printer.print_std "@{<C.F_Green>Valid@} (%2.4f) (%d)" time steps;
-      if get_unsat_core () then (
-        Printer.print_fmt (Options.get_fmt_usc ()) "unsat-core:@ %a"
-          (Explanation.print_unsat_core ~tab:true)
-          dep;
-        show_used_lemmas env dep);
-      image#set_stock `YES;
-      label#set_text (sprintf "  Valid (%2.2f s)" time);
-      buttonclean#misc#show ();
-      ignore
-        (buttonclean#connect#clicked ~callback:(fun () -> prune_unused env))
+    let time = Options.Time.value () in
+    if not satmode then Printer.print_std "%a" Loc.report d.st_loc;
+    if satmode then Printer.print_std "@{<C.F_Red>unsat@}"
+    else Printer.print_std "@{<C.F_Green>Valid@} (%2.4f) (%d)" time steps;
+    if get_unsat_core () then (
+      Printer.print_fmt (Options.get_fmt_usc ()) "unsat-core:@ %a"
+        (Explanation.print_unsat_core ~tab:true)
+        dep;
+      show_used_lemmas env dep);
+    image#set_stock `YES;
+    label#set_text (sprintf "  Valid (%2.2f s)" time);
+    buttonclean#misc#show ();
+    ignore
+      (buttonclean#connect#clicked ~callback:(fun () -> prune_unused env))
   | FE.Inconsistent d ->
-      if not satmode then
-        Printer.print_err "%a@ Inconsistent assumption" Loc.report d.st_loc
-      else Printer.print_std "unsat";
-      image#set_stock `EXECUTE;
-      label#set_text "  Inconsistent assumption"
+    if not satmode then
+      Printer.print_err "%a@ Inconsistent assumption" Loc.report d.st_loc
+    else Printer.print_std "unsat";
+    image#set_stock `EXECUTE;
+    label#set_text "  Inconsistent assumption"
   | FE.Unknown (d, t) ->
-      if not satmode then
-        Printer.print_std "%a@ I don't know." Loc.report d.st_loc
-      else Printer.print_std "unknown";
-      image#set_stock `NO;
-      label#set_text
-        (sprintf "  I don't know (%2.2f s)" (Options.Time.value ()));
-      if get_model () then pop_model t ()
+    if not satmode then
+      Printer.print_std "%a@ I don't know." Loc.report d.st_loc
+    else Printer.print_std "unknown";
+    image#set_stock `NO;
+    label#set_text
+      (sprintf "  I don't know (%2.2f s)" (Options.Time.value ()));
+    if get_model () then pop_model t ()
   | FE.Sat (d, t) ->
-      if not satmode then Printer.print_std "%a" Loc.report d.st_loc;
-      if satmode then Printer.print_std "unknown (sat)"
-      else Printer.print_std "I don't know";
-      image#set_stock `NO;
-      label#set_text
-        (sprintf "  I don't know (sat) (%2.2f s)" (Options.Time.value ()));
-      if get_model () then pop_model t ()
+    if not satmode then Printer.print_std "%a" Loc.report d.st_loc;
+    if satmode then Printer.print_std "unknown (sat)"
+    else Printer.print_std "I don't know";
+    image#set_stock `NO;
+    label#set_text
+      (sprintf "  I don't know (sat) (%2.2f s)" (Options.Time.value ()));
+    if get_model () then pop_model t ()
   | FE.Timeout _ -> assert false (* should not happen in GUI ? *)
   | FE.Preprocess -> assert false (* should not happen in GUI ! *)
 
 let update_aborted image label buttonstop buttonrun timers_model = function
   | Abort_thread ->
-      Options.Time.unset_timeout ~is_gui:true;
-      Timers.update timers_model.timers;
-      if get_debug () then Printer.print_dbg "alt-ergo thread terminated";
-      image#set_stock `DIALOG_QUESTION;
-      label#set_text "  Process aborted";
-      buttonstop#misc#hide ();
-      buttonrun#misc#show ()
+    Options.Time.unset_timeout ~is_gui:true;
+    Timers.update timers_model.timers;
+    if get_debug () then Printer.print_dbg "alt-ergo thread terminated";
+    image#set_stock `DIALOG_QUESTION;
+    label#set_text "  Process aborted";
+    buttonstop#misc#hide ();
+    buttonrun#misc#show ()
   | Util.Timeout ->
-      Options.Time.unset_timeout ~is_gui:true;
-      Timers.update timers_model.timers;
-      if get_debug () then
-        Printer.print_dbg "alt-ergo thread terminated (timeout)";
-      image#set_stock `CUT;
-      label#set_text "  Timeout";
-      buttonstop#misc#hide ();
-      buttonrun#misc#show ()
+    Options.Time.unset_timeout ~is_gui:true;
+    Timers.update timers_model.timers;
+    if get_debug () then
+      Printer.print_dbg "alt-ergo thread terminated (timeout)";
+    image#set_stock `CUT;
+    label#set_text "  Timeout";
+    buttonstop#misc#hide ();
+    buttonrun#misc#show ()
   | e ->
-      Options.Time.unset_timeout ~is_gui:true;
-      Timers.update timers_model.timers;
-      let message = sprintf "Error: %s" (Printexc.to_string e) in
-      if get_debug () then Printer.print_dbg "alt-ergo thread terminated";
-      image#set_stock `DIALOG_ERROR;
-      label#set_text (" " ^ message);
-      buttonstop#misc#hide ();
-      buttonrun#misc#show ();
-      Printer.print_err "%s" message;
-      pop_error ~error:true ~message ()
+    Options.Time.unset_timeout ~is_gui:true;
+    Timers.update timers_model.timers;
+    let message = sprintf "Error: %s" (Printexc.to_string e) in
+    if get_debug () then Printer.print_dbg "alt-ergo thread terminated";
+    image#set_stock `DIALOG_ERROR;
+    label#set_text (" " ^ message);
+    buttonstop#misc#hide ();
+    buttonrun#misc#show ();
+    Printer.print_err "%s" message;
+    pop_error ~error:true ~message ()
 
 let wrapper_update_status image label buttonclean env s steps =
   GtkThread.sync
@@ -583,8 +583,8 @@ let wrapper_update_aborted image label buttonstop buttonrun timers_model e =
 let wrapper_reset buttonstop buttonrun =
   GtkThread.async
     (fun () ->
-      buttonstop#misc#hide ();
-      buttonrun#misc#show ())
+       buttonstop#misc#hide ();
+       buttonrun#misc#show ())
     ()
 
 let wrapper_refresh_instances inst_model =
@@ -609,8 +609,8 @@ let force_interrupt old_action_ref n =
 let kill_thread thread () =
   match !thread with
   | Some r ->
-      interrupt := Some (Thread.id r);
-      Thread.join r
+    interrupt := Some (Thread.id r);
+    Thread.join r
   | _ -> interrupt := None
 
 let run_replay env used_context =
@@ -625,12 +625,12 @@ let run_replay env used_context =
   Options.Time.set_timeout ~is_gui:true (Options.get_timelimit ());
   List.iter
     (fun dcl ->
-      let cnf = Cnf.make_list dcl in
-      ignore
-        (List.fold_left
-           (FE.process_decl FE.print_status used_context consistent_dep)
-           (empty_sat_inst env.insts, true, Explanation.empty)
-           cnf))
+       let cnf = Cnf.make_list dcl in
+       ignore
+         (List.fold_left
+            (FE.process_decl FE.print_status used_context consistent_dep)
+            (empty_sat_inst env.insts, true, Explanation.empty)
+            cnf))
     ast_pruned;
   Options.Time.unset_timeout ~is_gui:true
 
@@ -672,39 +672,39 @@ let run buttonrun buttonstop buttonclean inst_model timers_model image label
     Some
       (Thread.create
          (fun () ->
-           (try
-              (* Thread.yield (); *)
-              if get_debug () then Printer.print_dbg "Starting alt-ergo thread";
-              Options.Time.start ();
-              Options.Time.set_timeout ~is_gui:true (Options.get_timelimit ());
-              Timers.set_timer_start (Timers.start timers_model.timers);
-              Timers.set_timer_pause (Timers.pause timers_model.timers);
+            (try
+               (* Thread.yield (); *)
+               if get_debug () then Printer.print_dbg "Starting alt-ergo thread";
+               Options.Time.start ();
+               Options.Time.set_timeout ~is_gui:true (Options.get_timelimit ());
+               Timers.set_timer_start (Timers.start timers_model.timers);
+               Timers.set_timer_pause (Timers.pause timers_model.timers);
 
-              let consistent_dep = Stack.create () in
-              List.iter
-                (fun dcl ->
-                  let cnf = Cnf.make_list dcl in
-                  ignore
-                    (List.fold_left
-                       (FE.process_decl
-                          (wrapper_update_status image label buttonclean env)
-                          used_context consistent_dep)
-                       (empty_sat_inst inst_model, true, Explanation.empty)
-                       cnf))
-                ast_pruned;
+               let consistent_dep = Stack.create () in
+               List.iter
+                 (fun dcl ->
+                    let cnf = Cnf.make_list dcl in
+                    ignore
+                      (List.fold_left
+                         (FE.process_decl
+                            (wrapper_update_status image label buttonclean env)
+                            used_context consistent_dep)
+                         (empty_sat_inst inst_model, true, Explanation.empty)
+                         cnf))
+                 ast_pruned;
 
-              Options.Time.unset_timeout ~is_gui:true
-            with e ->
-              wrapper_update_aborted image label buttonstop buttonrun
-                timers_model e);
-           if get_debug () then
-             Printer.print_dbg "Send done signal to waiting thread";
-           wrapper_reset buttonstop buttonrun;
-           Thread.delay 0.001;
-           GMain.Timeout.remove to_id;
-           GMain.Timeout.remove ti_id;
-           wrapper_refresh_instances inst_model ();
-           wrapper_refresh_timers timers_model ())
+               Options.Time.unset_timeout ~is_gui:true
+             with e ->
+               wrapper_update_aborted image label buttonstop buttonrun
+                 timers_model e);
+            if get_debug () then
+              Printer.print_dbg "Send done signal to waiting thread";
+            wrapper_reset buttonstop buttonrun;
+            Thread.delay 0.001;
+            GMain.Timeout.remove to_id;
+            GMain.Timeout.remove ti_id;
+            wrapper_refresh_instances inst_model ();
+            wrapper_refresh_timers timers_model ())
          ());
 
   Thread.yield ()
@@ -712,13 +712,13 @@ let run buttonrun buttonstop buttonclean inst_model timers_model image label
 let remove_context env () =
   List.iter
     (fun (td, _) ->
-      match td.c with
-      | APredicate_def (_, _, _, _) -> toggle_prune env td
-      | AAxiom (_, s, _, _)
-        when String.length s = 0
-             || (Stdlib.( <> ) s.[0] '_' && Stdlib.( <> ) s.[0] '@') ->
-          toggle_prune env td
-      | _ -> ())
+       match td.c with
+       | APredicate_def (_, _, _, _) -> toggle_prune env td
+       | AAxiom (_, s, _, _)
+         when String.length s = 0
+           || (Stdlib.( <> ) s.[0] '_' && Stdlib.( <> ) s.[0] '@') ->
+         toggle_prune env td
+       | _ -> ())
     env.ast
 
 let set_ctrl env b key =
@@ -855,20 +855,20 @@ let create_inst_view inst_model env buffer sv ~packing () =
          let limit = try int_of_string s with Failure _ -> -1 in
          List.iter
            (fun path ->
-             let row = inst_model.istore#get_iter path in
-             let id = inst_model.istore#get ~row ~column:inst_model.icol_tag in
-             let _, _, name, l = Hashtbl.find inst_model.h id in
-             if limit >= 0 then (
-               l := limit;
-               inst_model.istore#set ~row ~column:inst_model.icol_limit
-                 (string_of_int limit);
-               Gui_session.save env.actions
-                 (Gui_session.LimitLemma (id, name, limit)))
-             else (
-               l := -1;
-               inst_model.istore#set ~row ~column:inst_model.icol_limit inf;
-               Gui_session.save env.actions
-                 (Gui_session.UnlimitLemma (id, name))))
+              let row = inst_model.istore#get_iter path in
+              let id = inst_model.istore#get ~row ~column:inst_model.icol_tag in
+              let _, _, name, l = Hashtbl.find inst_model.h id in
+              if limit >= 0 then (
+                l := limit;
+                inst_model.istore#set ~row ~column:inst_model.icol_limit
+                  (string_of_int limit);
+                Gui_session.save env.actions
+                  (Gui_session.LimitLemma (id, name, limit)))
+              else (
+                l := -1;
+                inst_model.istore#set ~row ~column:inst_model.icol_limit inf;
+                Gui_session.save env.actions
+                  (Gui_session.UnlimitLemma (id, name))))
            view#selection#get_selected_rows));
   let col =
     GTree.view_column ~title:"limit"
@@ -940,8 +940,8 @@ let search_one buf str result (iter : GText.iter ref) found_all_tag =
   match !result with
   | None -> ()
   | Some (i1, i2) ->
-      buf#apply_tag found_all_tag ~start:i1 ~stop:i2;
-      iter := i2
+    buf#apply_tag found_all_tag ~start:i1 ~stop:i2;
+    iter := i2
 
 let search_all entry (_sv : GSourceView3.source_view) (buf : sbuffer) found_tag
     found_all_tag () =
@@ -978,7 +978,7 @@ let start_gui all_used_context =
   lmanager#set_search_path
     (String.concat Filename.dir_sep
        [ Config.datadir; "gtksourceview-2.0"; "language-specs" ]
-    :: lmanager#search_path);
+     :: lmanager#search_path);
   let source_language = lmanager#language "alt-ergo" in
 
   let smanager = GSourceView3.source_style_scheme_manager ~default:true in
@@ -1013,279 +1013,279 @@ let start_gui all_used_context =
   let envs =
     List.fold_left
       (fun acc (l, goal_name) ->
-        let used_context = FE.choose_used_context all_used_context ~goal_name in
-        let buf1 =
-          match source_language with
-          | Some language ->
-              GSourceView3.source_buffer ~language ~highlight_syntax:true
-                ~highlight_matching_brackets:true ()
-          | None -> GSourceView3.source_buffer ()
-        in
+         let used_context = FE.choose_used_context all_used_context ~goal_name in
+         let buf1 =
+           match source_language with
+           | Some language ->
+             GSourceView3.source_buffer ~language ~highlight_syntax:true
+               ~highlight_matching_brackets:true ()
+           | None -> GSourceView3.source_buffer ()
+         in
 
-        let buf2 =
-          match source_language with
-          | Some language ->
-              GSourceView3.source_buffer ~language ~highlight_syntax:true
-                ~highlight_matching_brackets:true ()
-          | None -> GSourceView3.source_buffer ()
-        in
+         let buf2 =
+           match source_language with
+           | Some language ->
+             GSourceView3.source_buffer ~language ~highlight_syntax:true
+               ~highlight_matching_brackets:true ()
+           | None -> GSourceView3.source_buffer ()
+         in
 
-        buf1#set_style_scheme scheme;
-        buf2#set_style_scheme scheme;
+         buf1#set_style_scheme scheme;
+         buf2#set_style_scheme scheme;
 
-        let annoted_ast = annot buf1 l in
-        if get_debug () then
-          Printer.print_dbg ~flushed:false "Computing dependencies...";
-        let dep = make_dep annoted_ast in
-        if get_debug () then Printer.print_dbg ~header:false "Done";
+         let annoted_ast = annot buf1 l in
+         if get_debug () then
+           Printer.print_dbg ~flushed:false "Computing dependencies...";
+         let dep = make_dep annoted_ast in
+         if get_debug () then Printer.print_dbg ~header:false "Done";
 
-        let text =
-          List.fold_left
-            (fun _ (td, _) ->
-              match td.c with
-              | AGoal (_, Thm, s, _) -> "goal " ^ s
-              | AGoal (_, Check, s, _) -> "check " ^ s
-              | AGoal (_, Cut, s, _) -> "cut " ^ s
-              | _ -> "Empty")
-            "" annoted_ast
-        in
+         let text =
+           List.fold_left
+             (fun _ (td, _) ->
+                match td.c with
+                | AGoal (_, Thm, s, _) -> "goal " ^ s
+                | AGoal (_, Check, s, _) -> "check " ^ s
+                | AGoal (_, Cut, s, _) -> "cut " ^ s
+                | _ -> "Empty")
+             "" annoted_ast
+         in
 
-        let label = GMisc.label ~text () in
-        let nb_page = ref 0 in
-        let append g =
-          nb_page := notebook#append_page ~tab_label:label#coerce g
-        in
+         let label = GMisc.label ~text () in
+         let nb_page = ref 0 in
+         let append g =
+           nb_page := notebook#append_page ~tab_label:label#coerce g
+         in
 
-        let eventBox = GBin.event_box ~border_width:0 ~packing:append () in
+         let eventBox = GBin.event_box ~border_width:0 ~packing:append () in
 
-        let vbox =
-          GPack.vbox ~homogeneous:false ~border_width:0 ~packing:eventBox#add ()
-        in
+         let vbox =
+           GPack.vbox ~homogeneous:false ~border_width:0 ~packing:eventBox#add ()
+         in
 
-        let rbox = GPack.vbox ~border_width:0 ~packing:vbox#add () in
+         let rbox = GPack.vbox ~border_width:0 ~packing:vbox#add () in
 
-        let toolbox = GPack.hbox ~border_width:0 ~packing:rbox#pack () in
+         let toolbox = GPack.hbox ~border_width:0 ~packing:rbox#pack () in
 
-        let toolbar =
-          GButton.toolbar (*~tooltips:true*)
-            ~packing:toolbox#add ~style:`BOTH ()
-        in
-        toolbar#set_icon_size `DIALOG;
+         let toolbar =
+           GButton.toolbar (*~tooltips:true*)
+             ~packing:toolbox#add ~style:`BOTH ()
+         in
+         toolbar#set_icon_size `DIALOG;
 
-        let hb = GPack.paned `HORIZONTAL ~border_width:3 ~packing:rbox#add () in
+         let hb = GPack.paned `HORIZONTAL ~border_width:3 ~packing:rbox#add () in
 
-        let vb1 =
-          GPack.paned `VERTICAL ~border_width:3
-            ~packing:(hb#pack1 ~shrink:true ~resize:true)
-            ()
-        in
-        let vb2 =
-          GPack.paned `VERTICAL ~border_width:3
-            ~packing:(hb#pack2 ~shrink:true ~resize:true)
-            ()
-        in
+         let vb1 =
+           GPack.paned `VERTICAL ~border_width:3
+             ~packing:(hb#pack1 ~shrink:true ~resize:true)
+             ()
+         in
+         let vb2 =
+           GPack.paned `VERTICAL ~border_width:3
+             ~packing:(hb#pack2 ~shrink:true ~resize:true)
+             ()
+         in
 
-        let fr1 =
-          GBin.frame ~shadow_type:`ETCHED_OUT
-            ~width:(60 * window_width / 100)
-            ~height:(50 * window_height / 100)
-            ~packing:(vb1#pack1 ~shrink:true ~resize:true)
-            ()
-        in
+         let fr1 =
+           GBin.frame ~shadow_type:`ETCHED_OUT
+             ~width:(60 * window_width / 100)
+             ~height:(50 * window_height / 100)
+             ~packing:(vb1#pack1 ~shrink:true ~resize:true)
+             ()
+         in
 
-        let fr2 =
-          GBin.frame ~shadow_type:`ETCHED_OUT
-            ~height:(15 * window_height / 100)
-            ~packing:(vb2#pack1 ~shrink:true ~resize:true)
-            ()
-        in
+         let fr2 =
+           GBin.frame ~shadow_type:`ETCHED_OUT
+             ~height:(15 * window_height / 100)
+             ~packing:(vb2#pack1 ~shrink:true ~resize:true)
+             ()
+         in
 
-        let fr3 =
-          GBin.frame ~shadow_type:`ETCHED_OUT ~show:false
-            ~height:(5 * window_height / 100)
-            ~packing:(vb1#pack2 ~shrink:true ~resize:true)
-            ()
-        in
+         let fr3 =
+           GBin.frame ~shadow_type:`ETCHED_OUT ~show:false
+             ~height:(5 * window_height / 100)
+             ~packing:(vb1#pack2 ~shrink:true ~resize:true)
+             ()
+         in
 
-        let binfo =
-          GPack.vbox ~border_width:0
-            ~packing:(vb2#pack2 ~shrink:true ~resize:true)
-            ()
-        in
+         let binfo =
+           GPack.vbox ~border_width:0
+             ~packing:(vb2#pack2 ~shrink:true ~resize:true)
+             ()
+         in
 
-        let fr4 = GBin.frame ~shadow_type:`ETCHED_OUT ~packing:binfo#add () in
+         let fr4 = GBin.frame ~shadow_type:`ETCHED_OUT ~packing:binfo#add () in
 
-        let fr5 = GBin.frame ~shadow_type:`NONE ~packing:binfo#pack () in
+         let fr5 = GBin.frame ~shadow_type:`NONE ~packing:binfo#pack () in
 
-        let table_timers =
-          GPack.table ~columns:3 ~rows:8 ~row_spacings:1 ~col_spacings:8
-            ~border_width:4 ~packing:fr5#add ()
-        in
+         let table_timers =
+           GPack.table ~columns:3 ~rows:8 ~row_spacings:1 ~col_spacings:8
+             ~border_width:4 ~packing:fr5#add ()
+         in
 
-        let st = GMisc.statusbar ~border_width:0 ~packing:vbox#pack () in
-        let st_ctx = st#new_context ~name:"Type" in
+         let st = GMisc.statusbar ~border_width:0 ~packing:vbox#pack () in
+         let st_ctx = st#new_context ~name:"Type" in
 
-        let error_model = empty_error_model () in
-        let inst_model = empty_inst_model () in
-        let timers_model = empty_timers_model table_timers in
+         let error_model = empty_error_model () in
+         let inst_model = empty_inst_model () in
+         let timers_model = empty_timers_model table_timers in
 
-        let resulting_ids = compute_resulting_ids annoted_ast in
-        let actions = Gui_session.read_actions resulting_ids session_cin in
+         let resulting_ids = compute_resulting_ids annoted_ast in
+         let actions = Gui_session.read_actions resulting_ids session_cin in
 
-        let sw1 =
-          GBin.scrolled_window ~vpolicy:`AUTOMATIC ~hpolicy:`AUTOMATIC
-            ~packing:fr1#add ()
-        in
-        let tv1 =
-          GSourceView3.source_view ~source_buffer:buf1 ~packing:sw1#add
-            ~show_line_numbers:true
-            ~wrap_mode:(if wrap then `CHAR else `NONE)
-            ~highlight_current_line:true ()
-        in
-        let _ = tv1#misc#modify_font font in
-        let _ = tv1#set_editable false in
+         let sw1 =
+           GBin.scrolled_window ~vpolicy:`AUTOMATIC ~hpolicy:`AUTOMATIC
+             ~packing:fr1#add ()
+         in
+         let tv1 =
+           GSourceView3.source_view ~source_buffer:buf1 ~packing:sw1#add
+             ~show_line_numbers:true
+             ~wrap_mode:(if wrap then `CHAR else `NONE)
+             ~highlight_current_line:true ()
+         in
+         let _ = tv1#misc#modify_font font in
+         let _ = tv1#set_editable false in
 
-        let sw2 =
-          GBin.scrolled_window ~vpolicy:`AUTOMATIC ~hpolicy:`AUTOMATIC
-            ~packing:fr2#add ()
-        in
-        let tv2 =
-          GSourceView3.source_view ~source_buffer:buf2 ~packing:sw2#add
-            ~show_line_numbers:false
-            ~wrap_mode:(if wrap then `CHAR else `NONE)
-            ~highlight_current_line:true ()
-        in
-        let _ = tv2#misc#modify_font font in
-        let _ = tv2#set_editable false in
+         let sw2 =
+           GBin.scrolled_window ~vpolicy:`AUTOMATIC ~hpolicy:`AUTOMATIC
+             ~packing:fr2#add ()
+         in
+         let tv2 =
+           GSourceView3.source_view ~source_buffer:buf2 ~packing:sw2#add
+             ~show_line_numbers:false
+             ~wrap_mode:(if wrap then `CHAR else `NONE)
+             ~highlight_current_line:true ()
+         in
+         let _ = tv2#misc#modify_font font in
+         let _ = tv2#set_editable false in
 
-        let env =
-          create_env buf1 tv1 buf2 tv2 error_model inst_model st_ctx annoted_ast
-            dep actions resulting_ids
-        in
-        connect env;
+         let env =
+           create_env buf1 tv1 buf2 tv2 error_model inst_model st_ctx annoted_ast
+             dep actions resulting_ids
+         in
+         connect env;
 
-        let remove_ctx_button =
-          GButton.toggle_tool_button ~label:" Remove context" ~stock:`CUT
-            ~packing:toolbar#insert ()
-        in
-        ignore
-          (remove_ctx_button#connect#clicked ~callback:(remove_context env));
+         let remove_ctx_button =
+           GButton.toggle_tool_button ~label:" Remove context" ~stock:`CUT
+             ~packing:toolbar#insert ()
+         in
+         ignore
+           (remove_ctx_button#connect#clicked ~callback:(remove_context env));
 
-        let run_button =
-          GButton.tool_button ~label:" Run Alt-Ergo" ~stock:`EXECUTE ()
-        in
-        toolbar#insert run_button;
+         let run_button =
+           GButton.tool_button ~label:" Run Alt-Ergo" ~stock:`EXECUTE ()
+         in
+         toolbar#insert run_button;
 
-        let stop_button = GButton.tool_button ~label:" Abort" ~stock:`STOP () in
-        stop_button#misc#hide ();
+         let stop_button = GButton.tool_button ~label:" Abort" ~stock:`STOP () in
+         stop_button#misc#hide ();
 
-        (* TODO: Use toolbar#insert instead of insert_space *)
-        (*toolbar#insert_space ();*)
-        let tool_item = GButton.tool_item () in
-        let result_box = GPack.hbox ~packing:tool_item#add () in
-        let result_image =
-          GMisc.image ~icon_size:`LARGE_TOOLBAR ~stock:`DIALOG_QUESTION
-            ~packing:result_box#add ()
-        in
-        let result_label = GMisc.label ~text:" " ~packing:result_box#add () in
+         (* TODO: Use toolbar#insert instead of insert_space *)
+         (*toolbar#insert_space ();*)
+         let tool_item = GButton.tool_item () in
+         let result_box = GPack.hbox ~packing:tool_item#add () in
+         let result_image =
+           GMisc.image ~icon_size:`LARGE_TOOLBAR ~stock:`DIALOG_QUESTION
+             ~packing:result_box#add ()
+         in
+         let result_label = GMisc.label ~text:" " ~packing:result_box#add () in
 
-        ignore (toolbar#insert tool_item);
+         ignore (toolbar#insert tool_item);
 
-        let clean_button =
-          GButton.tool_button ~label:" Clean unused" ~stock:`CLEAR ()
-        in
-        toolbar#insert clean_button;
-        clean_button#misc#hide ();
+         let clean_button =
+           GButton.tool_button ~label:" Clean unused" ~stock:`CLEAR ()
+         in
+         toolbar#insert clean_button;
+         clean_button#misc#hide ();
 
-        let toolsearch =
-          GButton.toolbar (*~tooltips:true*)
-            ~packing:(toolbox#pack ~fill:true) ()
-        in
-        toolsearch#set_icon_size `DIALOG;
+         let toolsearch =
+           GButton.toolbar (*~tooltips:true*)
+             ~packing:(toolbox#pack ~fill:true) ()
+         in
+         toolsearch#set_icon_size `DIALOG;
 
-        let tool_item = GButton.tool_item ~packing:toolsearch#insert () in
-        let search_box =
-          GPack.hbox ~spacing:5 ~border_width:5 ~packing:tool_item#add ()
-        in
-        ignore
-          (GMisc.image ~icon_size:`LARGE_TOOLBAR ~stock:`FIND
-             ~packing:search_box#add ());
-        let search_entry = GEdit.entry ~packing:search_box#add () in
+         let tool_item = GButton.tool_item ~packing:toolsearch#insert () in
+         let search_box =
+           GPack.hbox ~spacing:5 ~border_width:5 ~packing:tool_item#add ()
+         in
+         ignore
+           (GMisc.image ~icon_size:`LARGE_TOOLBAR ~stock:`FIND
+              ~packing:search_box#add ());
+         let search_entry = GEdit.entry ~packing:search_box#add () in
 
-        let search_forw_button =
-          GButton.tool_button ~stock:`GO_DOWN ~packing:toolsearch#insert ()
-        in
-        let search_back_button =
-          GButton.tool_button ~stock:`GO_UP ~packing:toolsearch#insert ()
-        in
+         let search_forw_button =
+           GButton.tool_button ~stock:`GO_DOWN ~packing:toolsearch#insert ()
+         in
+         let search_back_button =
+           GButton.tool_button ~stock:`GO_UP ~packing:toolsearch#insert ()
+         in
 
-        let found_all_tag = buf1#create_tag [ `BACKGROUND "yellow" ] in
-        let found_tag = buf1#create_tag [ `BACKGROUND "orange" ] in
+         let found_all_tag = buf1#create_tag [ `BACKGROUND "yellow" ] in
+         let found_tag = buf1#create_tag [ `BACKGROUND "orange" ] in
 
-        ignore
-          (search_entry#connect#changed
-             ~callback:
-               (search_all search_entry tv1 buf1 found_tag found_all_tag));
+         ignore
+           (search_entry#connect#changed
+              ~callback:
+                (search_all search_entry tv1 buf1 found_tag found_all_tag));
 
-        ignore
-          (search_entry#event#connect#key_press ~callback:(fun k ->
-               if GdkEvent.Key.keyval k = GdkKeysyms._Return then (
-                 search_next tv1 buf1 found_tag found_all_tag ();
-                 true)
-               else false));
+         ignore
+           (search_entry#event#connect#key_press ~callback:(fun k ->
+                if GdkEvent.Key.keyval k = GdkKeysyms._Return then (
+                  search_next tv1 buf1 found_tag found_all_tag ();
+                  true)
+                else false));
 
-        ignore
-          (search_forw_button#connect#clicked
-             ~callback:(search_next tv1 buf1 found_tag found_all_tag));
-        ignore
-          (search_back_button#connect#clicked
-             ~callback:
-               (search_next ~backward:true tv1 buf1 found_tag found_all_tag));
+         ignore
+           (search_forw_button#connect#clicked
+              ~callback:(search_next tv1 buf1 found_tag found_all_tag));
+         ignore
+           (search_back_button#connect#clicked
+              ~callback:
+                (search_next ~backward:true tv1 buf1 found_tag found_all_tag));
 
-        let sw3 =
-          GBin.scrolled_window ~vpolicy:`AUTOMATIC ~hpolicy:`AUTOMATIC
-            ~packing:fr3#add ()
-        in
-        ignore
-          (create_error_view error_model env.buffer tv1 ~packing:sw3#add ());
+         let sw3 =
+           GBin.scrolled_window ~vpolicy:`AUTOMATIC ~hpolicy:`AUTOMATIC
+             ~packing:fr3#add ()
+         in
+         ignore
+           (create_error_view error_model env.buffer tv1 ~packing:sw3#add ());
 
-        add_to_buffer error_model env.buffer env.ast;
-        env.buffer#place_cursor ~where:buf1#start_iter;
+         add_to_buffer error_model env.buffer env.ast;
+         env.buffer#place_cursor ~where:buf1#start_iter;
 
-        if error_model.some then fr3#misc#show ();
+         if error_model.some then fr3#misc#show ();
 
-        let sw4 =
-          GBin.scrolled_window ~vpolicy:`AUTOMATIC ~hpolicy:`AUTOMATIC
-            ~packing:fr4#add ()
-        in
+         let sw4 =
+           GBin.scrolled_window ~vpolicy:`AUTOMATIC ~hpolicy:`AUTOMATIC
+             ~packing:fr4#add ()
+         in
 
-        ignore
-          (create_inst_view inst_model env env.buffer tv1 ~packing:sw4#add ());
+         ignore
+           (create_inst_view inst_model env env.buffer tv1 ~packing:sw4#add ());
 
-        Gui_replay.replay_session env;
-        ignore (refresh_instances env.insts ());
+         Gui_replay.replay_session env;
+         ignore (refresh_instances env.insts ());
 
-        let thread = ref None in
+         let thread = ref None in
 
-        ignore
-          (run_button#connect#clicked
-             ~callback:
-               (run run_button stop_button clean_button inst_model timers_model
-                  result_image result_label thread env used_context));
+         ignore
+           (run_button#connect#clicked
+              ~callback:
+                (run run_button stop_button clean_button inst_model timers_model
+                   result_image result_label thread env used_context));
 
-        ignore (stop_button#connect#clicked ~callback:(kill_thread thread));
+         ignore (stop_button#connect#clicked ~callback:(kill_thread thread));
 
-        ignore (eventBox#event#connect#key_press ~callback:(set_ctrl env true));
+         ignore (eventBox#event#connect#key_press ~callback:(set_ctrl env true));
 
-        ignore
-          (eventBox#event#connect#key_release ~callback:(set_ctrl env false));
+         ignore
+           (eventBox#event#connect#key_release ~callback:(set_ctrl env false));
 
-        Hashtbl.add note_search !nb_page
-          ( search_entry,
-            run run_button stop_button clean_button inst_model timers_model
-              result_image result_label thread env used_context );
+         Hashtbl.add note_search !nb_page
+           ( search_entry,
+             run run_button stop_button clean_button inst_model timers_model
+               result_image result_label thread env used_context );
 
-        env :: acc)
+         env :: acc)
       [] typed_ast
   in
 
@@ -1306,14 +1306,14 @@ let start_gui all_used_context =
   let set_wrap_lines _ =
     List.iter
       (fun env ->
-        if Stdlib.( = ) env.goal_view#wrap_mode `NONE then (
-          env.goal_view#set_wrap_mode `CHAR;
-          env.inst_view#set_wrap_mode `CHAR;
-          Gui_config.update_wrap true)
-        else (
-          env.goal_view#set_wrap_mode `NONE;
-          env.inst_view#set_wrap_mode `NONE;
-          Gui_config.update_wrap false))
+         if Stdlib.( = ) env.goal_view#wrap_mode `NONE then (
+           env.goal_view#set_wrap_mode `CHAR;
+           env.inst_view#set_wrap_mode `CHAR;
+           Gui_config.update_wrap true)
+         else (
+           env.goal_view#set_wrap_mode `NONE;
+           env.inst_view#set_wrap_mode `NONE;
+           Gui_config.update_wrap false))
       envs
   in
 
@@ -1437,26 +1437,26 @@ let start_gui all_used_context =
     | [ `CONTROL ] -> (
         match key_ev with
         | k when k = GdkKeysyms._q ->
-            quit envs ();
-            true
+          quit envs ();
+          true
         | k when k = GdkKeysyms._s ->
-            save_dialog "Cancel" envs ();
-            true
+          save_dialog "Cancel" envs ();
+          true
         | k when k = GdkKeysyms._f ->
-            focus_search ();
-            true
+          focus_search ();
+          true
         | k when k = GdkKeysyms._r ->
-            launch_run ();
-            true
+          launch_run ();
+          true
         | k when k = GdkKeysyms._equal || k = GdkKeysyms._plus ->
-            increase_size envs;
-            true
+          increase_size envs;
+          true
         | k when k = GdkKeysyms._minus ->
-            decrease_size envs;
-            true
+          decrease_size envs;
+          true
         | k when k = GdkKeysyms._0 || k = GdkKeysyms._KP_0 ->
-            reset_size envs;
-            true
+          reset_size envs;
+          true
         | _ -> false)
     | _ -> false
   in
@@ -1481,28 +1481,28 @@ let start_replay session_cin all_used_context =
   let typed_ast = Typechecker.split_goals typed_ast in
   List.iter
     (fun (l, goal_name) ->
-      let used_context = FE.choose_used_context all_used_context ~goal_name in
+       let used_context = FE.choose_used_context all_used_context ~goal_name in
 
-      let buf1 = GSourceView3.source_buffer () in
+       let buf1 = GSourceView3.source_buffer () in
 
-      let annoted_ast = annot buf1 l in
+       let annoted_ast = annot buf1 l in
 
-      let error_model = empty_error_model () in
-      let inst_model = empty_inst_model () in
+       let error_model = empty_error_model () in
+       let inst_model = empty_inst_model () in
 
-      let resulting_ids = compute_resulting_ids annoted_ast in
-      let actions = Gui_session.read_actions resulting_ids session_cin in
+       let resulting_ids = compute_resulting_ids annoted_ast in
+       let actions = Gui_session.read_actions resulting_ids session_cin in
 
-      (* cradingue *)
-      let env =
-        create_replay_env buf1 error_model inst_model annoted_ast actions
-          resulting_ids
-      in
+       (* cradingue *)
+       let env =
+         create_replay_env buf1 error_model inst_model annoted_ast actions
+           resulting_ids
+       in
 
-      add_to_buffer error_model env.buffer env.ast;
+       add_to_buffer error_model env.buffer env.ast;
 
-      Gui_replay.replay_session env;
-      run_replay env used_context)
+       Gui_replay.replay_session env;
+       run_replay env used_context)
     typed_ast;
 
   match session_cin with Some c -> close_in c | None -> ()
@@ -1524,8 +1524,8 @@ let () =
   with
   | Sys_error _ -> start_gui all_used_context
   | Util.Timeout ->
-      Printer.print_err "Timeout";
-      exit 142
+    Printer.print_err "Timeout";
+    exit 142
   | Errors.Error e ->
-      Printer.print_err "%a" Errors.report e;
-      exit 1
+    Printer.print_err "%a" Errors.report e;
+    exit 1

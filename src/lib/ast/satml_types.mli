@@ -156,7 +156,7 @@ module Proxy_formula : sig
     * Atom.atom list list ->
     Atom.atom
     * (Atom.atom Expr.Map.t
-      * Expr.t Atom.Map.t
-      * Atom.var list
-      * Atom.atom list list)
+       * Expr.t Atom.Map.t
+       * Atom.var list
+       * Atom.atom list list)
 end

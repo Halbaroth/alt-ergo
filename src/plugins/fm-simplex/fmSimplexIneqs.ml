@@ -27,12 +27,12 @@ module Container : Inequalities.Container_SIG = struct
     let dsimplex = ref false
 
     module SCache = Simplex_cache.MAKE (struct
-      type t = X.r
+        type t = X.r
 
-      let compare = X.hash_cmp
+        let compare = X.hash_cmp
 
-      include X
-    end)
+        include X
+      end)
 
     module MX = Shostak.MXH
     module Ex = Explanation
@@ -52,38 +52,38 @@ module Container : Inequalities.Container_SIG = struct
       if get_debug_fm () then
         match answer with
         | Unsat { vof; vals; _ } ->
-            Printer.print_dbg "I read: the simplex problem is not feasible (<=)";
-            print_answer (vof, vals)
+          Printer.print_dbg "I read: the simplex problem is not feasible (<=)";
+          print_answer (vof, vals)
         | Eq_unsat ->
-            Printer.print_dbg "I read: the simplex problem is not feasible (=)"
+          Printer.print_dbg "I read: the simplex problem is not feasible (=)"
         | Unbound { vof; vals; _ } ->
-            Printer.print_dbg "I read: the simplex problem is not bounded";
-            print_answer (vof, vals)
+          Printer.print_dbg "I read: the simplex problem is not bounded";
+          print_answer (vof, vals)
         | Max { vof; vals; _ } ->
-            Printer.print_dbg "I read: the simplex problem has a solution";
-            print_answer (vof, vals)
+          Printer.print_dbg "I read: the simplex problem has a solution";
+          print_answer (vof, vals)
 
     let add_to_sum ld sum l_m =
       List.fold_left
         (fun sum (c, x) ->
-          let lp, ln = try MX.find x sum with Not_found -> ([], []) in
-          if Q.sign c > 0 then MX.add x ((ld, c) :: lp, ln) sum
-          else MX.add x (lp, (ld, c) :: ln) sum)
+           let lp, ln = try MX.find x sum with Not_found -> ([], []) in
+           if Q.sign c > 0 then MX.add x ((ld, c) :: lp, ln) sum
+           else MX.add x (lp, (ld, c) :: ln) sum)
         sum l_m
 
     let generalized_fm_projection (constrs : (int * t) list) =
       List.fold_left
         (fun (sum, ctt, lds) (ld, ineq) ->
-          let l_m, c = P.to_list ineq.ple0 in
-          assert (Q.is_int c);
-          if l_m == [] then (
-            Printer.print_err "%a <= 0" P.print ineq.ple0;
-            assert false)
-          else
-            let sum = add_to_sum ld sum l_m in
-            let ctt = (ld, c) :: ctt in
-            let lds = (ld, Q.one) :: lds in
-            (sum, ctt, lds))
+           let l_m, c = P.to_list ineq.ple0 in
+           assert (Q.is_int c);
+           if l_m == [] then (
+             Printer.print_err "%a <= 0" P.print ineq.ple0;
+             assert false)
+           else
+             let sum = add_to_sum ld sum l_m in
+             let ctt = (ld, c) :: ctt in
+             let lds = (ld, Q.one) :: lds in
+             (sum, ctt, lds))
         (MX.empty, [], []) constrs
 
     let polynomials_bounding_pb sum ctt lambdas =
@@ -102,11 +102,11 @@ module Container : Inequalities.Container_SIG = struct
     let explain vals constrs =
       List.fold_left
         (fun expl (ld, (re, eps)) ->
-          if Q.compare re Q.zero = 0 && Q.compare eps Q.zero = 0 then expl
-            (* XXX eps ? re ? *)
-          else
-            let { expl = ex; _ } = List.assoc ld constrs in
-            Explanation.union expl ex)
+           if Q.compare re Q.zero = 0 && Q.compare eps Q.zero = 0 then expl
+           (* XXX eps ? re ? *)
+           else
+             let { expl = ex; _ } = List.assoc ld constrs in
+             Explanation.union expl ex)
         Explanation.empty vals
 
     let cpt = ref 0
@@ -120,63 +120,63 @@ module Container : Inequalities.Container_SIG = struct
       let sim_res =
         match SCache.already_registered r_max_ctt r_equas r_s_neq with
         | None ->
-            if !dsimplex then
-              Printer.print_dbg ~flushed:false ~header:false "Simplex poly in@ ";
-            incr cpt;
-            if !dsimplex then
-              Printer.print_dbg ~flushed:false ~header:false "new simplex %d@ "
-                !cpt;
-            let res = Simplex_Q.main max_ctt equas s_neq nb_constrs in
-            if !dsimplex then Printer.print_dbg ~header:false "Simplex poly out";
-            SCache.register r_max_ctt r_equas r_s_neq !cpt res;
-            res
+          if !dsimplex then
+            Printer.print_dbg ~flushed:false ~header:false "Simplex poly in@ ";
+          incr cpt;
+          if !dsimplex then
+            Printer.print_dbg ~flushed:false ~header:false "new simplex %d@ "
+              !cpt;
+          let res = Simplex_Q.main max_ctt equas s_neq nb_constrs in
+          if !dsimplex then Printer.print_dbg ~header:false "Simplex poly out";
+          SCache.register r_max_ctt r_equas r_s_neq !cpt res;
+          res
         | Some (n, res, ctt') ->
-            if SCache.MI.compare Q.compare r_max_ctt ctt' = 0 then (
-              if !dsimplex then
-                Printer.print_dbg "reuse RESULTS of simplex %d" n;
-              res)
-            else (
-              if !dsimplex then Printer.print_dbg "reuse  simplex %d" n;
-              let res = Simplex_Q.partial_restart res max_ctt in
-              res)
+          if SCache.MI.compare Q.compare r_max_ctt ctt' = 0 then (
+            if !dsimplex then
+              Printer.print_dbg "reuse RESULTS of simplex %d" n;
+            res)
+          else (
+            if !dsimplex then Printer.print_dbg "reuse  simplex %d" n;
+            let res = Simplex_Q.partial_restart res max_ctt in
+            res)
       in
       print_parsed_answer sim_res;
       match sim_res with
       | Unsat _ | Eq_unsat -> acc
       | Unbound { vals; _ } ->
-          raise (Ex.Inconsistent (explain vals constrs, []))
+        raise (Ex.Inconsistent (explain vals constrs, []))
       (* XXX: parties reelles nulles *)
       | Max { vof = re, eps; vals; _ } ->
-          assert (Q.is_zero re);
-          let expl = explain vals constrs in
-          let cmp = Q.compare eps Q.zero in
-          if cmp > 0 then raise (Ex.Inconsistent (expl, []));
-          let dep =
-            List.fold_left
-              (fun dep (ld, (re_ld, eps_ld)) ->
-                assert (Q.is_zero re_ld);
-                if Q.is_zero eps_ld then dep
-                else
-                  let ineq = List.assoc ld constrs in
-                  match Util.MI.bindings ineq.dep with
-                  | [ (a, (n, p, is_le)) ] ->
-                      assert (Q.is_one n && is_le);
-                      assert (not (Util.MI.mem a dep));
-                      Util.MI.add a (eps_ld, p, is_le) dep
-                  | _ -> assert false)
-              Util.MI.empty vals
-          in
-          let ineq =
-            {
-              ple0 = P.create [] eps Ty.Tint;
-              is_le = true;
-              (* add an assert *)
-              age = current_age ();
-              expl;
-              dep;
-            }
-          in
-          add_ineqs are_eq acc None [ ineq ]
+        assert (Q.is_zero re);
+        let expl = explain vals constrs in
+        let cmp = Q.compare eps Q.zero in
+        if cmp > 0 then raise (Ex.Inconsistent (expl, []));
+        let dep =
+          List.fold_left
+            (fun dep (ld, (re_ld, eps_ld)) ->
+               assert (Q.is_zero re_ld);
+               if Q.is_zero eps_ld then dep
+               else
+                 let ineq = List.assoc ld constrs in
+                 match Util.MI.bindings ineq.dep with
+                 | [ (a, (n, p, is_le)) ] ->
+                   assert (Q.is_one n && is_le);
+                   assert (not (Util.MI.mem a dep));
+                   Util.MI.add a (eps_ld, p, is_le) dep
+                 | _ -> assert false)
+            Util.MI.empty vals
+        in
+        let ineq =
+          {
+            ple0 = P.create [] eps Ty.Tint;
+            is_le = true;
+            (* add an assert *)
+            age = current_age ();
+            expl;
+            dep;
+          }
+        in
+        add_ineqs are_eq acc None [ ineq ]
 
     let tighten_monomial add_ineqs are_eq acc x sum_x is_pos sum ctt lambdas
         nb_constrs constrs =
@@ -191,79 +191,79 @@ module Container : Inequalities.Container_SIG = struct
       let sim_res =
         match SCache.already_registered_mon x r_max_ctt r_equas r_s_neq with
         | None ->
-            if !dsimplex then
-              Printer.print_dbg ~flushed:false ~header:false
-                "Simplex monomes in@ ";
-            incr cpt;
-            if !dsimplex then
-              Printer.print_dbg ~flushed:false ~header:false "new simplex %d@ "
-                !cpt;
-            let res = Simplex_Q.main max_ctt equas s_neq nb_constrs in
-            if !dsimplex then
-              Printer.print_dbg ~header:false "Simplex monomes out";
-            SCache.register_mon x r_max_ctt r_equas r_s_neq !cpt res;
-            res
+          if !dsimplex then
+            Printer.print_dbg ~flushed:false ~header:false
+              "Simplex monomes in@ ";
+          incr cpt;
+          if !dsimplex then
+            Printer.print_dbg ~flushed:false ~header:false "new simplex %d@ "
+              !cpt;
+          let res = Simplex_Q.main max_ctt equas s_neq nb_constrs in
+          if !dsimplex then
+            Printer.print_dbg ~header:false "Simplex monomes out";
+          SCache.register_mon x r_max_ctt r_equas r_s_neq !cpt res;
+          res
         | Some (n, res, ctt') ->
-            if SCache.MI.compare Q.compare r_max_ctt ctt' = 0 then (
-              if !dsimplex then
-                Printer.print_dbg ~header:false "reuse RESULTS of simplex %d" n;
-              res)
-            else (
-              if !dsimplex then
-                Printer.print_dbg ~header:false "reuse  simplex %d" n;
-              let res = Simplex_Q.partial_restart res max_ctt in
-              res)
+          if SCache.MI.compare Q.compare r_max_ctt ctt' = 0 then (
+            if !dsimplex then
+              Printer.print_dbg ~header:false "reuse RESULTS of simplex %d" n;
+            res)
+          else (
+            if !dsimplex then
+              Printer.print_dbg ~header:false "reuse  simplex %d" n;
+            let res = Simplex_Q.partial_restart res max_ctt in
+            res)
       in
       print_parsed_answer sim_res;
       match sim_res with
       | Unsat _ | Eq_unsat -> acc
       | Unbound { vals; _ } ->
-          raise (Ex.Inconsistent (explain vals constrs, []))
+        raise (Ex.Inconsistent (explain vals constrs, []))
       | Max { vof = vof, eps; vals; _ } ->
-          (* XXX: parties avec eps nulles *)
-          assert (Q.is_zero eps);
-          let expl = explain vals constrs in
-          let dep =
-            List.fold_left
-              (fun dep (ld, (re_ld, eps_ld)) ->
-                assert (Q.is_zero eps_ld);
-                if Q.is_zero re_ld then dep
-                else
-                  let ineq = List.assoc ld constrs in
-                  match Util.MI.bindings ineq.dep with
-                  | [ (a, (n, p, is_le)) ] ->
-                      assert (Q.is_one n && is_le);
-                      assert (not (Util.MI.mem a dep));
-                      Util.MI.add a (re_ld, p, is_le) dep
-                  | _ -> assert false)
-              Util.MI.empty vals
-          in
-          let mon_coef = if is_pos then Q.one else Q.m_one in
-          let ineq =
-            {
-              ple0 = P.create [ (mon_coef, x) ] vof Ty.Tint;
-              is_le = true;
-              (* add an assert *)
-              age = current_age ();
-              expl;
-              dep;
-            }
-          in
-          add_ineqs are_eq acc None [ ineq ]
+        (* XXX: parties avec eps nulles *)
+        assert (Q.is_zero eps);
+        let expl = explain vals constrs in
+        let dep =
+          List.fold_left
+            (fun dep (ld, (re_ld, eps_ld)) ->
+               assert (Q.is_zero eps_ld);
+               if Q.is_zero re_ld then dep
+               else
+                 let ineq = List.assoc ld constrs in
+                 match Util.MI.bindings ineq.dep with
+                 | [ (a, (n, p, is_le)) ] ->
+                   assert (Q.is_one n && is_le);
+                   assert (not (Util.MI.mem a dep));
+                   Util.MI.add a (re_ld, p, is_le) dep
+                 | _ -> assert false)
+            Util.MI.empty vals
+        in
+        let mon_coef = if is_pos then Q.one else Q.m_one in
+        let ineq =
+          {
+            ple0 = P.create [ (mon_coef, x) ] vof Ty.Tint;
+            is_le = true;
+            (* add an assert *)
+            age = current_age ();
+            expl;
+            dep;
+          }
+        in
+        add_ineqs are_eq acc None [ ineq ]
 
     let tighten_monomials add_ineqs are_eq acc sum ctt lds nb_ctrs ctrs =
       MX.fold
         (fun x sum_x acc ->
-          let sum = MX.remove x sum in
-          let acc =
-            tighten_monomial add_ineqs are_eq acc x sum_x true sum ctt lds
-              nb_ctrs ctrs
-          in
-          let acc =
-            tighten_monomial add_ineqs are_eq acc x sum_x false sum ctt lds
-              nb_ctrs ctrs
-          in
-          acc)
+           let sum = MX.remove x sum in
+           let acc =
+             tighten_monomial add_ineqs are_eq acc x sum_x true sum ctt lds
+               nb_ctrs ctrs
+           in
+           let acc =
+             tighten_monomial add_ineqs are_eq acc x sum_x false sum ctt lds
+               nb_ctrs ctrs
+           in
+           acc)
         sum acc
 
     let fm_simplex add_ineqs are_eq acc constrs nb_constrs =
@@ -296,8 +296,8 @@ module Container : Inequalities.Container_SIG = struct
       let ctrs =
         MINEQS.fold
           (fun _ (ineq, _) ctrs ->
-            decr cpt;
-            (!cpt, ineq) :: ctrs)
+             decr cpt;
+             (!cpt, ineq) :: ctrs)
           mp []
       in
       (ctrs, nb_ineqs)
@@ -315,8 +315,8 @@ module Container : Inequalities.Container_SIG = struct
       (try
          MINEQS.iter
            (fun p _ ->
-             is_rat := is_rat_poly p;
-             raise Exit)
+              is_rat := is_rat_poly p;
+              raise Exit)
            mp
        with Exit -> ());
       let is_rat = !is_rat in

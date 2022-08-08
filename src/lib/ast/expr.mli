@@ -64,8 +64,8 @@ and quantified = private {
   sko_v : t list;
   sko_vty : Ty.t list;
   loc : Util.Loc.t;
-      (* location of the "GLOBAL" axiom containing this quantified
-         formula. It forms with name a unique id *)
+  (* location of the "GLOBAL" axiom containing this quantified
+     formula. It forms with name a unique id *)
   kind : decl_kind;
 }
 

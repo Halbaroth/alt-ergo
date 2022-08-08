@@ -10,17 +10,17 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
-open Structs.Satml_types
+module Ast = Alt_ergo_lib_ast
+open Ast.Satml_types
 
 exception Sat
-exception Unsat of Structs.Satml_types.Atom.clause list option
+exception Unsat of Ast.Satml_types.Atom.clause list option
 exception Last_UIP_reason of Atom.Set.t
 
 type conflict_origin =
   | C_none
   | C_bool of Atom.clause
-  | C_theory of Structs.Ex.t
+  | C_theory of Ast.Ex.t
 
 module type SAT_ML = sig
   (*module Make (Dummy : sig end) : sig*)
@@ -31,48 +31,48 @@ module type SAT_ML = sig
 
   val set_new_proxies :
     t ->
-    (Structs.Satml_types.Atom.atom * Structs.Satml_types.Atom.atom list * bool)
-    Util.Util.MI.t ->
+    (Ast.Satml_types.Atom.atom * Ast.Satml_types.Atom.atom list * bool)
+      Util.Util.MI.t ->
     unit
 
   val new_vars :
     t ->
     nbv:int ->
     (* nb made vars *)
-    Structs.Satml_types.Atom.var list ->
-    Structs.Satml_types.Atom.atom list list ->
-    Structs.Satml_types.Atom.atom list list ->
-    Structs.Satml_types.Atom.atom list list
-    * Structs.Satml_types.Atom.atom list list
+    Ast.Satml_types.Atom.var list ->
+    Ast.Satml_types.Atom.atom list list ->
+    Ast.Satml_types.Atom.atom list list ->
+    Ast.Satml_types.Atom.atom list list
+    * Ast.Satml_types.Atom.atom list list
 
   val assume :
     t ->
-    Structs.Satml_types.Atom.atom list list ->
-    Structs.Satml_types.Atom.atom list list ->
-    Structs.Expr.t ->
+    Ast.Satml_types.Atom.atom list list ->
+    Ast.Satml_types.Atom.atom list list ->
+    Ast.Expr.t ->
     cnumber:int ->
-    Structs.Satml_types.Atom.atom option Flat_Formula.Map.t ->
+    Ast.Satml_types.Atom.atom option Flat_Formula.Map.t ->
     dec_lvl:int ->
     unit
 
-  val boolean_model : t -> Structs.Satml_types.Atom.atom list
+  val boolean_model : t -> Ast.Satml_types.Atom.atom list
 
   val instantiation_context :
     t ->
-    Structs.Satml_types.Flat_Formula.hcons_env ->
-    Structs.Satml_types.Atom.Set.t
+    Ast.Satml_types.Flat_Formula.hcons_env ->
+    Ast.Satml_types.Atom.Set.t
 
   val current_tbox : t -> th
   val set_current_tbox : t -> th -> unit
   val empty : unit -> t
-  val assume_th_elt : t -> Structs.Expr.th_elt -> Structs.Ex.t -> unit
+  val assume_th_elt : t -> Ast.Expr.th_elt -> Ast.Ex.t -> unit
   val decision_level : t -> int
   val cancel_until : t -> int -> unit
 
   val update_lazy_cnf :
     t ->
     do_bcp:bool ->
-    Structs.Satml_types.Atom.atom option Flat_Formula.Map.t ->
+    Ast.Satml_types.Atom.atom option Flat_Formula.Map.t ->
     dec_lvl:int ->
     unit
 
@@ -82,7 +82,7 @@ module type SAT_ML = sig
   val assume_simple : t -> Atom.atom list list -> unit
   val decide : t -> Atom.atom -> unit
   val conflict_analyze_and_fix : t -> conflict_origin -> unit
-  val push : t -> Structs.Satml_types.Atom.atom -> unit
+  val push : t -> Ast.Satml_types.Atom.atom -> unit
   val pop : t -> unit
 end
 

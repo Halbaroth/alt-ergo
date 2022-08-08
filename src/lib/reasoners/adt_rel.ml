@@ -10,7 +10,7 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 open Util.Options
 open Format
 module X = Shostak.Combine
@@ -25,30 +25,30 @@ module LR = Uf.LX
 module SLR = Set.Make (LR)
 
 type t = {
-  classes : Structs.Expr.Set.t list;
-  domains : (Util.Hstring.Set.t * Structs.Ex.t) MX.t;
-  seen_destr : Structs.Expr.Set.t;
-  seen_access : Structs.Expr.Set.t;
+  classes : Ast.Expr.Set.t list;
+  domains : (Util.Hstring.Set.t * Ast.Ex.t) MX.t;
+  seen_destr : Ast.Expr.Set.t;
+  seen_access : Ast.Expr.Set.t;
   seen_testers : Util.Hstring.Set.t MX.t;
-      [@ocaml.ppwarning
-        "selectors should be improved. only representatives in it. No true or \
-         false _is"]
-  selectors : (Structs.Expr.t * Structs.Ex.t) list Util.Hstring.Map.t MX.t;
+  [@ocaml.ppwarning
+    "selectors should be improved. only representatives in it. No true or \
+     false _is"]
+  selectors : (Ast.Expr.t * Ast.Ex.t) list Util.Hstring.Map.t MX.t;
   size_splits : Util.Numbers.Q.t;
-  new_terms : Structs.Expr.Set.t;
-  pending_deds : (r Sig_rel.literal * Structs.Ex.t * Th_util.lit_origin) list;
+  new_terms : Ast.Expr.Set.t;
+  pending_deds : (r Sig_rel.literal * Ast.Ex.t * Th_util.lit_origin) list;
 }
 
 let empty classes =
   {
     classes;
     domains = MX.empty;
-    seen_destr = Structs.Expr.Set.empty;
-    seen_access = Structs.Expr.Set.empty;
+    seen_destr = Ast.Expr.Set.empty;
+    seen_access = Ast.Expr.Set.empty;
     seen_testers = MX.empty;
     selectors = MX.empty;
     size_splits = Util.Numbers.Q.one;
-    new_terms = Structs.Expr.Set.empty;
+    new_terms = Ast.Expr.Set.empty;
     pending_deds = [];
   }
 
@@ -68,41 +68,41 @@ module Debug = struct
         "@ @[<v 2>--ADT env %s ---------------------------------@ " loc;
       MX.iter
         (fun r (hss, ex) ->
-          print_dbg ~flushed:false ~header:false "%a 's domain is " X.print r;
-          (match Util.Hstring.Set.elements hss with
-          | [] -> ()
-          | hs :: l ->
+           print_dbg ~flushed:false ~header:false "%a 's domain is " X.print r;
+           (match Util.Hstring.Set.elements hss with
+            | [] -> ()
+            | hs :: l ->
               print_dbg ~flushed:false ~header:false "{ %s"
                 (Util.Hstring.view hs);
               List.iter
                 (fun hs ->
-                  print_dbg ~flushed:false ~header:false " | %s"
-                    (Util.Hstring.view hs))
+                   print_dbg ~flushed:false ~header:false " | %s"
+                     (Util.Hstring.view hs))
                 l);
-          print_dbg ~flushed:false ~header:false " } %a@ " Structs.Ex.print ex)
+           print_dbg ~flushed:false ~header:false " } %a@ " Ast.Ex.print ex)
         env.domains;
       print_dbg ~flushed:false ~header:false
         "@]@ @[<v 2>-- seen testers ---------------------------@ ";
       MX.iter
         (fun r hss ->
-          Util.Hstring.Set.iter
-            (fun hs ->
-              print_dbg ~flushed:false ~header:false "(%a is %a)@ " X.print r
-                Util.Hstring.print hs)
-            hss)
+           Util.Hstring.Set.iter
+             (fun hs ->
+                print_dbg ~flushed:false ~header:false "(%a is %a)@ " X.print r
+                  Util.Hstring.print hs)
+             hss)
         env.seen_testers;
       print_dbg ~flushed:false ~header:false
         "@]@ @[<v 2>-- selectors ------------------------------@ ";
       MX.iter
         (fun r mhs ->
-          Util.Hstring.Map.iter
-            (fun hs l ->
-              List.iter
-                (fun (a, _) ->
-                  print_dbg ~flushed:false ~header:false "(%a is %a) ==> %a@ "
-                    X.print r Util.Hstring.print hs Structs.Expr.print a)
-                l)
-            mhs)
+           Util.Hstring.Map.iter
+             (fun hs l ->
+                List.iter
+                  (fun (a, _) ->
+                     print_dbg ~flushed:false ~header:false "(%a is %a) ==> %a@ "
+                       X.print r Util.Hstring.print hs Ast.Expr.print a)
+                  l)
+             mhs)
         env.selectors;
       print_dbg ~header:false "@]@ -------------------------------------------")
 
@@ -129,7 +129,7 @@ let new_terms env = env.new_terms
 let instantiate ~do_syntactic_matching:_ _ env _ _ = (env, [])
 
 let assume_th_elt t th_elt _ =
-  match th_elt.Structs.Expr.extends with
+  match th_elt.Ast.Expr.extends with
   | Util.Util.Adt -> failwith "This Theory does not support theories extension"
   | _ -> t
 
@@ -139,7 +139,7 @@ let seen_tester r hs env =
 
 let deduce_is_constr uf r h eqs env ex =
   let r, ex' = try Uf.find_r uf r with Not_found -> assert false in
-  let ex = Structs.Ex.union ex ex' in
+  let ex = Ast.Ex.union ex ex' in
   match embed r with
   | Adt.Alien r -> (
       match X.term_extract r with
@@ -148,107 +148,107 @@ let deduce_is_constr uf r h eqs env ex =
             if seen_tester r h env then eqs
             else
               let is_c =
-                Structs.Expr.mk_builtin ~is_pos:true (Structs.Sy.IsConstr h)
+                Ast.Expr.mk_builtin ~is_pos:true (Ast.Sy.IsConstr h)
                   [ t ]
               in
               if get_debug_adt () then
                 Util.Printer.print_dbg ~module_name:"Adt_rel"
-                  ~function_name:"deduce_is_constr" "%a" Structs.Expr.print is_c;
+                  ~function_name:"deduce_is_constr" "%a" Ast.Expr.print is_c;
               (Sig_rel.LTerm is_c, ex, Th_util.Other) :: eqs
           in
-          match Structs.Expr.term_view t with
-          | Structs.Expr.Not_a_term _ -> assert false
-          | Structs.Expr.Term
-              { Structs.Expr.ty = Structs.Ty.Tadt (name, params) as ty; _ } ->
-              (* Only do this deduction for finite types ??
-                   may not terminate in some cases otherwise.
-                   eg. type t = A of t
-                   goal g: forall e,e' :t. e = C(e') -> false
-                   + should not be guareded by "seen_tester"
-              *)
-              let cases =
-                match Structs.Ty.type_body name params with
-                | Structs.Ty.Adt cases -> cases
-              in
-              let { Structs.Ty.destrs; _ } =
-                try
-                  List.find
-                    (fun { Structs.Ty.constr = c; _ } -> Util.Hstring.equal h c)
-                    cases
-                with Not_found -> assert false
-              in
-              let xs =
-                List.map (fun (_, ty) -> Structs.Expr.fresh_name ty) destrs
-              in
-              let cons =
-                Structs.Expr.mk_term
-                  (Structs.Sy.constr (Util.Hstring.view h))
-                  xs ty
-              in
-              let env =
-                { env with new_terms = Structs.Expr.Set.add cons env.new_terms }
-              in
-              let eq = Structs.Expr.mk_eq t cons ~iff:false in
-              if get_debug_adt () then
-                Util.Printer.print_dbg ~module_name:"Adt_rel"
-                  ~function_name:"deduce equal to constr" "%a"
-                  Structs.Expr.print eq;
-              let eqs = (Sig_rel.LTerm eq, ex, Th_util.Other) :: eqs in
-              (env, eqs)
+          match Ast.Expr.term_view t with
+          | Ast.Expr.Not_a_term _ -> assert false
+          | Ast.Expr.Term
+              { Ast.Expr.ty = Ast.Ty.Tadt (name, params) as ty; _ } ->
+            (* Only do this deduction for finite types ??
+                 may not terminate in some cases otherwise.
+                 eg. type t = A of t
+                 goal g: forall e,e' :t. e = C(e') -> false
+                 + should not be guareded by "seen_tester"
+            *)
+            let cases =
+              match Ast.Ty.type_body name params with
+              | Ast.Ty.Adt cases -> cases
+            in
+            let { Ast.Ty.destrs; _ } =
+              try
+                List.find
+                  (fun { Ast.Ty.constr = c; _ } -> Util.Hstring.equal h c)
+                  cases
+              with Not_found -> assert false
+            in
+            let xs =
+              List.map (fun (_, ty) -> Ast.Expr.fresh_name ty) destrs
+            in
+            let cons =
+              Ast.Expr.mk_term
+                (Ast.Sy.constr (Util.Hstring.view h))
+                xs ty
+            in
+            let env =
+              { env with new_terms = Ast.Expr.Set.add cons env.new_terms }
+            in
+            let eq = Ast.Expr.mk_eq t cons ~iff:false in
+            if get_debug_adt () then
+              Util.Printer.print_dbg ~module_name:"Adt_rel"
+                ~function_name:"deduce equal to constr" "%a"
+                Ast.Expr.print eq;
+            let eqs = (Sig_rel.LTerm eq, ex, Th_util.Other) :: eqs in
+            (env, eqs)
           | _ -> (env, eqs))
       | _ ->
-          Util.Printer.print_err "%a" X.print r;
-          assert false)
+        Util.Printer.print_err "%a" X.print r;
+        assert false)
   | _ -> (env, eqs)
 
 let values_of ty =
   match ty with
-  | Structs.Ty.Tadt (name, params) ->
-      let l =
-        match Structs.Ty.type_body name params with
-        | Structs.Ty.Adt cases -> cases
-      in
-      Some
-        (List.fold_left
-           (fun st { Structs.Ty.constr; _ } -> Util.Hstring.Set.add constr st)
-           Util.Hstring.Set.empty l)
+  | Ast.Ty.Tadt (name, params) ->
+    let l =
+      match Ast.Ty.type_body name params with
+      | Ast.Ty.Adt cases -> cases
+    in
+    Some
+      (List.fold_left
+         (fun st { Ast.Ty.constr; _ } -> Util.Hstring.Set.add constr st)
+         Util.Hstring.Set.empty l)
   | _ -> None
 
 let add_adt env uf t r sy ty =
   if MX.mem r env.domains then env
   else
     match (sy, ty) with
-    | Structs.Sy.Op (Structs.Sy.Constr hs), Structs.Ty.Tadt _ ->
-        if get_debug_adt () then
-          Util.Printer.print_dbg ~module_name:"Adt_rel" ~function_name:"add_adt"
-            "new ADT expr(C): %a" Structs.Expr.print t;
+    | Ast.Sy.Op (Ast.Sy.Constr hs), Ast.Ty.Tadt _ ->
+      if get_debug_adt () then
+        Util.Printer.print_dbg ~module_name:"Adt_rel" ~function_name:"add_adt"
+          "new ADT expr(C): %a" Ast.Expr.print t;
+      {
+        env with
+        domains =
+          MX.add r
+            (Util.Hstring.Set.singleton hs, Ast.Ex.empty)
+            env.domains;
+      }
+    | _, Ast.Ty.Tadt _ ->
+      if get_debug_adt () then
+        Util.Printer.print_dbg ~module_name:"Adt_rel" ~function_name:"add_adt"
+          "new ADT expr: %a" Ast.Expr.print t;
+      let constrs =
+        match values_of ty with None -> assert false | Some s -> s
+      in
+      let env =
         {
           env with
-          domains =
-            MX.add r
-              (Util.Hstring.Set.singleton hs, Structs.Ex.empty)
-              env.domains;
+          domains = MX.add r (constrs, Ast.Ex.empty) env.domains;
         }
-    | _, Structs.Ty.Tadt _ ->
-        if get_debug_adt () then
-          Util.Printer.print_dbg ~module_name:"Adt_rel" ~function_name:"add_adt"
-            "new ADT expr: %a" Structs.Expr.print t;
-        let constrs =
-          match values_of ty with None -> assert false | Some s -> s
+      in
+      if Util.Hstring.Set.cardinal constrs = 1 then
+        let h' = Util.Hstring.Set.choose constrs in
+        let env, pending_deds =
+          deduce_is_constr uf r h' env.pending_deds env Ast.Ex.empty
         in
-        let env =
-          {
-            env with
-            domains = MX.add r (constrs, Structs.Ex.empty) env.domains;
-          }
-        in
-        if Util.Hstring.Set.cardinal constrs = 1 then
-          let h' = Util.Hstring.Set.choose constrs in
-          let env, pending_deds =
-            deduce_is_constr uf r h' env.pending_deds env Structs.Ex.empty
-          in
-          { env with pending_deds }
-        else env
+        { env with pending_deds }
+      else env
     | _ -> env
 
 let update_tester r hs env =
@@ -269,49 +269,49 @@ let trivial_tester r hs =
 let constr_of_destr ty dest =
   if get_debug_adt () then
     Util.Printer.print_dbg ~module_name:"Adt_rel"
-      ~function_name:"constr_of_destr" "ty = %a" Structs.Ty.print ty;
+      ~function_name:"constr_of_destr" "ty = %a" Ast.Ty.print ty;
   match ty with
-  | Structs.Ty.Tadt (name, params) -> (
+  | Ast.Ty.Tadt (name, params) -> (
       let cases =
-        match Structs.Ty.type_body name params with
-        | Structs.Ty.Adt cases -> cases
+        match Ast.Ty.type_body name params with
+        | Ast.Ty.Adt cases -> cases
       in
       try
         List.find
-          (fun { Structs.Ty.destrs; _ } ->
-            List.exists (fun (d, _) -> Util.Hstring.equal dest d) destrs)
+          (fun { Ast.Ty.destrs; _ } ->
+             List.exists (fun (d, _) -> Util.Hstring.equal dest d) destrs)
           cases
       with Not_found -> assert false (* invariant *))
   | _ -> assert false
-  [@@ocaml.ppwarning
-    "XXX improve. For each selector, store its corresponding constructor when \
-     typechecking ?"]
+[@@ocaml.ppwarning
+  "XXX improve. For each selector, store its corresponding constructor when \
+   typechecking ?"]
 
 let add_guarded_destr env uf t hs e t_ty =
   if get_debug_adt () then
     Util.Printer.print_dbg ~flushed:false ~module_name:"Adt_rel"
       ~function_name:"add_guarded_destr" "new (guarded) Destr: %a@ "
-      Structs.Expr.print t;
-  let env = { env with seen_destr = Structs.Expr.Set.add t env.seen_destr } in
-  let { Structs.Ty.constr = c; _ } =
-    constr_of_destr (Structs.Expr.type_info e) hs
+      Ast.Expr.print t;
+  let env = { env with seen_destr = Ast.Expr.Set.add t env.seen_destr } in
+  let { Ast.Ty.constr = c; _ } =
+    constr_of_destr (Ast.Expr.type_info e) hs
   in
   let access =
-    Structs.Expr.mk_term
-      (Structs.Sy.destruct (Util.Hstring.view hs) ~guarded:false)
+    Ast.Expr.mk_term
+      (Ast.Sy.destruct (Util.Hstring.view hs) ~guarded:false)
       [ e ] t_ty
   in
   (* XXX : Never add non-guarded access to list of new terms !
      This may/will introduce bugs when instantiating
-     let env = {env with new_terms = Structs.Expr.Set.add access env.new_terms} in
+     let env = {env with new_terms = Ast.Expr.Set.add access env.new_terms} in
   *)
   let is_c =
-    Structs.Expr.mk_builtin ~is_pos:true (Structs.Sy.IsConstr c) [ e ]
+    Ast.Expr.mk_builtin ~is_pos:true (Ast.Sy.IsConstr c) [ e ]
   in
-  let eq = Structs.Expr.mk_eq access t ~iff:false in
+  let eq = Ast.Expr.mk_eq access t ~iff:false in
   if get_debug_adt () then
     Util.Printer.print_dbg ~header:false "associated with constr %a@,%a => %a"
-      Util.Hstring.print c Structs.Expr.print is_c Structs.Expr.print eq;
+      Util.Hstring.print c Ast.Expr.print is_c Ast.Expr.print eq;
   let r_e, ex_e = try Uf.find uf e with Not_found -> assert false in
   if trivial_tester r_e c then
     {
@@ -335,38 +335,38 @@ let add_guarded_destr env uf t hs e t_ty =
           (Util.Hstring.Map.add c ((eq, ex_e) :: old) m_e)
           env.selectors;
     }
-  [@@ocaml.ppwarning "working with X.term_extract r would be sufficient ?"]
+[@@ocaml.ppwarning "working with X.term_extract r would be sufficient ?"]
 
 let add_aux env (uf : uf) (r : r) t =
   if get_disable_adts () then env
   else
-    let { Structs.Expr.f = sy; xs; ty; _ } =
-      match Structs.Expr.term_view t with
-      | Structs.Expr.Term t -> t
-      | Structs.Expr.Not_a_term _ -> assert false
+    let { Ast.Expr.f = sy; xs; ty; _ } =
+      match Ast.Expr.term_view t with
+      | Ast.Expr.Term t -> t
+      | Ast.Expr.Not_a_term _ -> assert false
     in
     let env = add_adt env uf t r sy ty in
     match (sy, xs) with
-    | Structs.Sy.Op (Structs.Sy.Destruct (hs, true)), [ e ] ->
-        (* guarded *)
-        if get_debug_adt () then
-          Util.Printer.print_dbg ~module_name:"Adt_rel" ~function_name:"add_aux"
-            "add guarded destruct: %a" Structs.Expr.print t;
-        if Structs.Expr.Set.mem t env.seen_destr then env
-        else add_guarded_destr env uf t hs e ty
-    | Structs.Sy.Op (Structs.Sy.Destruct (_, false)), [ _ ] ->
-        (* not guarded *)
-        if get_debug_adt () then
-          Util.Printer.print_dbg ~module_name:"Adt_rel" ~function_name:"add_aux"
-            "[ADTs] add unguarded destruct: %a" Structs.Expr.print t;
-        { env with seen_access = Structs.Expr.Set.add t env.seen_access }
-    | Structs.Sy.Op (Structs.Sy.Destruct _), _ ->
-        assert false (* not possible *)
-    (*| Structs.Sy.Op Structs.Sy.IsConstr _, _ ->
+    | Ast.Sy.Op (Ast.Sy.Destruct (hs, true)), [ e ] ->
+      (* guarded *)
+      if get_debug_adt () then
+        Util.Printer.print_dbg ~module_name:"Adt_rel" ~function_name:"add_aux"
+          "add guarded destruct: %a" Ast.Expr.print t;
+      if Ast.Expr.Set.mem t env.seen_destr then env
+      else add_guarded_destr env uf t hs e ty
+    | Ast.Sy.Op (Ast.Sy.Destruct (_, false)), [ _ ] ->
+      (* not guarded *)
+      if get_debug_adt () then
+        Util.Printer.print_dbg ~module_name:"Adt_rel" ~function_name:"add_aux"
+          "[ADTs] add unguarded destruct: %a" Ast.Expr.print t;
+      { env with seen_access = Ast.Expr.Set.add t env.seen_access }
+    | Ast.Sy.Op (Ast.Sy.Destruct _), _ ->
+      assert false (* not possible *)
+    (*| Ast.Sy.Op Ast.Sy.IsConstr _, _ ->
       if get_debug_adt () then
       Util.Printer.print_dbg
       "new Tester: %a" E.print t;
-       { env with seen_testers = Structs.Expr.Set.add t env.seen_testers }
+       { env with seen_testers = Ast.Expr.Set.add t env.seen_testers }
     *)
     | _ -> env
 
@@ -376,9 +376,9 @@ let count_splits env la =
   let nb =
     List.fold_left
       (fun nb (_, _, _, i) ->
-        match i with
-        | Th_util.CS (Th_util.Th_sum, n) -> Util.Numbers.Q.mult nb n
-        | _ -> nb)
+         match i with
+         | Th_util.CS (Th_util.Th_sum, n) -> Util.Numbers.Q.mult nb n
+         | _ -> nb)
       env.size_splits la
   in
   { env with size_splits = nb }
@@ -387,45 +387,45 @@ let add_diseq uf hss sm1 sm2 dep env eqs =
   match (sm1, sm2) with
   | Adt.Alien r, Adt.Constr { c_name = h; c_args = []; _ }
   | Adt.Constr { c_name = h; c_args = []; _ }, Adt.Alien r ->
-      (* not correct with args *)
-      let enum, ex =
-        try MX.find r env.domains with Not_found -> (hss, Structs.Ex.empty)
-      in
-      let enum = Util.Hstring.Set.remove h enum in
-      let ex = Structs.Ex.union ex dep in
-      if Util.Hstring.Set.is_empty enum then
-        raise (Structs.Ex.Inconsistent (ex, env.classes))
-      else
-        let env = { env with domains = MX.add r (enum, ex) env.domains } in
-        if Util.Hstring.Set.cardinal enum = 1 then
-          let h' = Util.Hstring.Set.choose enum in
-          let env, eqs = deduce_is_constr uf r h' eqs env ex in
-          (env, eqs)
-        else (env, eqs)
+    (* not correct with args *)
+    let enum, ex =
+      try MX.find r env.domains with Not_found -> (hss, Ast.Ex.empty)
+    in
+    let enum = Util.Hstring.Set.remove h enum in
+    let ex = Ast.Ex.union ex dep in
+    if Util.Hstring.Set.is_empty enum then
+      raise (Ast.Ex.Inconsistent (ex, env.classes))
+    else
+      let env = { env with domains = MX.add r (enum, ex) env.domains } in
+      if Util.Hstring.Set.cardinal enum = 1 then
+        let h' = Util.Hstring.Set.choose enum in
+        let env, eqs = deduce_is_constr uf r h' eqs env ex in
+        (env, eqs)
+      else (env, eqs)
   | Adt.Alien _, Adt.Constr _ | Adt.Constr _, Adt.Alien _ -> (env, eqs)
   | Adt.Alien r1, Adt.Alien r2 ->
-      let enum1, ex1 =
-        try MX.find r1 env.domains with Not_found -> (hss, Structs.Ex.empty)
-      in
-      let enum2, ex2 =
-        try MX.find r2 env.domains with Not_found -> (hss, Structs.Ex.empty)
-      in
+    let enum1, ex1 =
+      try MX.find r1 env.domains with Not_found -> (hss, Ast.Ex.empty)
+    in
+    let enum2, ex2 =
+      try MX.find r2 env.domains with Not_found -> (hss, Ast.Ex.empty)
+    in
 
-      let env, eqs =
-        if Util.Hstring.Set.cardinal enum1 = 1 then
-          let ex = Structs.Ex.union dep ex1 in
-          let h' = Util.Hstring.Set.choose enum1 in
-          deduce_is_constr uf r1 h' eqs env ex
-        else (env, eqs)
-      in
-      let env, eqs =
-        if Util.Hstring.Set.cardinal enum2 = 1 then
-          let ex = Structs.Ex.union dep ex2 in
-          let h' = Util.Hstring.Set.choose enum2 in
-          deduce_is_constr uf r2 h' eqs env ex
-        else (env, eqs)
-      in
-      (env, eqs)
+    let env, eqs =
+      if Util.Hstring.Set.cardinal enum1 = 1 then
+        let ex = Ast.Ex.union dep ex1 in
+        let h' = Util.Hstring.Set.choose enum1 in
+        deduce_is_constr uf r1 h' eqs env ex
+      else (env, eqs)
+    in
+    let env, eqs =
+      if Util.Hstring.Set.cardinal enum2 = 1 then
+        let ex = Ast.Ex.union dep ex2 in
+        let h' = Util.Hstring.Set.choose enum2 in
+        deduce_is_constr uf r2 h' eqs env ex
+      else (env, eqs)
+    in
+    (env, eqs)
   | _ -> (env, eqs)
 
 let assoc_and_remove_selector hs r env =
@@ -442,107 +442,107 @@ let assoc_and_remove_selector hs r env =
 let assume_is_constr uf hs r dep env eqs =
   match embed r with
   | Adt.Constr { c_name; _ } when not (Util.Hstring.equal c_name hs) ->
-      raise (Structs.Ex.Inconsistent (dep, env.classes))
+    raise (Ast.Ex.Inconsistent (dep, env.classes))
   | _ ->
-      if get_debug_adt () then
-        Util.Printer.print_dbg ~module_name:"Adt_rel"
-          ~function_name:"assume_is_constr" "assume is constr %a %a" X.print r
-          Util.Hstring.print hs;
-      if seen_tester r hs env then (env, eqs)
-      else
-        let deds, env = assoc_and_remove_selector hs r env in
-        let eqs =
-          List.fold_left
-            (fun eqs (ded, dep') ->
-              (Sig_rel.LTerm ded, Structs.Ex.union dep dep', Th_util.Other)
-              :: eqs)
-            eqs deds
-        in
-        let env = update_tester r hs env in
+    if get_debug_adt () then
+      Util.Printer.print_dbg ~module_name:"Adt_rel"
+        ~function_name:"assume_is_constr" "assume is constr %a %a" X.print r
+        Util.Hstring.print hs;
+    if seen_tester r hs env then (env, eqs)
+    else
+      let deds, env = assoc_and_remove_selector hs r env in
+      let eqs =
+        List.fold_left
+          (fun eqs (ded, dep') ->
+             (Sig_rel.LTerm ded, Ast.Ex.union dep dep', Th_util.Other)
+             :: eqs)
+          eqs deds
+      in
+      let env = update_tester r hs env in
 
-        let enum, ex =
-          try MX.find r env.domains
-          with Not_found -> (
+      let enum, ex =
+        try MX.find r env.domains
+        with Not_found -> (
             (*Cannot just put assert false !
               some terms are not well inited *)
             match values_of (X.type_info r) with
             | None -> assert false
-            | Some s -> (s, Structs.Ex.empty))
-        in
-        let ex = Structs.Ex.union ex dep in
-        if not (Util.Hstring.Set.mem hs enum) then
-          raise (Structs.Ex.Inconsistent (ex, env.classes));
-        let env, eqs = deduce_is_constr uf r hs eqs env ex in
-        ( {
-            env with
-            domains = MX.add r (Util.Hstring.Set.singleton hs, ex) env.domains;
-          },
-          eqs )
+            | Some s -> (s, Ast.Ex.empty))
+      in
+      let ex = Ast.Ex.union ex dep in
+      if not (Util.Hstring.Set.mem hs enum) then
+        raise (Ast.Ex.Inconsistent (ex, env.classes));
+      let env, eqs = deduce_is_constr uf r hs eqs env ex in
+      ( {
+        env with
+        domains = MX.add r (Util.Hstring.Set.singleton hs, ex) env.domains;
+      },
+        eqs )
 
 let assume_not_is_constr uf hs r dep env eqs =
   match embed r with
   | Adt.Constr { c_name; _ } when Util.Hstring.equal c_name hs ->
-      raise (Structs.Ex.Inconsistent (dep, env.classes))
+    raise (Ast.Ex.Inconsistent (dep, env.classes))
   | _ ->
-      let _, env = assoc_and_remove_selector hs r env in
-      let enum, ex =
-        try MX.find r env.domains
-        with Not_found -> (
+    let _, env = assoc_and_remove_selector hs r env in
+    let enum, ex =
+      try MX.find r env.domains
+      with Not_found -> (
           (* semantic values may be not inited with function add *)
           match values_of (X.type_info r) with
-          | Some s -> (s, Structs.Ex.empty)
+          | Some s -> (s, Ast.Ex.empty)
           | None -> assert false)
-      in
-      if not (Util.Hstring.Set.mem hs enum) then (env, eqs)
+    in
+    if not (Util.Hstring.Set.mem hs enum) then (env, eqs)
+    else
+      let enum = Util.Hstring.Set.remove hs enum in
+      let ex = Ast.Ex.union ex dep in
+      if Util.Hstring.Set.is_empty enum then
+        raise (Ast.Ex.Inconsistent (ex, env.classes))
       else
-        let enum = Util.Hstring.Set.remove hs enum in
-        let ex = Structs.Ex.union ex dep in
-        if Util.Hstring.Set.is_empty enum then
-          raise (Structs.Ex.Inconsistent (ex, env.classes))
-        else
-          let env = { env with domains = MX.add r (enum, ex) env.domains } in
-          if Util.Hstring.Set.cardinal enum = 1 then
-            let h' = Util.Hstring.Set.choose enum in
-            let env, eqs = deduce_is_constr uf r h' eqs env ex in
-            (env, eqs)
-          else (env, eqs)
+        let env = { env with domains = MX.add r (enum, ex) env.domains } in
+        if Util.Hstring.Set.cardinal enum = 1 then
+          let h' = Util.Hstring.Set.choose enum in
+          let env, eqs = deduce_is_constr uf r h' eqs env ex in
+          (env, eqs)
+        else (env, eqs)
 
 (* dot it modulo equivalence class ? or is it sufficient ? *)
 let add_eq uf hss sm1 sm2 dep env eqs =
   match (sm1, sm2) with
   | Adt.Alien r, Adt.Constr { c_name = h; _ }
   | Adt.Constr { c_name = h; _ }, Adt.Alien r ->
-      let enum, ex =
-        try MX.find r env.domains with Not_found -> (hss, Structs.Ex.empty)
-      in
-      let ex = Structs.Ex.union ex dep in
-      if not (Util.Hstring.Set.mem h enum) then
-        raise (Structs.Ex.Inconsistent (ex, env.classes));
-      let env, eqs = deduce_is_constr uf r h eqs env ex in
-      ( {
-          env with
-          domains = MX.add r (Util.Hstring.Set.singleton h, ex) env.domains;
-        },
-        eqs )
+    let enum, ex =
+      try MX.find r env.domains with Not_found -> (hss, Ast.Ex.empty)
+    in
+    let ex = Ast.Ex.union ex dep in
+    if not (Util.Hstring.Set.mem h enum) then
+      raise (Ast.Ex.Inconsistent (ex, env.classes));
+    let env, eqs = deduce_is_constr uf r h eqs env ex in
+    ( {
+      env with
+      domains = MX.add r (Util.Hstring.Set.singleton h, ex) env.domains;
+    },
+      eqs )
   | Adt.Alien r1, Adt.Alien r2 ->
-      let enum1, ex1 =
-        try MX.find r1 env.domains with Not_found -> (hss, Structs.Ex.empty)
-      in
-      let enum2, ex2 =
-        try MX.find r2 env.domains with Not_found -> (hss, Structs.Ex.empty)
-      in
-      let ex = Structs.Ex.union dep (Structs.Ex.union ex1 ex2) in
-      let diff = Util.Hstring.Set.inter enum1 enum2 in
-      if Util.Hstring.Set.is_empty diff then
-        raise (Structs.Ex.Inconsistent (ex, env.classes));
-      let domains = MX.add r1 (diff, ex) env.domains in
-      let env = { env with domains = MX.add r2 (diff, ex) domains } in
-      if Util.Hstring.Set.cardinal diff = 1 then
-        let h' = Util.Hstring.Set.choose diff in
-        let env, eqs = deduce_is_constr uf r1 h' eqs env ex in
-        let env, eqs = deduce_is_constr uf r2 h' eqs env ex in
-        (env, eqs)
-      else (env, eqs)
+    let enum1, ex1 =
+      try MX.find r1 env.domains with Not_found -> (hss, Ast.Ex.empty)
+    in
+    let enum2, ex2 =
+      try MX.find r2 env.domains with Not_found -> (hss, Ast.Ex.empty)
+    in
+    let ex = Ast.Ex.union dep (Ast.Ex.union ex1 ex2) in
+    let diff = Util.Hstring.Set.inter enum1 enum2 in
+    if Util.Hstring.Set.is_empty diff then
+      raise (Ast.Ex.Inconsistent (ex, env.classes));
+    let domains = MX.add r1 (diff, ex) env.domains in
+    let env = { env with domains = MX.add r2 (diff, ex) domains } in
+    if Util.Hstring.Set.cardinal diff = 1 then
+      let h' = Util.Hstring.Set.choose diff in
+      let env, eqs = deduce_is_constr uf r1 h' eqs env ex in
+      let env, eqs = deduce_is_constr uf r2 h' eqs env ex in
+      (env, eqs)
+    else (env, eqs)
   | _ -> (env, eqs)
 
 let add_aux env r =
@@ -551,7 +551,7 @@ let add_aux env r =
   | Adt.Alien r when not (MX.mem r env.domains) -> (
       match values_of (X.type_info r) with
       | Some s ->
-          { env with domains = MX.add r (s, Structs.Ex.empty) env.domains }
+        { env with domains = MX.add r (s, Ast.Ex.empty) env.domains }
       | None -> env)
   | _ -> env
 
@@ -575,19 +575,19 @@ let update_cs_modulo_eq r1 r2 ex env eqs =
     let _new =
       Util.Hstring.Map.fold
         (fun hs l mhs ->
-          if trivial_tester r2 hs then (
-            if get_debug_adt () then
-              Util.Printer.print_dbg ~flushed:false ~header:false
-                "make deduction because %a ? %a is trivial@ " X.print r2
-                Util.Hstring.print hs;
-            List.iter
-              (fun (a, dep) ->
-                eqs := (Sig_rel.LTerm a, dep, Th_util.Other) :: !eqs)
-              l);
-          let l =
-            List.rev_map (fun (a, dep) -> (a, Structs.Ex.union ex dep)) l
-          in
-          Util.Hstring.Map.add hs l mhs)
+           if trivial_tester r2 hs then (
+             if get_debug_adt () then
+               Util.Printer.print_dbg ~flushed:false ~header:false
+                 "make deduction because %a ? %a is trivial@ " X.print r2
+                 Util.Hstring.print hs;
+             List.iter
+               (fun (a, dep) ->
+                  eqs := (Sig_rel.LTerm a, dep, Th_util.Other) :: !eqs)
+               l);
+           let l =
+             List.rev_map (fun (a, dep) -> (a, Ast.Ex.union ex dep)) l
+           in
+           Util.Hstring.Map.add hs l mhs)
         old mhs
     in
     if get_debug_adt () then Util.Printer.print_dbg ~header:false "";
@@ -598,11 +598,11 @@ let remove_redundancies la =
   let cache = ref SLR.empty in
   List.filter
     (fun (a, _, _, _) ->
-      let a = LR.make a in
-      if SLR.mem a !cache then false
-      else (
-        cache := SLR.add a !cache;
-        true))
+       let a = LR.make a in
+       if SLR.mem a !cache then false
+       else (
+         cache := SLR.add a !cache;
+         true))
     la
 
 let assume env uf la =
@@ -616,43 +616,43 @@ let assume env uf la =
     let aux bol r1 r2 dep env eqs = function
       | None -> (env, eqs)
       | Some hss ->
-          if bol then add_eq uf hss (embed r1) (embed r2) dep env eqs
-          else add_diseq uf hss (embed r1) (embed r2) dep env eqs
+        if bol then add_eq uf hss (embed r1) (embed r2) dep env eqs
+        else add_diseq uf hss (embed r1) (embed r2) dep env eqs
     in
     Debug.print_env "before assume" env;
     let env, eqs =
       List.fold_left
         (fun (env, eqs) (a, b, c, d) ->
-          Debug.assume a;
-          match (a, b, c, d) with
-          | Structs.Xliteral.Eq (r1, r2), _, ex, orig ->
-              (* needed for models generation because fresh terms are not
-                 added with function add *)
-              let env = add_rec (add_rec env r1) r2 in
-              let env, eqs =
-                if orig == Th_util.Subst then
-                  update_cs_modulo_eq r1 r2 ex env eqs
-                else (env, eqs)
-              in
-              aux true r1 r2 ex env eqs (values_of (X.type_info r1))
-          | Structs.Xliteral.Distinct (false, [ r1; r2 ]), _, ex, _ ->
-              (* needed for models generation because fresh terms are not
-                 added with function add *)
-              let env = add_rec (add_rec env r1) r2 in
-              aux false r1 r2 ex env eqs (values_of (X.type_info r1))
-          | ( Structs.Xliteral.Builtin (true, Structs.Sy.IsConstr hs, [ e ]),
-              _,
-              ex,
-              _ ) ->
-              assume_is_constr uf hs e ex env eqs
-          | ( Structs.Xliteral.Builtin (false, Structs.Sy.IsConstr hs, [ e ]),
-              _,
-              ex,
-              (_
-              [@ocaml.ppwarning "XXX: assume not (. ? .): reasoning missing ?"])
-            ) ->
-              assume_not_is_constr uf hs e ex env eqs
-          | _ -> (env, eqs))
+           Debug.assume a;
+           match (a, b, c, d) with
+           | Ast.Xliteral.Eq (r1, r2), _, ex, orig ->
+             (* needed for models generation because fresh terms are not
+                added with function add *)
+             let env = add_rec (add_rec env r1) r2 in
+             let env, eqs =
+               if orig == Th_util.Subst then
+                 update_cs_modulo_eq r1 r2 ex env eqs
+               else (env, eqs)
+             in
+             aux true r1 r2 ex env eqs (values_of (X.type_info r1))
+           | Ast.Xliteral.Distinct (false, [ r1; r2 ]), _, ex, _ ->
+             (* needed for models generation because fresh terms are not
+                added with function add *)
+             let env = add_rec (add_rec env r1) r2 in
+             aux false r1 r2 ex env eqs (values_of (X.type_info r1))
+           | ( Ast.Xliteral.Builtin (true, Ast.Sy.IsConstr hs, [ e ]),
+               _,
+               ex,
+               _ ) ->
+             assume_is_constr uf hs e ex env eqs
+           | ( Ast.Xliteral.Builtin (false, Ast.Sy.IsConstr hs, [ e ]),
+               _,
+               ex,
+               (_
+                [@ocaml.ppwarning "XXX: assume not (. ? .): reasoning missing ?"])
+             ) ->
+             assume_not_is_constr uf hs e ex env eqs
+           | _ -> (env, eqs))
         (env, []) la
     in
     let eqs = List.rev_append env.pending_deds eqs in
@@ -660,7 +660,7 @@ let assume env uf la =
     Debug.print_env "after assume" env;
     let print fmt (a, _, _) =
       match a with
-      | Sig_rel.LTerm a -> fprintf fmt "%a" Structs.Expr.print a
+      | Sig_rel.LTerm a -> fprintf fmt "%a" Ast.Expr.print a
       | _ -> assert false
     in
     if get_debug_adt () then
@@ -689,7 +689,7 @@ let case_split env _ ~for_model =
         Util.Printer.print_dbg ~header:false "found hs = %a" Util.Hstring.print
           hs;
       (* cs on negative version would be better in general *)
-      let cs = LR.mkv_builtin false (Structs.Sy.IsConstr hs) [ r ] in
+      let cs = LR.mkv_builtin false (Ast.Sy.IsConstr hs) [ r ] in
       [ (cs, true, Th_util.CS (Th_util.Th_adt, two)) ]
     with Not_found ->
       Debug.no_case_split ();
@@ -700,14 +700,14 @@ let query env uf (ra, _, ex, _) =
   else
     try
       match ra with
-      | Structs.Xliteral.Builtin (true, Structs.Sy.IsConstr hs, [ e ]) ->
-          ignore (assume_is_constr uf hs e ex env []);
-          None
-      | ((Structs.Xliteral.Builtin (false, Structs.Sy.IsConstr hs, [ e ]))
-      [@ocaml.ppwarning "XXX: assume not (. ? .): reasoning missing ?"]) ->
-          ignore (assume_not_is_constr uf hs e ex env []);
-          None
+      | Ast.Xliteral.Builtin (true, Ast.Sy.IsConstr hs, [ e ]) ->
+        ignore (assume_is_constr uf hs e ex env []);
+        None
+      | ((Ast.Xliteral.Builtin (false, Ast.Sy.IsConstr hs, [ e ]))
+         [@ocaml.ppwarning "XXX: assume not (. ? .): reasoning missing ?"]) ->
+        ignore (assume_not_is_constr uf hs e ex env []);
+        None
       | _ -> None
-    with Structs.Ex.Inconsistent (expl, classes) -> Some (expl, classes)
+    with Ast.Ex.Inconsistent (expl, classes) -> Some (expl, classes)
 
 (* ################################################################ *)

@@ -27,20 +27,20 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 
-type 'a literal = LTerm of Structs.Expr.t | LSem of 'a Structs.Xliteral.view
+type 'a literal = LTerm of Ast.Expr.t | LSem of 'a Ast.Xliteral.view
 
 type instances =
-  (Structs.Expr.t list * Structs.Expr.gformula * Structs.Ex.t) list
+  (Ast.Expr.t list * Ast.Expr.gformula * Ast.Ex.t) list
 
 type 'a input =
-  'a Structs.Xliteral.view
-  * Structs.Expr.t option
-  * Structs.Ex.t
+  'a Ast.Xliteral.view
+  * Ast.Expr.t option
+  * Ast.Ex.t
   * Th_util.lit_origin
 
-type 'a fact = 'a literal * Structs.Ex.t * Th_util.lit_origin
+type 'a fact = 'a literal * Ast.Ex.t * Th_util.lit_origin
 
 type 'a facts = {
   equas : 'a fact Queue.t;
@@ -49,12 +49,12 @@ type 'a facts = {
   mutable touched : 'a Util.Util.MI.t;
 }
 
-type 'a result = { assume : 'a fact list; remove : Structs.Expr.t list }
+type 'a result = { assume : 'a fact list; remove : Ast.Expr.t list }
 
 module type RELATION = sig
   type t
 
-  val empty : Structs.Expr.Set.t list -> t
+  val empty : Ast.Expr.Set.t list -> t
 
   val assume :
     t -> Uf.t -> Shostak.Combine.r input list -> t * Shostak.Combine.r result
@@ -65,29 +65,29 @@ module type RELATION = sig
     t ->
     Uf.t ->
     for_model:bool ->
-    (Shostak.Combine.r Structs.Xliteral.view * bool * Th_util.lit_origin) list
+    (Shostak.Combine.r Ast.Xliteral.view * bool * Th_util.lit_origin) list
   (** case_split env returns a list of equalities *)
 
   val add :
     t ->
     Uf.t ->
     Shostak.Combine.r ->
-    Structs.Expr.t ->
-    t * (Shostak.Combine.r Structs.Xliteral.view * Structs.Ex.t) list
+    Ast.Expr.t ->
+    t * (Shostak.Combine.r Ast.Xliteral.view * Ast.Ex.t) list
   (** add a representant to take into account *)
 
   val instantiate :
     do_syntactic_matching:bool ->
-    Matching_types.info Structs.Expr.Map.t
-    * Structs.Expr.t list Structs.Expr.Map.t Structs.Sy.Map.t ->
+    Matching_types.info Ast.Expr.Map.t
+    * Ast.Expr.t list Ast.Expr.Map.t Ast.Sy.Map.t ->
     t ->
     Uf.t ->
-    (Structs.Expr.t -> Structs.Expr.t -> bool) ->
+    (Ast.Expr.t -> Ast.Expr.t -> bool) ->
     t * instances
 
   val print_model :
-    Format.formatter -> t -> (Structs.Expr.t * Shostak.Combine.r) list -> unit
+    Format.formatter -> t -> (Ast.Expr.t * Shostak.Combine.r) list -> unit
 
-  val new_terms : t -> Structs.Expr.Set.t
-  val assume_th_elt : t -> Structs.Expr.th_elt -> Structs.Ex.t -> t
+  val new_terms : t -> Ast.Expr.Set.t
+  val assume_th_elt : t -> Ast.Expr.th_elt -> Ast.Ex.t -> t
 end

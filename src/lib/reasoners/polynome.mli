@@ -27,7 +27,7 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 
 exception Not_a_num
 exception Maybe_zero
@@ -47,7 +47,7 @@ module type T = sig
   val hash : t -> int
 
   val create :
-    (Util.Numbers.Q.t * r) list -> Util.Numbers.Q.t -> Structs.Ty.t -> t
+    (Util.Numbers.Q.t * r) list -> Util.Numbers.Q.t -> Ast.Ty.t -> t
 
   val add : t -> t -> t
   val sub : t -> t -> t
@@ -65,7 +65,7 @@ module type T = sig
   val to_list : t -> (Util.Numbers.Q.t * r) list * Util.Numbers.Q.t
   val leaves : t -> r list
   val print : Format.formatter -> t -> unit
-  val type_info : t -> Structs.Ty.t
+  val type_info : t -> Ast.Ty.t
   val is_monomial : t -> (Util.Numbers.Q.t * r * Util.Numbers.Q.t) option
 
   (* PPMC des denominateurs des coefficients excepte la constante *)

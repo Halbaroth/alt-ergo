@@ -31,14 +31,14 @@ open Options
 type t = { content : string; id : int }
 
 module S = Hcons.Make (struct
-  type elt = t
+    type elt = t
 
-  let hash s = Hashtbl.hash s.content
-  let eq s1 s2 = String.equal s1.content s2.content
-  let set_id n v = { v with id = n }
-  let initial_size = 9001
-  let disable_weaks () = Options.get_disable_weaks ()
-end)
+    let hash s = Hashtbl.hash s.content
+    let eq s1 s2 = String.equal s1.content s2.content
+    let set_id n v = { v with id = n }
+    let initial_size = 9001
+    let disable_weaks () = Options.get_disable_weaks ()
+  end)
 
 let make s = S.make { content = s; id = -1 }
 let view s = s.content

@@ -27,11 +27,11 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 
 type 'a ac = {
-  h : Structs.Sy.t;
-  t : Structs.Ty.t;
+  h : Ast.Sy.t;
+  t : Ast.Ty.t;
   l : ('a * int) list;
   distribute : bool;
 }
@@ -48,15 +48,15 @@ module type SHOSTAK = sig
   val name : string
   (** Name of the theory*)
 
-  val is_mine_symb : Structs.Sy.t -> Structs.Ty.t -> bool
+  val is_mine_symb : Ast.Sy.t -> Ast.Ty.t -> bool
   (** return true if the symbol and the type are owned by the theory*)
 
-  val make : Structs.Expr.t -> r * Structs.Expr.t list
+  val make : Ast.Expr.t -> r * Ast.Expr.t list
   (** Give a representant of a term of the theory*)
 
-  val term_extract : r -> Structs.Expr.t option * bool (* original term ? *)
+  val term_extract : r -> Ast.Expr.t option * bool (* original term ? *)
   val color : r ac -> r
-  val type_info : t -> Structs.Ty.t
+  val type_info : t -> Ast.Ty.t
   val embed : r -> t
   val is_mine : t -> r
 
@@ -74,7 +74,7 @@ module type SHOSTAK = sig
 
   val solve : r -> r -> r solve_pb -> r solve_pb
   val print : Format.formatter -> t -> unit
-  val fully_interpreted : Structs.Sy.t -> bool
+  val fully_interpreted : Ast.Sy.t -> bool
   val abstract_selectors : t -> (r * r) list -> r * (r * r) list
 
   (* the returned bool is true when the returned term in a constant of the
@@ -82,20 +82,20 @@ module type SHOSTAK = sig
      (eg. records). In this case, it's a unit fact, not a decision
   *)
   val assign_value :
-    r -> r list -> (Structs.Expr.t * r) list -> (Structs.Expr.t * bool) option
+    r -> r list -> (Ast.Expr.t * r) list -> (Ast.Expr.t * bool) option
 
   (* choose the value to print and how to print it for the given term.
      The second term is its representative. The list is its equivalence class
   *)
   val choose_adequate_model :
-    Structs.Expr.t -> r -> (Structs.Expr.t * r) list -> r * string
+    Ast.Expr.t -> r -> (Ast.Expr.t * r) list -> r * string
 end
 
 module type X = sig
   type r
 
-  val make : Structs.Expr.t -> r * Structs.Expr.t list
-  val type_info : r -> Structs.Ty.t
+  val make : Ast.Expr.t -> r * Ast.Expr.t list
+  val type_info : r -> Ast.Ty.t
   val str_cmp : r -> r -> int
   val hash_cmp : r -> r -> int
   val equal : r -> r -> bool
@@ -103,29 +103,29 @@ module type X = sig
   val leaves : r -> r list
   val subst : r -> r -> r -> r
   val solve : r -> r -> (r * r) list
-  val term_embed : Structs.Expr.t -> r
-  val term_extract : r -> Structs.Expr.t option * bool (* original term ? *)
+  val term_embed : Ast.Expr.t -> r
+  val term_extract : r -> Ast.Expr.t option * bool (* original term ? *)
   val ac_embed : r ac -> r
   val ac_extract : r -> r ac option
   val color : r ac -> r
-  val fully_interpreted : Structs.Sy.t -> Structs.Ty.t -> bool
+  val fully_interpreted : Ast.Sy.t -> Ast.Ty.t -> bool
   val is_a_leaf : r -> bool
   val print : Format.formatter -> r -> unit
   val abstract_selectors : r -> (r * r) list -> r * (r * r) list
   val top : unit -> r
   val bot : unit -> r
-  val is_solvable_theory_symbol : Structs.Sy.t -> Structs.Ty.t -> bool
+  val is_solvable_theory_symbol : Ast.Sy.t -> Ast.Ty.t -> bool
 
   (* the returned bool is true when the returned term in a constant of the
      theory. Otherwise, the term contains aliens that should be assigned
      (eg. records). In this case, it's a unit fact, not a decision
   *)
   val assign_value :
-    r -> r list -> (Structs.Expr.t * r) list -> (Structs.Expr.t * bool) option
+    r -> r list -> (Ast.Expr.t * r) list -> (Ast.Expr.t * bool) option
 
   (* choose the value to print and how to print it for the given term.
      The second term is its representative. The list is its equivalence class
   *)
   val choose_adequate_model :
-    Structs.Expr.t -> r -> (Structs.Expr.t * r) list -> r * string
+    Ast.Expr.t -> r -> (Ast.Expr.t * r) list -> r * string
 end

@@ -58,7 +58,7 @@ let get_instantiation_heuristic = function
 let get_no_decisions_on = function
   | None -> None
   | Some l ->
-      Some (List.fold_left (fun acc d -> Util.SS.add d acc) Util.SS.empty l)
+    Some (List.fold_left (fun acc d -> Util.SS.add d acc) Util.SS.empty l)
 
 let get_frontend = function
   | None -> None

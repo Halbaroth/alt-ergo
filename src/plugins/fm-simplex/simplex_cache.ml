@@ -16,11 +16,11 @@ open Options
 open Simplex
 
 module MAKE (C : sig
-  type t
+    type t
 
-  val compare : t -> t -> int
-  val print : formatter -> t -> unit
-end) =
+    val compare : t -> t -> int
+    val print : formatter -> t -> unit
+  end) =
 struct
   module MI = Util.MI
   module MD = Map.Make (C)
@@ -33,38 +33,38 @@ struct
     Printer.print_dbg ~flushed:false "@[<v 2>sum %d@ " id;
     MD.iter
       (fun x (lp, ln, q) ->
-        Printer.print_dbg ~flushed:false ~header:false
-          "%a -> (%a) + (%a) + %s = 0@ " C.print x ppprint lp ppprint ln
-          (Q.to_string q))
+         Printer.print_dbg ~flushed:false ~header:false
+           "%a -> (%a) + (%a) + %s = 0@ " C.print x ppprint lp ppprint ln
+           (Q.to_string q))
       sum;
     Printer.print_dbg ~header:false "@]"
 
   module SM = Map.Make (struct
-    type t1 = (Q.t MI.t * Q.t MI.t * Q.t) MD.t
-    type t2 = Q.t MI.t
-    type t3 = Q.t MI.t
-    type t = t1 * t2 * t3
+      type t1 = (Q.t MI.t * Q.t MI.t * Q.t) MD.t
+      type t2 = Q.t MI.t
+      type t3 = Q.t MI.t
+      type t = t1 * t2 * t3
 
-    let cmp (m1, n1, q1) (m2, n2, q2) =
-      let c = Q.compare q1 q2 in
-      if c <> 0 then c
-      else
-        let c = MI.compare Q.compare m1 m2 in
-        if c <> 0 then c else MI.compare Q.compare n1 n2
+      let cmp (m1, n1, q1) (m2, n2, q2) =
+        let c = Q.compare q1 q2 in
+        if c <> 0 then c
+        else
+          let c = MI.compare Q.compare m1 m2 in
+          if c <> 0 then c else MI.compare Q.compare n1 n2
 
-    let compare (sum1, _, lambdas1) (sum2, _, lambdas2) =
-      let c = MD.compare cmp sum1 sum2 in
-      if c <> 0 then c
-      else
-        let c = MI.compare Q.compare lambdas1 lambdas2 in
-        if c <> 0 then (
-          print_sum 1 sum1;
-          print_sum 2 sum2;
-          Printer.print_dbg "l1 = %a" ppprint lambdas1;
-          Printer.print_dbg "l2 = %a" ppprint lambdas2);
-        assert (c = 0);
-        c
-  end)
+      let compare (sum1, _, lambdas1) (sum2, _, lambdas2) =
+        let c = MD.compare cmp sum1 sum2 in
+        if c <> 0 then c
+        else
+          let c = MI.compare Q.compare lambdas1 lambdas2 in
+          if c <> 0 then (
+            print_sum 1 sum1;
+            print_sum 2 sum2;
+            Printer.print_dbg "l1 = %a" ppprint lambdas1;
+            Printer.print_dbg "l2 = %a" ppprint lambdas2);
+          assert (c = 0);
+          c
+    end)
 
   let (m : (int * result * Q.t MI.t) SM.t ref) = ref SM.empty
   let (mm : (int * result * Q.t MI.t) SM.t MD.t ref) = ref MD.empty
@@ -76,9 +76,9 @@ struct
     let equas =
       List.fold_left
         (fun mp (x, (lp, ln, q)) ->
-          let lp = mi_of_l lp in
-          let ln = mi_of_l ln in
-          MD.add x (lp, ln, q) mp)
+           let lp = mi_of_l lp in
+           let ln = mi_of_l ln in
+           MD.add x (lp, ln, q) mp)
         MD.empty equas
     in
     (max_ctt, equas, s_neq)

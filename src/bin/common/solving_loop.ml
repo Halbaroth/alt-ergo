@@ -28,7 +28,7 @@
 
 module Frontend = Alt_ergo_lib_frontend
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 module Reasoners = Alt_ergo_lib_reasoners
 open Util.Options
 
@@ -42,14 +42,14 @@ type 'a state = {
 
 let main () =
   let module SatCont = (val Reasoners.Sat_solver.get_current ()
-                          : Reasoners.Sat_solver_sig.SatContainer)
+                         : Reasoners.Sat_solver_sig.SatContainer)
   in
   let module TH = (val if Util.Options.get_no_theory () then
-                         (module Reasoners.Theory.Main_Empty
-                         : Reasoners.Theory.S)
-                       else
-                         (module Reasoners.Theory.Main_Default
-                         : Reasoners.Theory.S) : Reasoners.Theory.S)
+                      (module Reasoners.Theory.Main_Empty
+                        : Reasoners.Theory.S)
+                    else
+                      (module Reasoners.Theory.Main_Default
+                        : Reasoners.Theory.S) : Reasoners.Theory.S)
   in
   let module SAT = SatCont.Make (TH) in
   let module FE = Frontend.Frontend.Make (SAT) in
@@ -66,13 +66,13 @@ let main () =
       let _ =
         List.fold_left
           (FE.process_decl FE.print_status used_context consistent_dep_stack)
-          (SAT.empty (), true, Structs.Ex.empty)
+          (SAT.empty (), true, Ast.Ex.empty)
           cnf
       in
       if Util.Options.get_timelimit_per_goal () then
         Util.Options.Time.unset_timeout ~is_gui:false;
       if Util.Options.get_profiling () then
-        Structs.Profiling.print true (Util.Steps.get_steps ())
+        Ast.Profiling.print true (Util.Steps.get_steps ())
           (Signals_profiling.get_timers ())
           (get_fmt_err ())
     with Util.Util.Timeout ->
@@ -82,23 +82,23 @@ let main () =
   let typed_loop all_context state td =
     if get_type_only () then state
     else
-      match td.Structs.Typed.c with
-      | Structs.Typed.TGoal (_, kind, name, _) -> (
+      match td.Ast.Typed.c with
+      | Ast.Typed.TGoal (_, kind, name, _) -> (
           let l = state.local @ state.global @ state.ctx in
           let cnf = List.rev @@ Frontend.Cnf.make l td in
           let () = solve all_context (cnf, name) in
           match kind with
-          | Structs.Typed.Check | Structs.Typed.Cut -> { state with local = [] }
+          | Ast.Typed.Check | Ast.Typed.Cut -> { state with local = [] }
           | _ -> { state with global = []; local = [] })
-      | Structs.Typed.TAxiom (_, s, _, _) when Structs.Typed.is_global_hyp s ->
-          let cnf = Frontend.Cnf.make state.global td in
-          { state with global = cnf }
-      | Structs.Typed.TAxiom (_, s, _, _) when Structs.Typed.is_local_hyp s ->
-          let cnf = Frontend.Cnf.make state.local td in
-          { state with local = cnf }
+      | Ast.Typed.TAxiom (_, s, _, _) when Ast.Typed.is_global_hyp s ->
+        let cnf = Frontend.Cnf.make state.global td in
+        { state with global = cnf }
+      | Ast.Typed.TAxiom (_, s, _, _) when Ast.Typed.is_local_hyp s ->
+        let cnf = Frontend.Cnf.make state.local td in
+        { state with local = cnf }
       | _ ->
-          let cnf = Frontend.Cnf.make state.ctx td in
-          { state with ctx = cnf }
+        let cnf = Frontend.Cnf.make state.ctx td in
+        { state with ctx = cnf }
   in
 
   let (module I : Frontend.Input.S) =
@@ -120,15 +120,15 @@ let main () =
       I.parse_files ~filename ~preludes
     with
     | Util.Util.Timeout ->
-        FE.print_status (FE.Timeout None) 0;
-        exit 142
+      FE.print_status (FE.Timeout None) 0;
+      exit 142
     | Parsing.Parse_error ->
-        Util.Printer.print_err "%a" Structs.Errors.report
-          (Syntax_error ((Lexing.dummy_pos, Lexing.dummy_pos), ""));
-        exit 1
-    | Structs.Errors.Error e ->
-        Util.Printer.print_err "%a" Structs.Errors.report e;
-        exit 1
+      Util.Printer.print_err "%a" Ast.Errors.report
+        (Syntax_error ((Lexing.dummy_pos, Lexing.dummy_pos), ""));
+      exit 1
+    | Ast.Errors.Error e ->
+      Util.Printer.print_err "%a" Ast.Errors.report e;
+      exit 1
   in
 
   let all_used_context = FE.init_all_used_context () in
@@ -140,9 +140,9 @@ let main () =
       try
         let l, env = I.type_parsed state.env assertion_stack p in
         List.fold_left (typed_loop all_used_context) { state with env } l
-      with Structs.Errors.Error e ->
+      with Ast.Errors.Error e ->
         if e != Warning_as_error then
-          Util.Printer.print_err "%a" Structs.Errors.report e;
+          Util.Printer.print_err "%a" Ast.Errors.report e;
         exit 1
   in
 

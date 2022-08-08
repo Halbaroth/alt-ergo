@@ -9,7 +9,7 @@
 (*                                                                            *)
 (******************************************************************************)
 
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 
 exception Method_not_registered of string
 
@@ -28,7 +28,7 @@ module type S = sig
   val empty_env : env
 
   val type_parsed :
-    env -> env Stack.t -> parsed -> int Structs.Typed.atdecl list * env
+    env -> env Stack.t -> parsed -> int Ast.Typed.atdecl list * env
 end
 
 let input_methods = ref []

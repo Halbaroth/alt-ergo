@@ -12,8 +12,8 @@
 (library
  (name AltErgoParsers)
  (public_name alt-ergo-parsers)
- (libraries camlzip dynlink psmt2-frontend alt-ergo-lib alt-ergo-lib.structs
-   alt-ergo-lib.util alt-ergo-lib.frontend stdlib-shims)
+ (libraries camlzip dynlink psmt2-frontend alt-ergo-lib
+   stdlib-shims)
  (modules
   ; common
   Parsers

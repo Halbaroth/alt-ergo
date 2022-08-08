@@ -95,7 +95,7 @@ module Simplex (C : Coef_Type) = struct
         let nz = ref 0 in
         List.iter
           (fun (_, { a2; _ }) ->
-            Array.iter (fun v -> incr (if Q.is_zero v then z else nz)) a2)
+             Array.iter (fun v -> incr (if Q.is_zero v then z else nz)) a2)
           matrix;
         print_dbg ~flushed:false ~header:false "zero-cells:     %d@ " !z;
         print_dbg ~header:false "non-zero-cells: %d" !nz)
@@ -127,8 +127,8 @@ module Simplex (C : Coef_Type) = struct
           poly0 co;
         List.iter
           (fun (_, (pp, pn, ctt)) ->
-            print_dbg ~flushed:false ~header:false "(%a)  + (%a) + %s =  0;@ "
-              poly0 pp poly0 pn (Q.to_string ctt))
+             print_dbg ~flushed:false ~header:false "(%a)  + (%a) + %s =  0;@ "
+               poly0 pp poly0 pn (Q.to_string ctt))
           eqs;
         print_dbg ~header:false "@]%a >  0;@ %s" poly0 s_neq sep)
 
@@ -150,13 +150,13 @@ module Simplex (C : Coef_Type) = struct
         print_dbg ~flushed:false "%s@ @[<v 2>Associations:@ " sep;
         H.iter
           (fun i j ->
-            print_dbg ~flushed:false ~header:false "L(%d) -> %d@ " j i)
+             print_dbg ~flushed:false ~header:false "L(%d) -> %d@ " j i)
           h_i_s;
         print_dbg ~flushed:false ~header:false "@]@[<v 2>subst:@ ";
         List.iter
           (fun ((s, i), p) ->
-            print_dbg ~flushed:false ~header:false "(L%d,%d) |-> %a@ " s i poly
-              p)
+             print_dbg ~flushed:false ~header:false "(L%d,%d) |-> %a@ " s i poly
+               p)
           sbt;
         let (s, i), pneq = s_neq in
         print_dbg ~header:false "@]s_neq:@ (L%d,%d) |-> %a@ cost:@ %a@ %s" s i
@@ -179,7 +179,7 @@ module Simplex (C : Coef_Type) = struct
         print_dbg ~header:false "@]@[<v 2> matrix:@ ";
         List.iter
           (fun (i, p) ->
-            print_dbg ~flushed:false ~header:false "%d |-> %a@ " i (ppoly sp) p)
+             print_dbg ~flushed:false ~header:false "%d |-> %a@ " i (ppoly sp) p)
           matrix;
 
         print_dbg ~header:false "@]> cost: %a@ %s" (ppoly sp) co sep)
@@ -371,18 +371,18 @@ module Simplex (C : Coef_Type) = struct
     let solve_zero_arr zsbt zsbt_inv a =
       Array.iter
         (fun (s, coef) ->
-          if not (C.is_zero coef) then (
-            Vec.push zsbt s;
-            zsbt_inv.(s) <- true))
+           if not (C.is_zero coef) then (
+             Vec.push zsbt s;
+             zsbt_inv.(s) <- true))
         a
 
     let solve_zero_list zsbt zsbt_inv l =
       if !dsimplex then Printer.print_dbg "[eq_solve] 0 = 0 (modulo Li >= 0)";
       List.iter
         (fun (s, _coef) ->
-          if not zsbt_inv.(s) then (
-            Vec.push zsbt s;
-            zsbt_inv.(s) <- true))
+           if not zsbt_inv.(s) then (
+             Vec.push zsbt s;
+             zsbt_inv.(s) <- true))
         l
 
     let substs_from_equalities eqs h_i_s len =
@@ -393,57 +393,57 @@ module Simplex (C : Coef_Type) = struct
       let eqs =
         List.fold_left
           (fun acc (_, ((lp, ln, ctt) as lp_ln)) ->
-            (* lp + ln + ctt = 0 *)
-            let sg = Q.sign ctt in
-            let p = create len lp_ln h_i_s in
-            if !dsimplex then
-              Printer.print_dbg ~flushed:false ~header:false "  >> poly %a@ "
-                D.poly p;
-            match (lp, ln) with
-            | [], [] -> assert false
-            | _ :: _, [] when sg = 0 ->
-                solve_zero_list zsbt zsbt_inv lp;
-                acc
-            | [], _ :: _ when sg = 0 ->
-                solve_zero_list zsbt zsbt_inv ln;
-                acc
-            | _ :: _, [] when sg > 0 -> raise Inconsistent
-            | [], _ :: _ when sg < 0 -> raise Inconsistent
-            | _ -> create len lp_ln h_i_s :: acc)
+             (* lp + ln + ctt = 0 *)
+             let sg = Q.sign ctt in
+             let p = create len lp_ln h_i_s in
+             if !dsimplex then
+               Printer.print_dbg ~flushed:false ~header:false "  >> poly %a@ "
+                 D.poly p;
+             match (lp, ln) with
+             | [], [] -> assert false
+             | _ :: _, [] when sg = 0 ->
+               solve_zero_list zsbt zsbt_inv lp;
+               acc
+             | [], _ :: _ when sg = 0 ->
+               solve_zero_list zsbt zsbt_inv ln;
+               acc
+             | _ :: _, [] when sg > 0 -> raise Inconsistent
+             | [], _ :: _ when sg < 0 -> raise Inconsistent
+             | _ -> create len lp_ln h_i_s :: acc)
           [] eqs
       in
       (*let mm = ref [] in*)
       List.iter
         (fun p ->
-          (*mm := {c=p.c ; a = Array.copy p.a} :: !mm;*)
-          if !dsimplex then
-            Printer.print_dbg ~flushed:false ~header:false
-              "[eq_solve] solve      0 = %a@ " D.poly p;
-          normalize_poly p sbt zsbt;
-          if !dsimplex then
-            Printer.print_dbg ~flushed:false ~header:false
-              "i.e. [eq_solve] solve      0 = %a@ " D.poly p;
-          try
-            match coefs_have_mem_sign p.a with
-            | Some n ->
-                let c = C2.compare p.c C2.zero in
-                if n = 0 && c <> 0 then raise Inconsistent;
-                if n > 0 && c > 0 then raise Inconsistent;
-                if n < 0 && c < 0 then raise Inconsistent;
-                if n <> 0 && c = 0 then solve_zero_arr zsbt zsbt_inv p.a;
-                if n <> 0 && c <> 0 then (
-                  let (((s, pivot), p) as ln) = pivot_in_p len p in
-                  if !dsimplex then
-                    Printer.print_dbg ~flushed:false ~header:false
-                      "new pivot (L%d,%d) |-> %a@ " s pivot D.poly p;
-                  Vec.push sbt ln)
-            | _ ->
-                let (((s, pivot), p) as ln) = pivot_in_p len p in
-                if !dsimplex then
-                  Printer.print_dbg ~flushed:false ~header:false
-                    "new pivot (L%d,%d) |-> %a@ " s pivot D.poly p;
-                Vec.push sbt ln
-          with Trivial -> ())
+           (*mm := {c=p.c ; a = Array.copy p.a} :: !mm;*)
+           if !dsimplex then
+             Printer.print_dbg ~flushed:false ~header:false
+               "[eq_solve] solve      0 = %a@ " D.poly p;
+           normalize_poly p sbt zsbt;
+           if !dsimplex then
+             Printer.print_dbg ~flushed:false ~header:false
+               "i.e. [eq_solve] solve      0 = %a@ " D.poly p;
+           try
+             match coefs_have_mem_sign p.a with
+             | Some n ->
+               let c = C2.compare p.c C2.zero in
+               if n = 0 && c <> 0 then raise Inconsistent;
+               if n > 0 && c > 0 then raise Inconsistent;
+               if n < 0 && c < 0 then raise Inconsistent;
+               if n <> 0 && c = 0 then solve_zero_arr zsbt zsbt_inv p.a;
+               if n <> 0 && c <> 0 then (
+                 let (((s, pivot), p) as ln) = pivot_in_p len p in
+                 if !dsimplex then
+                   Printer.print_dbg ~flushed:false ~header:false
+                     "new pivot (L%d,%d) |-> %a@ " s pivot D.poly p;
+                 Vec.push sbt ln)
+             | _ ->
+               let (((s, pivot), p) as ln) = pivot_in_p len p in
+               if !dsimplex then
+                 Printer.print_dbg ~flushed:false ~header:false
+                   "new pivot (L%d,%d) |-> %a@ " s pivot D.poly p;
+               Vec.push sbt ln
+           with Trivial -> ())
         eqs;
       if !dsimplex then Printer.print_dbg "";
       normalize_sbt sbt zsbt
@@ -544,22 +544,22 @@ module Simplex (C : Coef_Type) = struct
       let matrix, _ =
         List.fold_left
           (fun (matrix, cptL) ((s, _), p) ->
-            let p = compact_poly p base new_len h_zsbt in
-            H.add basic cptL s;
-            ((cptL, p) :: matrix, cptL + 1))
+             let p = compact_poly p base new_len h_zsbt in
+             H.add basic cptL s;
+             ((cptL, p) :: matrix, cptL + 1))
           ([], new_len) matrix
       in
       let matrix =
         List.fold_left
           (fun acc ((_, p) as line) ->
-            if !dsimplex then
-              Printer.print_dbg "compact_problem: LINE %a" D.pline line;
-            if array_is_null p.a2 then
-              let c = C2.compare p.c2 C2.zero in
-              if c = 0 then acc
-              else if c < 0 then raise Inconsistent
-              else line :: acc (* CONSTANT SOLUTION: SHOULD EXTRACT IT*)
-            else line :: acc)
+             if !dsimplex then
+               Printer.print_dbg "compact_problem: LINE %a" D.pline line;
+             if array_is_null p.a2 then
+               let c = C2.compare p.c2 C2.zero in
+               if c = 0 then acc
+               else if c < 0 then raise Inconsistent
+               else line :: acc (* CONSTANT SOLUTION: SHOULD EXTRACT IT*)
+             else line :: acc)
           [] matrix
       in
       let co, non_basic = compact_poly_2 co base new_len h_zsbt in
@@ -568,11 +568,11 @@ module Simplex (C : Coef_Type) = struct
         Array.init len (fun i ->
             try H.find basic i
             with Not_found -> (
-              try H.find non_basic i
-              with Not_found ->
-                if !dsimplex then
-                  Printer.print_dbg "Colonne vide ! donc supprimee";
-                -20000))
+                try H.find non_basic i
+                with Not_found ->
+                  if !dsimplex then
+                    Printer.print_dbg "Colonne vide ! donc supprimee";
+                  -20000))
       in
       (co, matrix, distr)
 
@@ -617,10 +617,10 @@ module Simplex (C : Coef_Type) = struct
       match ctx with
       | [] -> assert false
       | line :: ctx ->
-          List.fold_left
-            (fun ((_, p') as line') ((_, p) as line) ->
-              if C2.compare p.c2 p'.c2 < 0 then line else line')
-            line ctx
+        List.fold_left
+          (fun ((_, p') as line') ((_, p) as line) ->
+             if C2.compare p.c2 p'.c2 < 0 then line else line')
+          line ctx
 
     let subst ({ a2; c2 } as pp) lhs { a2 = rhs_a2; c2 = rhs_c2 } =
       let v = a2.(lhs) in
@@ -666,15 +666,15 @@ module Simplex (C : Coef_Type) = struct
       let acc = ref None in
       List.iter
         (fun ((j, p) as line) ->
-          let v_ch_vr = p.a2.(ch_vr) in
-          if C.compare v_ch_vr C.zero < 0 then
-            let rap = C2.minus (C2.div p.c2 v_ch_vr) in
-            match !acc with
-            | None -> acc := Some (v_ch_vr, rap, line)
-            | Some (_, r, (jj, _)) ->
-                let delta = C2.compare rap r in
-                let change = delta < 0 || (delta = 0 && j < jj) in
-                if change then acc := Some (v_ch_vr, rap, line))
+           let v_ch_vr = p.a2.(ch_vr) in
+           if C.compare v_ch_vr C.zero < 0 then
+             let rap = C2.minus (C2.div p.c2 v_ch_vr) in
+             match !acc with
+             | None -> acc := Some (v_ch_vr, rap, line)
+             | Some (_, r, (jj, _)) ->
+               let delta = C2.compare rap r in
+               let change = delta < 0 || (delta = 0 && j < jj) in
+               if change then acc := Some (v_ch_vr, rap, line))
         ctx;
       match !acc with
       | None -> raise (E_unbound (ctx, co))
@@ -762,10 +762,10 @@ module Simplex (C : Coef_Type) = struct
       D.pivot_result sbt;
 
       (match !co_opt with
-      | None -> ()
-      | Some coo ->
-          subst coo sbt.lhs sbt.rhs;
-          co_opt := Some coo);
+       | None -> ()
+       | Some coo ->
+         subst coo sbt.lhs sbt.rhs;
+         co_opt := Some coo);
       subst_ctx ctx sbt;
       subst co sbt.lhs sbt.rhs;
       simplex ctx co distr order
@@ -812,10 +812,10 @@ module Simplex (C : Coef_Type) = struct
       if ghost < !len then (
         List.iter
           (fun (_, p) ->
-            if not (Array.length p.a2 == !len) then
-              failwith
-                (sprintf "len = %d but plen = %d" !len (Array.length p.a2));
-            p.a2.(ghost) <- C.zero)
+             if not (Array.length p.a2 == !len) then
+               failwith
+                 (sprintf "len = %d but plen = %d" !len (Array.length p.a2));
+             p.a2.(ghost) <- C.zero)
           ctx;
         (ctx, false))
       else
@@ -850,10 +850,10 @@ module Simplex (C : Coef_Type) = struct
       match !co_opt with
       | None -> assert false
       | Some co ->
-          co_opt := None;
-          let i = index_of_ghost distr in
-          if i < !len then co.a2.(i) <- C.zero;
-          co
+        co_opt := None;
+        let i = index_of_ghost distr in
+        if i < !len then co.a2.(i) <- C.zero;
+        co
 
     (*** / coeur du simplex_init *********************************************)
 
@@ -891,24 +891,24 @@ module Simplex (C : Coef_Type) = struct
 
     let result_extraction distr q = function
       | I_max (ctx_ex, co_ex) ->
-          D.result_extraction "max" ctx_ex co_ex distr;
+        D.result_extraction "max" ctx_ex co_ex distr;
 
-          let res = infos_of distr q co_ex ctx_ex in
-          if !dsimplex then
-            Printer.print_dbg ">result size %d" (List.length res.vals);
-          Max res
+        let res = infos_of distr q co_ex ctx_ex in
+        if !dsimplex then
+          Printer.print_dbg ">result size %d" (List.length res.vals);
+        Max res
       | I_unbound (ctx_ex, co_ex) ->
-          D.result_extraction "unbound" ctx_ex co_ex distr;
-          let res = infos_of distr q co_ex ctx_ex in
-          if !dsimplex then
-            Printer.print_dbg ">result size %d" (List.length res.vals);
-          Unbound res
+        D.result_extraction "unbound" ctx_ex co_ex distr;
+        let res = infos_of distr q co_ex ctx_ex in
+        if !dsimplex then
+          Printer.print_dbg ">result size %d" (List.length res.vals);
+        Unbound res
       | I_unsat (ctx_ex, co_ex) ->
-          D.result_extraction "unsat" ctx_ex co_ex distr;
-          let res = infos_of distr q co_ex ctx_ex in
-          if !dsimplex then
-            Printer.print_dbg ">result size %d" (List.length res.vals);
-          Unsat res
+        D.result_extraction "unsat" ctx_ex co_ex distr;
+        let res = infos_of distr q co_ex ctx_ex in
+        if !dsimplex then
+          Printer.print_dbg ">result size %d" (List.length res.vals);
+        Unsat res
 
     let core_main co matrix distr =
       let len = Array.length co.a2 in
@@ -973,55 +973,55 @@ module Simplex (C : Coef_Type) = struct
         match rr.ctx with
         | [] -> assert false
         | (_, a) :: _ ->
-            if !dsimplex then Printer.print_dbg ~header:false "tbl: @ ";
-            if !dsimplex then
-              Array.iteri
-                (fun i s ->
-                  Printer.print_dbg ~flushed:false ~header:false
-                    "%d -> L%d | @ " i s)
-                rr.distr;
-            let len = Array.length a.a2 in
-            let cost = { a2 = Array.make len Q.zero; c2 = (Q.zero, Q.zero) } in
+          if !dsimplex then Printer.print_dbg ~header:false "tbl: @ ";
+          if !dsimplex then
             Array.iteri
-              (fun i ld ->
-                if !dsimplex then
-                  Printer.print_dbg ~flushed:false ~header:false
-                    "> AVANT: cost: %a@ traitement de l'index %d@ "
-                    (D.ppoly (D.max_poly cost))
-                    cost i;
-                try
-                  let q = List.assoc ld max_ctt in
-                  if !dsimplex then
-                    Printer.print_dbg ~flushed:false ~header:false
-                      "L%d associe a %s@ " ld (Q.to_string q);
-                  try cost.a2.(i) <- Q.add cost.a2.(i) q
-                  with Invalid_argument s -> (
-                    assert (String.compare s "index out of bounds" = 0);
-                    if !dsimplex then
-                      Printer.print_dbg ~flushed:false ~header:false
-                        "L%d out of bounds@ " ld;
-                    try
-                      let rhs = List.assoc i rr.ctx in
-                      subst_spec cost q rhs
-                    with Not_found -> () (*vaut zero ? assert false*))
-                with Not_found ->
-                  if !dsimplex then
-                    Printer.print_dbg ~flushed:false ~header:false
-                      "L%d associe a RIEN@ " ld)
+              (fun i s ->
+                 Printer.print_dbg ~flushed:false ~header:false
+                   "%d -> L%d | @ " i s)
               rr.distr;
-            if !dsimplex then
-              Printer.print_dbg ~header:false "> RES cost: %a"
-                (D.ppoly (D.max_poly cost))
-                cost;
+          let len = Array.length a.a2 in
+          let cost = { a2 = Array.make len Q.zero; c2 = (Q.zero, Q.zero) } in
+          Array.iteri
+            (fun i ld ->
+               if !dsimplex then
+                 Printer.print_dbg ~flushed:false ~header:false
+                   "> AVANT: cost: %a@ traitement de l'index %d@ "
+                   (D.ppoly (D.max_poly cost))
+                   cost i;
+               try
+                 let q = List.assoc ld max_ctt in
+                 if !dsimplex then
+                   Printer.print_dbg ~flushed:false ~header:false
+                     "L%d associe a %s@ " ld (Q.to_string q);
+                 try cost.a2.(i) <- Q.add cost.a2.(i) q
+                 with Invalid_argument s -> (
+                     assert (String.compare s "index out of bounds" = 0);
+                     if !dsimplex then
+                       Printer.print_dbg ~flushed:false ~header:false
+                         "L%d out of bounds@ " ld;
+                     try
+                       let rhs = List.assoc i rr.ctx in
+                       subst_spec cost q rhs
+                     with Not_found -> () (*vaut zero ? assert false*))
+               with Not_found ->
+                 if !dsimplex then
+                   Printer.print_dbg ~flushed:false ~header:false
+                     "L%d associe a RIEN@ " ld)
+            rr.distr;
+          if !dsimplex then
+            Printer.print_dbg ~header:false "> RES cost: %a"
+              (D.ppoly (D.max_poly cost))
+              cost;
 
-            (* XXX *)
-            let leng = Array.length cost.a2 in
-            Core_Simplex.reset_refs leng;
-            (* XXX *)
-            let res = Core_Simplex.solve cost rr.ctx rr.distr (rr.order, []) in
-            let res = Core_Simplex.result_extraction rr.distr rr.order res in
-            (*XXX*Timer.Simplex_main.stop();*)
-            res)
+          (* XXX *)
+          let leng = Array.length cost.a2 in
+          Core_Simplex.reset_refs leng;
+          (* XXX *)
+          let res = Core_Simplex.solve cost rr.ctx rr.distr (rr.order, []) in
+          let res = Core_Simplex.result_extraction rr.distr rr.order res in
+          (*XXX*Timer.Simplex_main.stop();*)
+          res)
 
   (*
   let main co eqs s_neq nb_vars =

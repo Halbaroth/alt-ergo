@@ -26,15 +26,15 @@
 (*                                                                            *)
 (******************************************************************************)
 
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 
 (* used in the typechecker for the text-mode *)
 val make :
   Commands.sat_tdecl list ->
-  (int Structs.Typed.tdecl, 'a) Structs.Typed.annoted ->
+  (int Ast.Typed.tdecl, 'a) Ast.Typed.annoted ->
   Commands.sat_tdecl list
 
 (* used in the GUI *)
 val make_list :
-  (int Structs.Typed.tdecl, 'a) Structs.Typed.annoted list ->
+  (int Ast.Typed.tdecl, 'a) Ast.Typed.annoted list ->
   Commands.sat_tdecl list

@@ -10,12 +10,12 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 
 [@@@ocaml.warning "-33"]
 
 open Util.Options
-open Structs.Parsed
+open Ast.Parsed
 
 (* helper functions *)
 
@@ -41,8 +41,8 @@ let mk_algebraic_type_decl loc ty_vars ty enums =
     let l =
       List.rev_map
         (fun (c, l) ->
-          if l != [] then raise Exit;
-          c)
+           if l != [] then raise Exit;
+           c)
         enums
     in
     mk_non_rec_type_decl loc ty_vars ty (Enum (List.rev l))

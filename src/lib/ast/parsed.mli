@@ -76,7 +76,7 @@ and pp_desc =
   | PPapp of string * lexpr list
   | PPmapsTo of string * lexpr
   | PPinInterval of lexpr * bool * lexpr * lexpr * bool
-    (* bool = true <-> interval is_open *)
+  (* bool = true <-> interval is_open *)
   | PPdistinct of lexpr list
   | PPconst of constant
   | PPinfix of lexpr * pp_infix * lexpr

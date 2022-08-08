@@ -39,9 +39,9 @@ let instantiation_heuristic_parser = function
   | "auto" -> Ok IAuto
   | "greedy" -> Ok IGreedy
   | s ->
-      Error
-        (`Msg
-          ("Option --instantiation-heuristic does not acceptthe argument \"" ^ s))
+    Error
+      (`Msg
+         ("Option --instantiation-heuristic does not acceptthe argument \"" ^ s))
 
 let instantiation_heuristic_to_string = function
   | INormal -> "normal"
@@ -91,9 +91,9 @@ let value_of_fmt = function
   | Stdout -> Format.std_formatter
   | Stderr -> Format.err_formatter
   | Other s ->
-      let oc = open_out s in
-      at_exit (fun () -> close_out oc);
-      Format.formatter_of_out_channel oc
+    let oc = open_out s in
+    at_exit (fun () -> close_out oc);
+    Format.formatter_of_out_channel oc
 
 let formatter_parser = function
   | "stdout" -> Ok Stdout
@@ -187,17 +187,17 @@ let mk_case_split_opt case_split_policy enable_adts_cs max_split =
     | "before-matching" -> Ok Util.Util.BeforeMatching
     | "after-matching" -> Ok Util.Util.AfterMatching
     | _ ->
-        Error
-          ("Bad value '" ^ case_split_policy
+      Error
+        ("Bad value '" ^ case_split_policy
          ^ "' for option --case-split-policy")
   in
   let max_split = Util.Numbers.Q.from_string max_split in
   match res with
   | Ok case_split_policy ->
-      set_max_split max_split;
-      set_case_split_policy case_split_policy;
-      set_enable_adts_cs enable_adts_cs;
-      `Ok ()
+    set_max_split max_split;
+    set_case_split_policy case_split_policy;
+    set_enable_adts_cs enable_adts_cs;
+    `Ok ()
   | Error m -> `Error (false, m)
 
 let mk_context_opt replay replay_all_used_context replay_used_context
@@ -242,8 +242,8 @@ let mk_internal_opt disable_weaks enable_assertions warning_as_error gc_policy =
     match gc_policy with
     | 0 | 1 | 2 -> gc_policy
     | _ ->
-        Util.Printer.print_wrn "Gc_policy value must be 0[default], 1 or 2";
-        0
+      Util.Printer.print_wrn "Gc_policy value must be 0[default], 1 or 2";
+      0
   in
   set_disable_weaks disable_weaks;
   set_enable_assertions enable_assertions;
@@ -255,10 +255,10 @@ let mk_limit_opt age_bound fm_cross_limit timelimit_interpretation steps_bound
   let set_limit t d =
     match t with
     | Some t ->
-        if Sys.win32 then (
-          Util.Printer.print_wrn "timelimit not supported on Win32 (ignored)";
-          d)
-        else t
+      if Sys.win32 then (
+        Util.Printer.print_wrn "timelimit not supported on Win32 (ignored)";
+        d)
+      else t
     | None -> d
   in
   if steps_bound < -1 then
@@ -331,33 +331,33 @@ let mk_sat_opt get_bottom_classes disable_flat_formulas_simplification
     match sat_solver with
     | "CDCL" | "satML" -> `Ok (Util.Util.CDCL, false, false, false)
     | "CDCL-Tableaux" | "satML-Tableaux" | "CDCL-tableaux" | "satML-tableaux" ->
-        `Ok
-          (Util.Util.CDCL_Tableaux, cdcl_tableaux_inst, cdcl_tableaux_th, false)
+      `Ok
+        (Util.Util.CDCL_Tableaux, cdcl_tableaux_inst, cdcl_tableaux_th, false)
     | "tableaux" | "Tableaux" | "tableaux-like" | "Tableaux-like" ->
-        `Ok (Util.Util.Tableaux, false, false, false)
+      `Ok (Util.Util.Tableaux, false, false, false)
     | "tableaux-cdcl" | "Tableaux-CDCL" | "tableaux-CDCL" | "Tableaux-cdcl" ->
-        `Ok (Util.Util.Tableaux_CDCL, false, false, true)
+      `Ok (Util.Util.Tableaux_CDCL, false, false, true)
     | _ -> `Error ("Args parsing error: unkown SAT solver " ^ sat_solver)
   in
   match res with
   | `Ok (sat_solver, cdcl_tableaux_inst, cdcl_tableaux_th, tableaux_cdcl) ->
-      set_arith_matching arith_matching;
-      set_bottom_classes get_bottom_classes;
-      set_cdcl_tableaux_inst cdcl_tableaux_inst;
-      set_cdcl_tableaux_th cdcl_tableaux_th;
-      set_disable_flat_formulas_simplification
-        disable_flat_formulas_simplification;
-      set_enable_restarts enable_restarts;
-      set_minimal_bj minimal_bj;
-      set_no_backjumping no_backjumping;
-      set_no_backward no_backward;
-      set_no_decisions no_decisions;
-      set_no_decisions_on no_decisions_on;
-      set_no_sat_learning no_sat_learning;
-      set_sat_plugin sat_plugin;
-      set_sat_solver sat_solver;
-      set_tableaux_cdcl tableaux_cdcl;
-      `Ok ()
+    set_arith_matching arith_matching;
+    set_bottom_classes get_bottom_classes;
+    set_cdcl_tableaux_inst cdcl_tableaux_inst;
+    set_cdcl_tableaux_th cdcl_tableaux_th;
+    set_disable_flat_formulas_simplification
+      disable_flat_formulas_simplification;
+    set_enable_restarts enable_restarts;
+    set_minimal_bj minimal_bj;
+    set_no_backjumping no_backjumping;
+    set_no_backward no_backward;
+    set_no_decisions no_decisions;
+    set_no_decisions_on no_decisions_on;
+    set_no_sat_learning no_sat_learning;
+    set_sat_plugin sat_plugin;
+    set_sat_solver sat_solver;
+    set_tableaux_cdcl tableaux_cdcl;
+    `Ok ()
   | `Error m -> `Error (false, m)
 
 let mk_term_opt disable_ites inline_lets rewriting term_like_pp =
@@ -392,8 +392,8 @@ let halt_opt version_info where =
       | "data" -> `Ok Util.Config.datadir
       | "man" -> `Ok Util.Config.mandir
       | _ ->
-          `Error
-            ("Option --where does not accept the argument \"" ^ w
+        `Error
+          ("Option --where does not accept the argument \"" ^ w
            ^ "\"\nAccepted options are lib, plugins, preludes, data or man")
     in
     match res with
@@ -411,32 +411,32 @@ let halt_opt version_info where =
   try
     match where with
     | Some w ->
-        handle_where w;
-        `Ok true
+      handle_where w;
+      `Ok true
     | None ->
-        if version_info then (
-          handle_version_info version_info;
-          `Ok true)
-        else `Ok false
+      if version_info then (
+        handle_version_info version_info;
+        `Ok true)
+      else `Ok false
   with
   | Failure f -> `Error (false, f)
   | Error (b, m) -> `Error (b, m)
 
 let mk_opts file () () () () () () halt_opt gc () () () () () () () () =
   if halt_opt then `Ok false
-    (* If save_used_context was invoked as an option it should
-         automatically set unsat_core to true *)
+  (* If save_used_context was invoked as an option it should
+       automatically set unsat_core to true *)
   else (
     if get_save_used_context () then set_unsat_core true;
     (match file with
-    | Some f ->
-        let base_file =
-          try Filename.chop_extension f with Invalid_argument _ -> f
-        in
-        set_file f;
-        set_session_file (base_file ^ ".agr");
-        set_used_context_file base_file
-    | _ -> ());
+     | Some f ->
+       let base_file =
+         try Filename.chop_extension f with Invalid_argument _ -> f
+       in
+       set_file f;
+       set_session_file (base_file ^ ".agr");
+       set_used_context_file base_file
+     | _ -> ());
 
     Gc.set { (Gc.get ()) with Gc.allocation_policy = gc };
     `Ok true)
@@ -516,7 +516,7 @@ let parse_dbg_opt_spl1 =
   Term.(
     ret
       (const mk_dbg_opt_spl1 $ debug $ debug_ac $ debug_adt $ debug_arith
-     $ debug_arrays $ debug_bitv $ debug_cc $ debug_combine $ debug_constr))
+       $ debug_arrays $ debug_bitv $ debug_cc $ debug_combine $ debug_constr))
 
 let parse_dbg_opt_spl2 =
   let docs = s_debug in
@@ -570,7 +570,7 @@ let parse_dbg_opt_spl2 =
   Term.(
     ret
       (const mk_dbg_opt_spl2 $ debug_explanations $ debug_fm $ debug_fpa
-     $ debug_gc $ debug_interpretation $ debug_ite $ debug_matching $ debug_sat
+       $ debug_gc $ debug_interpretation $ debug_ite $ debug_matching $ debug_sat
       ))
 
 let parse_dbg_opt_spl3 =
@@ -635,8 +635,8 @@ let parse_dbg_opt_spl3 =
   Term.(
     ret
       (const mk_dbg_opt_spl3 $ debug_split $ debug_sum $ debug_triggers
-     $ debug_types $ debug_typing $ debug_uf $ debug_unsat_core $ debug_use
-     $ debug_warnings $ rule))
+       $ debug_types $ debug_typing $ debug_uf $ debug_unsat_core $ debug_use
+       $ debug_warnings $ rule))
 
 let parse_case_split_opt =
   let docs = s_case_split in
@@ -704,7 +704,7 @@ let parse_context_opt =
   Term.(
     ret
       (const mk_context_opt $ replay $ replay_all_used_context
-     $ replay_used_context $ save_used_context))
+       $ replay_used_context $ save_used_context))
 
 let parse_execution_opt =
   let docs = s_execution in
@@ -795,9 +795,9 @@ let parse_execution_opt =
   Term.(
     ret
       (const mk_execution_opt $ frontend $ input_format $ parse_only $ parsers
-     $ preludes $ no_locs_in_answers $ colors_in_output $ no_headers_in_output
-     $ no_formatting_in_output $ no_forced_flush_in_output $ pretty_output
-     $ type_only $ type_smt2))
+       $ preludes $ no_locs_in_answers $ colors_in_output $ no_headers_in_output
+       $ no_formatting_in_output $ no_forced_flush_in_output $ pretty_output
+       $ type_only $ type_smt2))
 
 let parse_halt_opt =
   let docs = s_halt in
@@ -856,7 +856,7 @@ let parse_internal_opt =
   Term.(
     ret
       (const mk_internal_opt $ disable_weaks $ enable_assertions
-     $ warning_as_error $ gc_policy))
+       $ warning_as_error $ gc_policy))
 
 let parse_limit_opt =
   let docs = s_limit in
@@ -923,7 +923,7 @@ let parse_limit_opt =
   Term.(
     ret
       (const mk_limit_opt $ age_bound $ fm_cross_limit
-     $ timelimit_interpretation $ steps_bound $ timelimit $ timelimit_per_goal))
+       $ timelimit_interpretation $ steps_bound $ timelimit $ timelimit_per_goal))
 
 let parse_output_opt =
   let docs = s_output in
@@ -1016,7 +1016,7 @@ let parse_profiling_opt =
   Term.(
     ret
       (const mk_profiling_opt $ cumulative_time_profiling $ profiling
-     $ profiling_plugin $ get_verbose))
+       $ profiling_plugin $ get_verbose))
 
 let parse_quantifiers_opt =
   let docs = s_quantifiers in
@@ -1094,8 +1094,8 @@ let parse_quantifiers_opt =
   Term.(
     ret
       (const mk_quantifiers_opt $ instantiation_heuristic
-     $ instantiate_after_backjump $ max_multi_triggers_size $ nb_triggers
-     $ no_ematching $ no_user_triggers $ normalize_instances $ triggers_var))
+       $ instantiate_after_backjump $ max_multi_triggers_size $ nb_triggers
+       $ no_ematching $ no_user_triggers $ normalize_instances $ triggers_var))
 
 let parse_sat_opt =
   let docs = s_sat in
@@ -1206,11 +1206,11 @@ let parse_sat_opt =
   Term.(
     ret
       (const mk_sat_opt $ get_bottom_classes
-     $ disable_flat_formulas_simplification $ enable_restarts
-     $ no_arith_matching $ no_backjumping $ no_backward $ no_decisions
-     $ no_decisions_on $ no_minimal_bj $ no_sat_learning
-     $ no_tableaux_cdcl_in_instantiation $ no_tableaux_cdcl_in_theories
-     $ sat_plugin $ sat_solver))
+       $ disable_flat_formulas_simplification $ enable_restarts
+       $ no_arith_matching $ no_backjumping $ no_backward $ no_decisions
+       $ no_decisions_on $ no_minimal_bj $ no_sat_learning
+       $ no_tableaux_cdcl_in_instantiation $ no_tableaux_cdcl_in_theories
+       $ sat_plugin $ sat_solver))
 
 let parse_term_opt =
   let docs = s_term in
@@ -1319,8 +1319,8 @@ let parse_theory_opt =
   Term.(
     ret
       (const mk_theory_opt $ disable_adts $ inequalities_plugin $ no_ac
-     $ no_contracongru $ no_fm $ no_nla $ no_tcp $ no_theory $ restricted
-     $ tighten_vars $ use_fpa))
+       $ no_contracongru $ no_fm $ no_nla $ no_tcp $ no_theory $ restricted
+       $ tighten_vars $ use_fpa))
 
 let parse_fmt_opt =
   let docs = s_fmt in
@@ -1412,11 +1412,11 @@ let main =
     Term.(
       ret
         (const mk_opts $ file $ parse_case_split_opt $ parse_context_opt
-       $ parse_dbg_opt_spl1 $ parse_dbg_opt_spl2 $ parse_dbg_opt_spl3
-       $ parse_execution_opt $ parse_halt_opt $ parse_internal_opt
-       $ parse_limit_opt $ parse_output_opt $ parse_profiling_opt
-       $ parse_quantifiers_opt $ parse_sat_opt $ parse_term_opt
-       $ parse_theory_opt $ parse_fmt_opt))
+         $ parse_dbg_opt_spl1 $ parse_dbg_opt_spl2 $ parse_dbg_opt_spl3
+         $ parse_execution_opt $ parse_halt_opt $ parse_internal_opt
+         $ parse_limit_opt $ parse_output_opt $ parse_profiling_opt
+         $ parse_quantifiers_opt $ parse_sat_opt $ parse_term_opt
+         $ parse_theory_opt $ parse_fmt_opt))
   in
   let info =
     Cmd.info "alt-ergo" ~version:Util.Version._version ~doc ~exits ~man

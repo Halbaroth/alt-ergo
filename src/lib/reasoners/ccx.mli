@@ -27,7 +27,7 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 
 [@@@ocaml.warning "-33"]
 
@@ -46,49 +46,49 @@ module type S = sig
     t ->
     r Sig_rel.facts ->
     (* acc *)
-    Structs.Expr.t ->
-    Structs.Ex.t ->
+    Ast.Expr.t ->
+    Ast.Ex.t ->
     t * r Sig_rel.facts
 
   val add :
     t ->
     r Sig_rel.facts ->
     (* acc *)
-    Structs.Expr.t ->
-    Structs.Ex.t ->
+    Ast.Expr.t ->
+    Ast.Ex.t ->
     t * r Sig_rel.facts
 
   val assume_literals :
     t ->
-    (r Sig_rel.literal * Structs.Ex.t * Th_util.lit_origin) list ->
+    (r Sig_rel.literal * Ast.Ex.t * Th_util.lit_origin) list ->
     r Sig_rel.facts ->
-    t * (r Sig_rel.literal * Structs.Ex.t * Th_util.lit_origin) list
+    t * (r Sig_rel.literal * Ast.Ex.t * Th_util.lit_origin) list
 
   val case_split :
     t ->
     for_model:bool ->
-    (r Structs.Xliteral.view * bool * Th_util.lit_origin) list * t
+    (r Ast.Xliteral.view * bool * Th_util.lit_origin) list * t
 
-  val query : t -> Structs.Expr.t -> Th_util.answer
-  val new_terms : t -> Structs.Expr.Set.t
-  val class_of : t -> Structs.Expr.t -> Structs.Expr.t list
+  val query : t -> Ast.Expr.t -> Th_util.answer
+  val new_terms : t -> Ast.Expr.Set.t
+  val class_of : t -> Ast.Expr.t -> Ast.Expr.t list
 
   val are_equal :
-    t -> Structs.Expr.t -> Structs.Expr.t -> init_terms:bool -> Th_util.answer
+    t -> Ast.Expr.t -> Ast.Expr.t -> init_terms:bool -> Th_util.answer
 
-  val are_distinct : t -> Structs.Expr.t -> Structs.Expr.t -> Th_util.answer
-  val cl_extract : t -> Structs.Expr.Set.t list
-  val term_repr : t -> Structs.Expr.t -> init_term:bool -> Structs.Expr.t
+  val are_distinct : t -> Ast.Expr.t -> Ast.Expr.t -> Th_util.answer
+  val cl_extract : t -> Ast.Expr.Set.t list
+  val term_repr : t -> Ast.Expr.t -> init_term:bool -> Ast.Expr.t
   val print_model : Format.formatter -> t -> unit
   val get_union_find : t -> Uf.t
-  val assume_th_elt : t -> Structs.Expr.th_elt -> Structs.Ex.t -> t
+  val assume_th_elt : t -> Ast.Expr.th_elt -> Ast.Ex.t -> t
 
   val theories_instances :
     do_syntactic_matching:bool ->
-    Matching_types.info Structs.Expr.Map.t
-    * Structs.Expr.t list Structs.Expr.Map.t Structs.Sy.Map.t ->
+    Matching_types.info Ast.Expr.Map.t
+    * Ast.Expr.t list Ast.Expr.Map.t Ast.Sy.Map.t ->
     t ->
-    (Structs.Expr.t -> Structs.Expr.t -> bool) ->
+    (Ast.Expr.t -> Ast.Expr.t -> bool) ->
     t * Sig_rel.instances
 end
 

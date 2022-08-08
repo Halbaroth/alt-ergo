@@ -10,7 +10,7 @@
 (******************************************************************************)
 
 module Frontend = Alt_ergo_lib_frontend
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 module Util = Alt_ergo_lib_util
 open AltErgoParsers
 
@@ -20,7 +20,7 @@ let register_legacy () =
   let module M : Frontend.Input.S = struct
     (* Parsing *)
 
-    type parsed = Structs.Parsed.decl
+    type parsed = Ast.Parsed.decl
 
     let parse_file ~content ~format =
       let l = Parsers.parse_problem_as_string ~content ~format in

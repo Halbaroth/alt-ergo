@@ -27,10 +27,10 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 
 (*type 'a abstract*)
-type 'a abstract = Cons of Util.Hstring.t * Structs.Ty.t | Alien of 'a
+type 'a abstract = Cons of Util.Hstring.t * Ast.Ty.t | Alien of 'a
 
 module type ALIEN = sig
   include Sig.X

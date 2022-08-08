@@ -26,17 +26,17 @@
 (*                                                                            *)
 (******************************************************************************)
 
-module Structs = Alt_ergo_lib_structs
-open Structs.Typed
+module Ast = Alt_ergo_lib_ast
+open Ast.Typed
 
 (* Sat entry *)
 
 type sat_decl_aux =
-  | Assume of string * Structs.Expr.t * bool
-  | PredDef of Structs.Expr.t * string (*name of the predicate*)
-  | RwtDef of Structs.Expr.t rwt_rule list
-  | Query of string * Structs.Expr.t * goal_sort
-  | ThAssume of Structs.Expr.th_elt
+  | Assume of string * Ast.Expr.t * bool
+  | PredDef of Ast.Expr.t * string (*name of the predicate*)
+  | RwtDef of Ast.Expr.t rwt_rule list
+  | Query of string * Ast.Expr.t * goal_sort
+  | ThAssume of Ast.Expr.th_elt
   | Push of int
   | Pop of int
 

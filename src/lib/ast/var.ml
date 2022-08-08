@@ -41,13 +41,13 @@ let to_string { hs; id } = sprintf "%s~%d" (Util.Hstring.view hs) id
 let print fmt v = fprintf fmt "%s" (to_string v)
 
 module Set = Set.Make (struct
-  type t = view
+    type t = view
 
-  let compare = compare
-end)
+    let compare = compare
+  end)
 
 module Map = Map.Make (struct
-  type t = view
+    type t = view
 
-  let compare = compare
-end)
+    let compare = compare
+  end)

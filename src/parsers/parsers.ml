@@ -27,15 +27,15 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 open Util.Options
-open Structs.Errors
+open Ast.Errors
 open Format
 
 module type PARSER_INTERFACE = sig
-  val file : Lexing.lexbuf -> Structs.Parsed.file
-  val expr : Lexing.lexbuf -> Structs.Parsed.lexpr
-  val trigger : Lexing.lexbuf -> Structs.Parsed.lexpr list * bool
+  val file : Lexing.lexbuf -> Ast.Parsed.file
+  val expr : Lexing.lexbuf -> Ast.Parsed.lexpr
+  val trigger : Lexing.lexbuf -> Ast.Parsed.lexpr list * bool
 end
 
 let parsers = ref ([] : (string * (module PARSER_INTERFACE)) list)
@@ -60,18 +60,18 @@ let find_parser ext_opt format =
         error
           (Parser_error
              ("Error: no parser registered for the provided input format %S ?@."
-            ^ format)))
+              ^ format)))
     else
       error
         (Parser_error
            ("Error: no parser registered for the provided input format %S ?@."
-          ^ format))
+            ^ format))
 
 let set_output_format fmt =
   if Util.Options.get_infer_output_format () then
     match fmt with
     | Util.Options.Unknown s ->
-        Util.Printer.print_wrn "The output format %s is not supported" s
+      Util.Printer.print_wrn "The output format %s is not supported" s
     | fmt -> Util.Options.set_output_format fmt
 
 let get_input_parser fmt =
@@ -87,8 +87,8 @@ let get_parser ext_opt =
     match ext_opt with
     | Some ext -> get_input_parser (Util.Options.match_extension ext)
     | None ->
-        error
-          (Parser_error "Error: no extension found, can't infer input format@.")
+      error
+        (Parser_error "Error: no extension found, can't infer input format@.")
   else get_input_parser (Util.Options.get_input_format ())
 
 let parse_file ?lang lexbuf =
@@ -109,19 +109,19 @@ let extract_zip_file f =
   try
     match MyZip.entries cin with
     | [ e ] when not (MyZip.is_directory e) ->
-        if get_verbose () then
-          Util.Printer.print_dbg ~module_name:"Parsers"
-            ~function_name:"extract_zip_file"
-            "I'll read the content of '%s' in the given zip" (MyZip.filename e);
-        let content = MyZip.read_entry cin e in
-        MyZip.close_in cin;
-        content
+      if get_verbose () then
+        Util.Printer.print_dbg ~module_name:"Parsers"
+          ~function_name:"extract_zip_file"
+          "I'll read the content of '%s' in the given zip" (MyZip.filename e);
+      let content = MyZip.read_entry cin e in
+      MyZip.close_in cin;
+      content
     | _ ->
-        MyZip.close_in cin;
-        raise
-          (Arg.Bad
-             (sprintf "%s '%s' %s@?" "The zipped file" f
-                "should contain exactly one file."))
+      MyZip.close_in cin;
+      raise
+        (Arg.Bad
+           (sprintf "%s '%s' %s@?" "The zipped file" f
+              "should contain exactly one file."))
   with e ->
     MyZip.close_in cin;
     raise e
@@ -148,23 +148,23 @@ let parse_input_file file =
     if opened_cin then close_in cin;
     a
   with
-  | Structs.Errors.Error e ->
-      if opened_cin then close_in cin;
-      raise (Error e)
+  | Ast.Errors.Error e ->
+    if opened_cin then close_in cin;
+    raise (Error e)
   | Parsing.Parse_error as e ->
-      if opened_cin then close_in cin;
-      raise e
+    if opened_cin then close_in cin;
+    raise e
 
 let parse_problem ~filename ~preludes =
   Parsers_loader.load ();
   let acc = parse_input_file filename in
   List.fold_left
     (fun acc prelude ->
-      let prelude =
-        if Sys.file_exists prelude then prelude
-        else Util.Config.preludesdir ^ "/" ^ prelude
-      in
-      List.rev_append (List.rev (parse_input_file prelude)) acc)
+       let prelude =
+         if Sys.file_exists prelude then prelude
+         else Util.Config.preludesdir ^ "/" ^ prelude
+       in
+       List.rev_append (List.rev (parse_input_file prelude)) acc)
     acc (List.rev preludes)
 
 let parse_problem_as_string ~content ~format =
@@ -173,5 +173,5 @@ let parse_problem_as_string ~content ~format =
     let lb = Lexing.from_string content in
     parse_file ?lang:format lb
   with
-  | Structs.Errors.Error e -> raise (Error e)
+  | Ast.Errors.Error e -> raise (Error e)
   | Parsing.Parse_error as e -> raise e

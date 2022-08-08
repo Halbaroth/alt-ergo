@@ -45,7 +45,7 @@ type instantiation_heuristic = INormal | IAuto | IGreedy
 type input_format =
   | Native  (** Native Alt-Ergo format  *)
   | Smtlib2
-      (** {{:
+  (** {{:
       http://smtlib.cs.uiowa.edu/papers/smt-lib-reference-v2.6-r2017-07-18.pdf}
       Smtlib} default format *)
   | Why3  (** Why3 file format *)

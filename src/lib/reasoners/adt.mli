@@ -10,17 +10,17 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 
 type 'a abstract =
   | Constr of {
       c_name : Util.Hstring.t;
-      c_ty : Structs.Ty.t;
+      c_ty : Ast.Ty.t;
       c_args : (Util.Hstring.t * 'a) list;
     }
-  | Select of { d_name : Util.Hstring.t; d_ty : Structs.Ty.t; d_arg : 'a }
+  | Select of { d_name : Util.Hstring.t; d_ty : Ast.Ty.t; d_arg : 'a }
   | Tester of { t_name : Util.Hstring.t; t_arg : 'a }
-    (* tester is currently not used to build values *)
+  (* tester is currently not used to build values *)
   | Alien of 'a
 
 module type ALIEN = sig

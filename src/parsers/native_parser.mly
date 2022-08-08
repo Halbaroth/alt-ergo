@@ -74,13 +74,13 @@
 
 /* Entry points */
 
-%type <Alt_ergo_lib_structs.Parsed.lexpr list * bool> trigger_parser
+%type <Alt_ergo_lib_ast.Parsed.lexpr list * bool> trigger_parser
 %start trigger_parser
 
-%type <Alt_ergo_lib_structs.Parsed.lexpr> lexpr_parser
+%type <Alt_ergo_lib_ast.Parsed.lexpr> lexpr_parser
 %start lexpr_parser
 
-%type <Alt_ergo_lib_structs.Parsed.file> file_parser
+%type <Alt_ergo_lib_ast.Parsed.file> file_parser
 %start file_parser
 %%
 
@@ -117,7 +117,7 @@ decl:
              List.map
                (fun (a, b, c, d) ->
                  match mk_algebraic_type_decl a b c d with
-                 | Alt_ergo_lib_structs.Parsed.TypeDecl [e] -> e
+                 | Alt_ergo_lib_ast.Parsed.TypeDecl [e] -> e
                  | _ -> assert false
                ) l
            in
@@ -164,8 +164,8 @@ theory_elt:
 
 
 ac_modifier:
-| /* */ { Structs.Sy.Other }
-| AC    { Structs.Sy.Ac }
+| /* */ { Ast.Sy.Other }
+| AC    { Ast.Sy.Ac }
 
 primitive_type:
 | INT  { int_type }

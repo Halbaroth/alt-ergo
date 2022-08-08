@@ -10,58 +10,58 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 open Util.Options
 
 module EX2 = struct
-  type t = Structs.Expr.t * Structs.Expr.t
+  type t = Ast.Expr.t * Ast.Expr.t
 
   let compare (s1, s2) (t1, t2) =
-    let c = Structs.Expr.compare s1 t1 in
-    if c <> 0 then c else Structs.Expr.compare s2 t2
+    let c = Ast.Expr.compare s1 t1 in
+    if c <> 0 then c else Ast.Expr.compare s2 t2
 end
 
 module ME2 = Map.Make (EX2)
 module SE2 = Set.Make (EX2)
 
 module TB = Map.Make (struct
-  type t = Structs.Expr.t * bool
+    type t = Ast.Expr.t * bool
 
-  let compare (a1, b1) (a2, b2) =
-    let c = Structs.Expr.compare a1 a2 in
-    if c <> 0 then c else Stdlib.compare b1 b2
-end)
+    let compare (a1, b1) (a2, b2) =
+      let c = Ast.Expr.compare a1 a2 in
+      if c <> 0 then c else Stdlib.compare b1 b2
+  end)
 
 type t = {
-  pending_deds : Structs.Ex.t ME2.t;
-  guarded_pos_deds : SE2.t Structs.Expr.Map.t;
-  guarded_neg_deds : SE2.t Structs.Expr.Map.t;
-  assumed_pos_preds : Structs.Ex.t Structs.Expr.Map.t;
-  assumed_neg_preds : Structs.Ex.t Structs.Expr.Map.t;
+  pending_deds : Ast.Ex.t ME2.t;
+  guarded_pos_deds : SE2.t Ast.Expr.Map.t;
+  guarded_neg_deds : SE2.t Ast.Expr.Map.t;
+  assumed_pos_preds : Ast.Ex.t Ast.Expr.Map.t;
+  assumed_neg_preds : Ast.Ex.t Ast.Expr.Map.t;
 }
 
 let empty _ =
   {
     pending_deds = ME2.empty;
-    guarded_pos_deds = Structs.Expr.Map.empty;
-    guarded_neg_deds = Structs.Expr.Map.empty;
-    assumed_pos_preds = Structs.Expr.Map.empty;
-    assumed_neg_preds = Structs.Expr.Map.empty;
+    guarded_pos_deds = Ast.Expr.Map.empty;
+    guarded_neg_deds = Ast.Expr.Map.empty;
+    assumed_pos_preds = Ast.Expr.Map.empty;
+    assumed_neg_preds = Ast.Expr.Map.empty;
   }
 
 let is_ite =
-  let ite = Structs.Sy.Op Structs.Sy.Tite in
+  let ite = Ast.Sy.Op Ast.Sy.Tite in
   fun t ->
-    match Structs.Expr.term_view t with
-    | Structs.Expr.Not_a_term _ -> assert false
-    | Structs.Expr.Term { Structs.Expr.f; xs = [ p; t1; t2 ]; _ }
-      when Structs.Sy.equal f ite ->
-        Some (p, t1, t2)
+    match Ast.Expr.term_view t with
+    | Ast.Expr.Not_a_term _ -> assert false
+    | Ast.Expr.Term { Ast.Expr.f; xs = [ p; t1; t2 ]; _ }
+      when Ast.Sy.equal f ite ->
+      Some (p, t1, t2)
     | _ -> None
 
 let add_to_guarded p s t mp =
-  let st = try Structs.Expr.Map.find p mp with Not_found -> SE2.empty in
-  Structs.Expr.Map.add p (SE2.add (s, t) st) mp
+  let st = try Ast.Expr.Map.find p mp with Not_found -> SE2.empty in
+  Ast.Expr.Map.add p (SE2.add (s, t) st) mp
 
 let add_aux env t =
   if Util.Options.get_disable_ites () then env
@@ -71,52 +71,52 @@ let add_aux env t =
     | Some (p, t1, t2) -> (
         if get_debug_ite () then
           Util.Printer.print_dbg ~module_name:"Ite_rel" ~function_name:"add_aux"
-            "(if %a then %a else %a)" Structs.Expr.print p Structs.Expr.print t1
-            Structs.Expr.print t2;
+            "(if %a then %a else %a)" Ast.Expr.print p Ast.Expr.print t1
+            Ast.Expr.print t2;
         try
-          let ex = Structs.Expr.Map.find p env.assumed_pos_preds in
+          let ex = Ast.Expr.Map.find p env.assumed_pos_preds in
           { env with pending_deds = ME2.add (t, t1) ex env.pending_deds }
         with Not_found -> (
-          try
-            let ex = Structs.Expr.Map.find p env.assumed_neg_preds in
-            { env with pending_deds = ME2.add (t, t2) ex env.pending_deds }
-          with Not_found ->
-            let guarded_pos_deds = add_to_guarded p t t1 env.guarded_pos_deds in
-            let guarded_neg_deds = add_to_guarded p t t2 env.guarded_neg_deds in
-            { env with guarded_pos_deds; guarded_neg_deds }))
+            try
+              let ex = Ast.Expr.Map.find p env.assumed_neg_preds in
+              { env with pending_deds = ME2.add (t, t2) ex env.pending_deds }
+            with Not_found ->
+              let guarded_pos_deds = add_to_guarded p t t1 env.guarded_pos_deds in
+              let guarded_neg_deds = add_to_guarded p t t2 env.guarded_neg_deds in
+              { env with guarded_pos_deds; guarded_neg_deds }))
 
 let add env _ _ t = (add_aux env t, [])
 
 let extract_preds env la =
   List.fold_left
     (fun acc (_ra, root, expl, _orig) ->
-      match root with
-      | None -> acc
-      | Some a -> (
-          match Structs.Expr.lit_view a with
-          | Structs.Expr.Pred (t, is_neg)
-            when (not (Structs.Expr.Map.mem t env.assumed_pos_preds))
-                 && not (Structs.Expr.Map.mem t env.assumed_neg_preds) ->
-              if get_debug_ite () then
-                Util.Printer.print_dbg ~module_name:"Ite_rel"
-                  ~function_name:"assume" "%a" Structs.Expr.print a;
-              TB.add (t, is_neg) expl acc
-          | _ -> acc))
+       match root with
+       | None -> acc
+       | Some a -> (
+           match Ast.Expr.lit_view a with
+           | Ast.Expr.Pred (t, is_neg)
+             when (not (Ast.Expr.Map.mem t env.assumed_pos_preds))
+               && not (Ast.Expr.Map.mem t env.assumed_neg_preds) ->
+             if get_debug_ite () then
+               Util.Printer.print_dbg ~module_name:"Ite_rel"
+                 ~function_name:"assume" "%a" Ast.Expr.print a;
+             TB.add (t, is_neg) expl acc
+           | _ -> acc))
     TB.empty la
 
 let extract_pending_deductions env =
   let l =
     ME2.fold
       (fun (s, t) ex acc ->
-        let a =
-          (Structs.Expr.mk_eq ~iff:false s t
-           [@ocaml.ppwarning "TODO: build IFF instead ?"])
-        in
-        if get_debug_ite () then
-          Util.Printer.print_dbg ~module_name:"Ite_rel" ~function_name:"assume"
-            "deduce that %a with expl %a" Structs.Expr.print a Structs.Ex.print
-            ex;
-        (Sig_rel.LTerm a, ex, Th_util.Other) :: acc)
+         let a =
+           (Ast.Expr.mk_eq ~iff:false s t
+            [@ocaml.ppwarning "TODO: build IFF instead ?"])
+         in
+         if get_debug_ite () then
+           Util.Printer.print_dbg ~module_name:"Ite_rel" ~function_name:"assume"
+             "deduce that %a with expl %a" Ast.Expr.print a Ast.Ex.print
+             ex;
+         (Sig_rel.LTerm a, ex, Th_util.Other) :: acc)
       env.pending_deds []
   in
   ({ env with pending_deds = ME2.empty }, l)
@@ -128,30 +128,30 @@ let assume env _ la =
     let env =
       TB.fold
         (fun (t, is_neg) ex env ->
-          if is_neg then
-            let assumed_neg_preds =
-              Structs.Expr.Map.add t ex env.assumed_neg_preds
-            in
-            let deds =
-              try Structs.Expr.Map.find t env.guarded_neg_deds
-              with Not_found -> SE2.empty
-            in
-            let pending_deds =
-              SE2.fold (fun e acc -> ME2.add e ex acc) deds env.pending_deds
-            in
-            { env with assumed_neg_preds; pending_deds }
-          else
-            let assumed_pos_preds =
-              Structs.Expr.Map.add t ex env.assumed_pos_preds
-            in
-            let deds =
-              try Structs.Expr.Map.find t env.guarded_pos_deds
-              with Not_found -> SE2.empty
-            in
-            let pending_deds =
-              SE2.fold (fun e acc -> ME2.add e ex acc) deds env.pending_deds
-            in
-            { env with assumed_pos_preds; pending_deds })
+           if is_neg then
+             let assumed_neg_preds =
+               Ast.Expr.Map.add t ex env.assumed_neg_preds
+             in
+             let deds =
+               try Ast.Expr.Map.find t env.guarded_neg_deds
+               with Not_found -> SE2.empty
+             in
+             let pending_deds =
+               SE2.fold (fun e acc -> ME2.add e ex acc) deds env.pending_deds
+             in
+             { env with assumed_neg_preds; pending_deds }
+           else
+             let assumed_pos_preds =
+               Ast.Expr.Map.add t ex env.assumed_pos_preds
+             in
+             let deds =
+               try Ast.Expr.Map.find t env.guarded_pos_deds
+               with Not_found -> SE2.empty
+             in
+             let pending_deds =
+               SE2.fold (fun e acc -> ME2.add e ex acc) deds env.pending_deds
+             in
+             { env with assumed_pos_preds; pending_deds })
         (extract_preds env la) env
     in
     let env, deds = extract_pending_deductions env in
@@ -172,6 +172,6 @@ let assume env uf la =
 let case_split _ _ ~for_model:_ = []
 let query _ _ _ = None
 let print_model _ _ _ = ()
-let new_terms _ = Structs.Expr.Set.empty
+let new_terms _ = Ast.Expr.Set.empty
 let instantiate ~do_syntactic_matching:_ _ env _ _ = (env, [])
 let assume_th_elt t _ _ = t

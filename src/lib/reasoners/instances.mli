@@ -27,39 +27,39 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 
 module type S = sig
   type t
   type tbox
-  type instances = (Structs.Expr.gformula * Structs.Ex.t) list
+  type instances = (Ast.Expr.gformula * Ast.Ex.t) list
 
   val empty : t
-  val add_terms : t -> Structs.Expr.Set.t -> Structs.Expr.gformula -> t
-  val add_lemma : t -> Structs.Expr.gformula -> Structs.Ex.t -> t
+  val add_terms : t -> Ast.Expr.Set.t -> Ast.Expr.gformula -> t
+  val add_lemma : t -> Ast.Expr.gformula -> Ast.Ex.t -> t
 
   val add_predicate :
     t ->
-    guard:Structs.Expr.t ->
+    guard:Ast.Expr.t ->
     name:string ->
-    Structs.Expr.gformula ->
-    Structs.Ex.t ->
+    Ast.Expr.gformula ->
+    Ast.Ex.t ->
     t
 
   (* the first returned expr is the guard (incremental mode),
      the second one is the defn of the given predicate *)
   val ground_pred_defn :
-    Structs.Expr.t ->
+    Ast.Expr.t ->
     t ->
-    (Structs.Expr.t * Structs.Expr.t * Structs.Ex.t) option
+    (Ast.Expr.t * Ast.Expr.t * Ast.Ex.t) option
 
-  val pop : t -> guard:Structs.Expr.t -> t
+  val pop : t -> guard:Ast.Expr.t -> t
 
   val m_lemmas :
     Util.Util.matching_env ->
     t ->
     tbox ->
-    (Structs.Expr.t -> Structs.Expr.t -> bool) ->
+    (Ast.Expr.t -> Ast.Expr.t -> bool) ->
     int ->
     instances * instances (* goal_directed, others *)
 
@@ -67,7 +67,7 @@ module type S = sig
     Util.Util.matching_env ->
     t ->
     tbox ->
-    (Structs.Expr.t -> Structs.Expr.t -> bool) ->
+    (Ast.Expr.t -> Ast.Expr.t -> bool) ->
     int ->
     instances * instances (* goal_directed, others *)
 
@@ -75,8 +75,8 @@ module type S = sig
 
   val matching_terms_info :
     t ->
-    Matching_types.info Structs.Expr.Map.t
-    * Structs.Expr.t list Structs.Expr.Map.t Structs.Sy.Map.t
+    Matching_types.info Ast.Expr.Map.t
+    * Ast.Expr.t list Ast.Expr.Map.t Ast.Sy.Map.t
 end
 
 module Make (X : Theory.S) : S with type tbox = X.t

@@ -29,7 +29,7 @@
 {
   [@@@ocaml.warning "-33"]
   module Util = Alt_ergo_lib_util
-  module Structs = Alt_ergo_lib_structs
+  module Ast = Alt_ergo_lib_ast
   open Util.Options
 
   open Lexing
@@ -217,7 +217,7 @@ rule parse_token = parse
   | _ as c {
     let loc = (Lexing.lexeme_start_p lexbuf, Lexing.lexeme_end_p lexbuf) in
     let s = "illegal character: " ^ String.make 1 c in
-    Structs.Errors.error (Structs.Errors.Lexical_error (loc, s))
+    Ast.Errors.error (Ast.Errors.Lexical_error (loc, s))
   }
 
 and parse_comment = parse
@@ -226,7 +226,7 @@ and parse_comment = parse
   | '\n' { mk_new_line lexbuf; parse_comment lexbuf }
   | eof  {
     let loc = (Lexing.lexeme_start_p lexbuf, Lexing.lexeme_end_p lexbuf) in
-    Structs.Errors.error (Structs.Errors.Lexical_error (loc, "unterminated comment"))
+    Ast.Errors.error (Ast.Errors.Lexical_error (loc, "unterminated comment"))
   }
   | _    { parse_comment lexbuf }
 
@@ -245,7 +245,7 @@ and parse_string str_buf = parse
 
   | eof  {
     let loc = (Lexing.lexeme_start_p lexbuf, Lexing.lexeme_end_p lexbuf) in
-    Structs.Errors.error (Structs.Errors.Lexical_error (loc, "unterminated string"))
+    Ast.Errors.error (Ast.Errors.Lexical_error (loc, "unterminated string"))
   }
 
   | _ as c {
@@ -268,7 +268,7 @@ and parse_string str_buf = parse
         let loc = (Lexing.lexeme_start_p lexbuf, Lexing.lexeme_end_p lexbuf) in
         let lex = Lexing.lexeme lexbuf in
         Parsing.clear_parser ();
-        Structs.Errors.error (Structs.Errors.Syntax_error (loc, lex))
+        Ast.Errors.error (Ast.Errors.Syntax_error (loc, lex))
 
     let file    = aux Native_parser.file_parser    parse_token
     let expr    = aux Native_parser.lexpr_parser   parse_token

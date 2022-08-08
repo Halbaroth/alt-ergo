@@ -27,21 +27,21 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 
 type t
 
-exception NotConsistent of Structs.Ex.t
+exception NotConsistent of Ast.Ex.t
 exception No_finite_bound
 
-val undefined : Structs.Ty.t -> t
+val undefined : Ast.Ty.t -> t
 val is_undefined : t -> bool
-val point : Util.Numbers.Q.t -> Structs.Ty.t -> Structs.Ex.t -> t
+val point : Util.Numbers.Q.t -> Ast.Ty.t -> Ast.Ex.t -> t
 val doesnt_contain_0 : t -> Th_util.answer
 val is_positive : t -> Th_util.answer
 val is_strict_smaller : t -> t -> bool
-val new_borne_sup : Structs.Ex.t -> Util.Numbers.Q.t -> is_le:bool -> t -> t
-val new_borne_inf : Structs.Ex.t -> Util.Numbers.Q.t -> is_le:bool -> t -> t
+val new_borne_sup : Ast.Ex.t -> Util.Numbers.Q.t -> is_le:bool -> t -> t
+val new_borne_inf : Ast.Ex.t -> Util.Numbers.Q.t -> is_le:bool -> t -> t
 
 val only_borne_sup : t -> t
 (** Keep only the upper bound of the interval,
@@ -51,7 +51,7 @@ val only_borne_inf : t -> t
 (** Keep only the lower bound of the interval,
     setting the upper bound to plus infty. *)
 
-val is_point : t -> (Util.Numbers.Q.t * Structs.Ex.t) option
+val is_point : t -> (Util.Numbers.Q.t * Ast.Ex.t) option
 val intersect : t -> t -> t
 val exclude : t -> t -> t
 val mult : t -> t -> t
@@ -75,17 +75,17 @@ val pretty_print : Format.formatter -> t -> unit
 val print : Format.formatter -> t -> unit
 val finite_size : t -> Util.Numbers.Q.t option
 
-val borne_inf : t -> Util.Numbers.Q.t * Structs.Ex.t * bool
+val borne_inf : t -> Util.Numbers.Q.t * Ast.Ex.t * bool
 (** bool is true when bound is large. Raise: No_finite_bound if no
     finite lower bound *)
 
-val borne_sup : t -> Util.Numbers.Q.t * Structs.Ex.t * bool
+val borne_sup : t -> Util.Numbers.Q.t * Ast.Ex.t * bool
 (** bool is true when bound is large. Raise: No_finite_bound if no
     finite upper bound*)
 
 val div : t -> t -> t
 
-val coerce : Structs.Ty.t -> t -> t
+val coerce : Ast.Ty.t -> t -> t
 (** Coerce an interval to the given type. The main use of that function is
     to round a rational interval to an integer interval. This is particularly
     useful to avoid roudning too many times when manipulating intervals that
@@ -98,9 +98,9 @@ val mk_closed :
   Util.Numbers.Q.t ->
   bool ->
   bool ->
-  Structs.Ex.t ->
-  Structs.Ex.t ->
-  Structs.Ty.t ->
+  Ast.Ex.t ->
+  Ast.Ex.t ->
+  Ast.Ty.t ->
   t
 (**
    takes as argument in this order:
@@ -110,9 +110,9 @@ val mk_closed :
    - a bool that says if the upper bound it is large (true) or strict
    - an explanation of the lower bound
    - an explanation of the upper bound
-   - a type Structs.Ty.t (Tint or Treal *)
+   - a type Ast.Ty.t (Tint or Treal *)
 
-type bnd = (Util.Numbers.Q.t * Util.Numbers.Q.t) option * Structs.Ex.t
+type bnd = (Util.Numbers.Q.t * Util.Numbers.Q.t) option * Ast.Ex.t
 (* - None <-> Infinity
    - the first number is the real bound
    - the second number if +1 (resp. -1) for strict lower (resp. upper) bound,
@@ -121,18 +121,18 @@ type bnd = (Util.Numbers.Q.t * Util.Numbers.Q.t) option * Structs.Ex.t
 
 val bounds_of : t -> (bnd * bnd) list
 val contains : t -> Util.Numbers.Q.t -> bool
-val add_explanation : t -> Structs.Ex.t -> t
+val add_explanation : t -> Ast.Ex.t -> t
 val equal : t -> t -> bool
 
 type interval_matching =
   ((Util.Numbers.Q.t * bool) option
-  * (Util.Numbers.Q.t * bool) option
-  * Structs.Ty.t)
-  Structs.Var.Map.t
+   * (Util.Numbers.Q.t * bool) option
+   * Ast.Ty.t)
+    Ast.Var.Map.t
 
 val match_interval :
-  Structs.Sy.bound ->
-  Structs.Sy.bound ->
+  Ast.Sy.bound ->
+  Ast.Sy.bound ->
   t ->
   interval_matching ->
   interval_matching option

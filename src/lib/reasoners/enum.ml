@@ -27,12 +27,12 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 open Util.Options
 open Format
 open Sig
 
-type 'a abstract = Cons of Util.Hstring.t * Structs.Ty.t | Alien of 'a
+type 'a abstract = Cons of Util.Hstring.t * Ast.Ty.t | Alien of 'a
 
 module type ALIEN = sig
   include Sig.X
@@ -49,7 +49,7 @@ module Shostak (X : ALIEN) = struct
 
   let is_mine_symb sy ty =
     match (sy, ty) with
-    | Structs.Sy.Op (Structs.Sy.Constr _), Structs.Ty.Tsum _ -> true
+    | Ast.Sy.Op (Ast.Sy.Constr _), Ast.Ty.Tsum _ -> true
     | _ -> false
 
   let fully_interpreted _ = true
@@ -73,7 +73,7 @@ module Shostak (X : ALIEN) = struct
       if get_debug_sum () then
         match res with
         | [ (p, v) ] ->
-            print_dbg ~header:false "we get: %a |-> %a@]" X.print p X.print v
+          print_dbg ~header:false "we get: %a |-> %a@]" X.print p X.print v
         | [] -> print_dbg ~header:false "the equation is trivial"
         | _ -> assert false
 
@@ -89,8 +89,8 @@ module Shostak (X : ALIEN) = struct
   let compare_mine c1 c2 =
     match (c1, c2) with
     | Cons (h1, ty1), Cons (h2, ty2) ->
-        let n = Util.Hstring.compare h1 h2 in
-        if n <> 0 then n else Structs.Ty.compare ty1 ty2
+      let n = Util.Hstring.compare h1 h2 in
+      if n <> 0 then n else Ast.Ty.compare ty1 ty2
     | Alien r1, Alien r2 -> X.str_cmp r1 r2
     | Alien _, Cons _ -> 1
     | Cons _, Alien _ -> -1
@@ -100,12 +100,12 @@ module Shostak (X : ALIEN) = struct
   let equal s1 s2 =
     match (s1, s2) with
     | Cons (h1, ty1), Cons (h2, ty2) ->
-        Util.Hstring.equal h1 h2 && Structs.Ty.equal ty1 ty2
+      Util.Hstring.equal h1 h2 && Ast.Ty.equal ty1 ty2
     | Alien r1, Alien r2 -> X.equal r1 r2
     | Alien _, Cons _ | Cons _, Alien _ -> false
 
   let hash = function
-    | Cons (h, ty) -> Util.Hstring.hash h + (19 * Structs.Ty.hash ty)
+    | Cons (h, ty) -> Util.Hstring.hash h + (19 * Ast.Ty.hash ty)
     | Alien r -> X.hash r
 
   let leaves _ = []
@@ -116,15 +116,15 @@ module Shostak (X : ALIEN) = struct
     else match c with Cons _ -> cr | Alien r -> X.subst p v r
 
   let make t =
-    match Structs.Expr.term_view t with
-    | Structs.Expr.Term
+    match Ast.Expr.term_view t with
+    | Ast.Expr.Term
         {
-          Structs.Expr.f = Structs.Sy.Op (Structs.Sy.Constr hs);
+          Ast.Expr.f = Ast.Sy.Op (Ast.Sy.Constr hs);
           xs = [];
           ty;
           _;
         } ->
-        (is_mine (Cons (hs, ty)), [])
+      (is_mine (Cons (hs, ty)), [])
     | _ -> assert false
 
   let solve a b =
@@ -176,8 +176,8 @@ module Shostak (X : ALIEN) = struct
     let r =
       match l with
       | (_, r) :: l ->
-          List.iter (fun (_, x) -> assert (X.equal x r)) l;
-          r
+        List.iter (fun (_, x) -> assert (X.equal x r)) l;
+        r
       | [] -> (
           (* We do this, because terms of some semantic values created
              by CS are not created and added to UF *)

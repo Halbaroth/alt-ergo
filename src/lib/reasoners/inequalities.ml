@@ -27,7 +27,7 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 open Format
 open Util.Options
 module Z = Util.Numbers.Z
@@ -43,7 +43,7 @@ module type S = sig
     (* int instead of Term.t as a key to prevent us
        from using it in deductions *)
     dep : (Q.t * P.t * bool) Util.Util.MI.t;
-    expl : Structs.Ex.t;
+    expl : Ast.Ex.t;
     age : Z.t;
   }
 
@@ -64,7 +64,7 @@ module type S = sig
   val incr_age : unit -> unit
 
   val create_ineq :
-    P.t -> P.t -> bool -> Structs.Expr.t option -> Structs.Ex.t -> t
+    P.t -> P.t -> bool -> Ast.Expr.t option -> Ast.Ex.t -> t
 
   val print_inequation : Format.formatter -> t -> unit
 
@@ -111,37 +111,37 @@ module Container : Container_SIG = struct
       ple0 : P.t;
       is_le : bool;
       dep : (Q.t * P.t * bool) Util.Util.MI.t;
-      expl : Structs.Ex.t;
+      expl : Ast.Ex.t;
       age : Z.t;
     }
 
     let print_inequation fmt ineq =
       fprintf fmt "%a %s 0 %a" P.print ineq.ple0
         (if ineq.is_le then "<=" else "<")
-        Structs.Ex.print ineq.expl
+        Ast.Ex.print ineq.expl
 
     let create_ineq p1 p2 is_le a expl =
       let ple0 = P.sub p1 p2 in
       match P.to_list ple0 with
       | [], ctt when is_le && Q.sign ctt > 0 ->
-          raise (Intervals.NotConsistent expl)
+        raise (Intervals.NotConsistent expl)
       | [], ctt when (not is_le) && Q.sign ctt >= 0 ->
-          raise (Intervals.NotConsistent expl)
+        raise (Intervals.NotConsistent expl)
       | _ ->
-          let p, c, d = P.normal_form ple0 in
-          (* ple0 = (p + c) * d, and d > 0 *)
-          assert (Q.compare d Q.zero > 0);
-          let c =
-            if P.type_info p == Structs.Ty.Treal then c else Q.ceiling c
-          in
-          let p = P.add_const c p in
-          let dep =
-            match a with
-            | Some a ->
-                Util.Util.MI.singleton (Structs.Expr.uid a) (Q.one, p, is_le)
-            | None -> Util.Util.MI.empty
-          in
-          { ple0 = p; is_le; dep; expl; age = !age_cpt }
+        let p, c, d = P.normal_form ple0 in
+        (* ple0 = (p + c) * d, and d > 0 *)
+        assert (Q.compare d Q.zero > 0);
+        let c =
+          if P.type_info p == Ast.Ty.Treal then c else Q.ceiling c
+        in
+        let p = P.add_const c p in
+        let dep =
+          match a with
+          | Some a ->
+            Util.Util.MI.singleton (Ast.Expr.uid a) (Q.one, p, is_le)
+          | None -> Util.Util.MI.empty
+        in
+        { ple0 = p; is_le; dep; expl; age = !age_cpt }
 
     let find_coefficient x ineq = P.find x ineq.ple0
 
@@ -149,13 +149,13 @@ module Container : Container_SIG = struct
       let mx =
         List.fold_left
           (fun m (c, x) ->
-            let cmp = Q.sign c in
-            (* equiv. to compare c Q.zero *)
-            if cmp = 0 then m
-            else
-              let pos, neg = try MX.find x m with Not_found -> (0, 0) in
-              if cmp > 0 then MX.add x (pos + 1, neg) m
-              else MX.add x (pos, neg + 1) m)
+             let cmp = Q.sign c in
+             (* equiv. to compare c Q.zero *)
+             if cmp = 0 then m
+             else
+               let pos, neg = try MX.find x m with Not_found -> (0, 0) in
+               if cmp > 0 then MX.add x (pos + 1, neg) m
+               else MX.add x (pos, neg + 1) m)
           mx
           (fst (P.to_list p))
       in
@@ -168,8 +168,8 @@ module Container : Container_SIG = struct
       let is_empty mp = MP.is_empty mp
 
       let younger ineq' ineq =
-        (* requires more work in Structs.Ex
-           Structs.Ex.younger ineq'.expl ineq.expl ||*)
+        (* requires more work in Ast.Ex
+           Ast.Ex.younger ineq'.expl ineq.expl ||*)
         Z.compare ineq'.age ineq.age <= 0
 
       let insert ineq mp =
@@ -186,7 +186,7 @@ module Container : Container_SIG = struct
                  the right (most recent) age *)
               if younger ineq ineq' then mp else MP.add p0 (ineq, ctt) mp
             else if ineq.is_le then mp
-              (* ineq' more precise, because it has < *)
+            (* ineq' more precise, because it has < *)
             else MP.add p0 (ineq, ctt) mp (*ineq has < -c and ineq' <= -c *)
           else if cmp > 0 then
             (* i.e. ctt' > ctt, i.e. p0 <(=) -ctt' < -ctt *)
@@ -230,19 +230,19 @@ module Container : Container_SIG = struct
       else
         Util.Util.MI.fold
           (fun a (coef, p, is_le) dep ->
-            Util.Util.MI.add a (Q.mult coef c, p, is_le) dep)
+             Util.Util.MI.add a (Q.mult coef c, p, is_le) dep)
           dep Util.Util.MI.empty
 
     let merge_deps d1 d2 =
       Util.Util.MI.merge
         (fun _ op1 op2 ->
-          match (op1, op2) with
-          | None, None -> None
-          | Some _, None -> op1
-          | None, Some _ -> op2
-          | Some (c1, p1, is_le1), Some (c2, p2, is_le2) ->
-              assert (P.equal p1 p2 && is_le1 == is_le2);
-              Some (Q.add c1 c2, p1, is_le1))
+           match (op1, op2) with
+           | None, None -> None
+           | Some _, None -> op1
+           | None, Some _ -> op2
+           | Some (c1, p1, is_le1), Some (c2, p2, is_le2) ->
+             assert (P.equal p1 p2 && is_le1 == is_le2);
+             Some (Q.add c1 c2, p1, is_le1))
         d1 d2
 
     let cross x cpos cneg mp =
@@ -252,38 +252,38 @@ module Container : Container_SIG = struct
         match l with
         | [] -> acc
         | { ple0 = p1; is_le = k1; dep = d1; expl = ex1; age = a1 } :: l ->
-            let n1 = Q.abs (P.find x p1) in
-            let acc =
-              List.fold_left
-                (fun acc
-                     { ple0 = p2; is_le = k2; dep = d2; expl = ex2; age = a2 } ->
-                  Util.Options.exec_thread_yield ();
-                  let n2 = Q.abs (P.find x p2) in
-                  let n1, n2 =
-                    (* light normalization of n1 and n2 *)
-                    if Q.equal n1 n2 then (Q.one, Q.one) else (n1, n2)
-                  in
-                  let p = P.add (P.mult_const n2 p1) (P.mult_const n1 p2) in
-                  let p, c, d = P.normal_form p in
-                  (* light norm of p *)
-                  let p = P.add_const c p in
-                  assert (Q.sign d > 0);
-                  let d1 = mult_list (Q.div n2 d) d1 in
-                  let d2 = mult_list (Q.div n1 d) d2 in
-                  let ni =
-                    {
-                      ple0 = p;
-                      is_le = k1 && k2;
-                      dep = merge_deps d1 d2;
-                      age = Z.max a1 a2;
-                      expl = Structs.Ex.union ex1 ex2;
-                    }
-                  in
-                  incr nb_inqs;
-                  MINEQS.insert ni acc)
-                acc cpos
-            in
-            cross_rec acc l
+          let n1 = Q.abs (P.find x p1) in
+          let acc =
+            List.fold_left
+              (fun acc
+                { ple0 = p2; is_le = k2; dep = d2; expl = ex2; age = a2 } ->
+                Util.Options.exec_thread_yield ();
+                let n2 = Q.abs (P.find x p2) in
+                let n1, n2 =
+                  (* light normalization of n1 and n2 *)
+                  if Q.equal n1 n2 then (Q.one, Q.one) else (n1, n2)
+                in
+                let p = P.add (P.mult_const n2 p1) (P.mult_const n1 p2) in
+                let p, c, d = P.normal_form p in
+                (* light norm of p *)
+                let p = P.add_const c p in
+                assert (Q.sign d > 0);
+                let d1 = mult_list (Q.div n2 d) d1 in
+                let d2 = mult_list (Q.div n1 d) d2 in
+                let ni =
+                  {
+                    ple0 = p;
+                    is_le = k1 && k2;
+                    dep = merge_deps d1 d2;
+                    age = Z.max a1 a2;
+                    expl = Ast.Ex.union ex1 ex2;
+                  }
+                in
+                incr nb_inqs;
+                MINEQS.insert ni acc)
+              acc cpos
+          in
+          cross_rec acc l
       in
       (cross_rec mp cneg, !nb_inqs)
 
@@ -303,11 +303,11 @@ module Container : Container_SIG = struct
       let xopt =
         MX.fold
           (fun x (pos, neg) acc ->
-            match acc with
-            | None -> Some (x, pos * neg)
-            | Some (_, c') ->
-                let c = pos * neg in
-                if c < c' then Some (x, c) else acc)
+             match acc with
+             | None -> Some (x, pos * neg)
+             | Some (_, c') ->
+               let c = pos * neg in
+               if c < c' then Some (x, c) else acc)
           pos_neg None
       in
       match xopt with Some (x, _) -> (x, pos_neg) | None -> raise Not_found
@@ -376,13 +376,13 @@ let set_current mdl = current := mdl
 let load_current_inequalities_reasoner () =
   match Util.Options.get_inequalities_plugin () with
   | "" ->
-      if Util.Options.get_debug_fm () then
-        Util.Printer.print_dbg
-          "[Dynlink] Using the 'FM module' for arithmetic inequalities"
+    if Util.Options.get_debug_fm () then
+      Util.Printer.print_dbg
+        "[Dynlink] Using the 'FM module' for arithmetic inequalities"
   | path ->
-      Util.MyDynlink.load
-        (Util.Options.get_debug_fm ())
-        path "'inequalities' reasoner (FM module)"
+    Util.MyDynlink.load
+      (Util.Options.get_debug_fm ())
+      path "'inequalities' reasoner (FM module)"
 
 let get_current () =
   if not !initialized then (

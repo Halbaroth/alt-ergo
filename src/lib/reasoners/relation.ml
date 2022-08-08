@@ -27,7 +27,7 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 
 [@@@ocaml.warning "-33"]
 
@@ -78,14 +78,14 @@ let assume env uf sa =
   let env6, { assume = a6; remove = rm6 } = Rel6.assume env.r6 uf sa in
   let env7, { assume = a7; remove = rm7 } = Rel7.assume env.r7 uf sa in
   ( {
-      r1 = env1;
-      r2 = env2;
-      r3 = env3;
-      r4 = env4;
-      r5 = env5;
-      r6 = env6;
-      r7 = env7;
-    },
+    r1 = env1;
+    r2 = env2;
+    r3 = env3;
+    r4 = env4;
+    r5 = env5;
+    r6 = env6;
+    r7 = env7;
+  },
     {
       assume = a1 |@| a2 |@| a3 |@| a4 |@| a5 |@| a6 |@| a7;
       remove = rm1 |@| rm2 |@| rm3 |@| rm4 |@| rm5 |@| rm6 |@| rm7;
@@ -143,10 +143,10 @@ let case_split env uf ~for_model =
   let l = seq1 |@| seq2 |@| seq3 |@| seq4 |@| seq5 |@| seq6 |@| seq7 in
   List.sort
     (fun (_, _, sz1) (_, _, sz2) ->
-      match (sz1, sz2) with
-      | Th_util.CS (_, sz1), Th_util.CS (_, sz2) ->
-          Util.Numbers.Q.compare sz1 sz2
-      | _ -> assert false)
+       match (sz1, sz2) with
+       | Th_util.CS (_, sz1), Th_util.CS (_, sz2) ->
+         Util.Numbers.Q.compare sz1 sz2
+       | _ -> assert false)
     l
 
 let add env uf r t =
@@ -203,8 +203,8 @@ let new_terms env =
   let t5 = Rel5.new_terms env.r5 in
   let t6 = Rel6.new_terms env.r6 in
   let t7 = Rel7.new_terms env.r7 in
-  Structs.Expr.Set.union t1
-    (Structs.Expr.Set.union t2
-       (Structs.Expr.Set.union t3
-          (Structs.Expr.Set.union t4
-             (Structs.Expr.Set.union t5 (Structs.Expr.Set.union t6 t7)))))
+  Ast.Expr.Set.union t1
+    (Ast.Expr.Set.union t2
+       (Ast.Expr.Set.union t3
+          (Ast.Expr.Set.union t4
+             (Ast.Expr.Set.union t5 (Ast.Expr.Set.union t6 t7)))))

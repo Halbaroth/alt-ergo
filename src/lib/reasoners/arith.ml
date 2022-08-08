@@ -27,21 +27,21 @@
 (******************************************************************************)
 
 module Util = Alt_ergo_lib_util
-module Structs = Alt_ergo_lib_structs
+module Ast = Alt_ergo_lib_ast
 open Format
 open Util.Options
 open Sig
 module Z = Util.Numbers.Z
 module Q = Util.Numbers.Q
 
-let is_mult h = Structs.Sy.equal (Structs.Sy.Op Structs.Sy.Mult) h
-let mod_symb = Structs.Sy.name "@mod"
+let is_mult h = Ast.Sy.equal (Ast.Sy.Op Ast.Sy.Mult) h
+let mod_symb = Ast.Sy.name "@mod"
 
-let calc_power (c : Q.t) (d : Q.t) (ty : Structs.Ty.t) =
+let calc_power (c : Q.t) (d : Q.t) (ty : Ast.Ty.t) =
   (* d must be integral and if we work on integer exponentation,
      d must be positive*)
   if not (Q.is_int d) then raise Exit;
-  if Structs.Ty.Tint == ty && Q.sign d < 0 then raise Exit;
+  if Ast.Ty.Tint == ty && Q.sign d < 0 then raise Exit;
   let n =
     match Z.to_machine_int (Q.to_z d) with Some n -> n | None -> raise Exit
   in
@@ -49,34 +49,34 @@ let calc_power (c : Q.t) (d : Q.t) (ty : Structs.Ty.t) =
   let sz = Z.numbits (Q.num c) + Z.numbits (Q.den c) in
   if sz <> 0 && Stdlib.abs n > 100_000 / sz then raise Exit;
   let res = Q.power c n in
-  assert (ty != Structs.Ty.Tint || Q.is_int c);
+  assert (ty != Ast.Ty.Tint || Q.is_int c);
   res
 
-let calc_power_opt (c : Q.t) (d : Q.t) (ty : Structs.Ty.t) =
+let calc_power_opt (c : Q.t) (d : Q.t) (ty : Ast.Ty.t) =
   try Some (calc_power c d ty) with Exit -> None
 
 module Type (X : Sig.X) : Polynome.T with type r = X.r = struct
   include Polynome.Make (struct
-    include X
-    module Ac = Ac.Make (X)
+      include X
+      module Ac = Ac.Make (X)
 
-    let mult v1 v2 =
-      X.ac_embed
-        {
-          distribute = true;
-          h = Structs.Sy.Op Structs.Sy.Mult;
-          t = X.type_info v1;
-          l =
-            (let l2 =
-               match X.ac_extract v1 with
-               | Some { h; l; _ }
-                 when Structs.Sy.equal h (Structs.Sy.Op Structs.Sy.Mult) ->
+      let mult v1 v2 =
+        X.ac_embed
+          {
+            distribute = true;
+            h = Ast.Sy.Op Ast.Sy.Mult;
+            t = X.type_info v1;
+            l =
+              (let l2 =
+                 match X.ac_extract v1 with
+                 | Some { h; l; _ }
+                   when Ast.Sy.equal h (Ast.Sy.Op Ast.Sy.Mult) ->
                    l
-               | _ -> [ (v1, 1) ]
-             in
-             Ac.add (Structs.Sy.Op Structs.Sy.Mult) (v2, 1) l2);
-        }
-  end)
+                 | _ -> [ (v1, 1) ]
+               in
+               Ac.add (Ast.Sy.Op Ast.Sy.Mult) (v2, 1) l2);
+          }
+    end)
 end
 
 module Shostak (X : Sig.X) (P : Polynome.EXTENDED_Polynome with type r = X.r) =
@@ -108,7 +108,7 @@ struct
   (*BISECT-IGNORE-END*)
 
   let is_mine_symb sy _ty =
-    let open Structs.Sy in
+    let open Ast.Sy in
     match sy with
     | Int _ | Real _ -> true
     | Op
@@ -116,7 +116,7 @@ struct
         | Abs_real | Sqrt_real | Sqrt_real_default | Sqrt_real_excess
         | Real_of_int | Int_floor | Int_ceil | Max_int | Max_real | Min_int
         | Min_real | Pow | Integer_log2 | Integer_round ) ->
-        true
+      true
     | _ -> false
 
   let empty_polynome ty = P.create [] Q.zero ty
@@ -137,39 +137,39 @@ struct
      c3. exists k. t1 = t2 * k + t ;
      c4. t2 <> 0 (already checked) *)
   let mk_modulo md t1 t2 p2 ctx =
-    let zero = Structs.Expr.int "0" in
-    let c1 = Structs.Expr.mk_builtin ~is_pos:true Structs.Sy.LE [ zero; md ] in
+    let zero = Ast.Expr.int "0" in
+    let c1 = Ast.Expr.mk_builtin ~is_pos:true Ast.Sy.LE [ zero; md ] in
     let c2 =
       match P.is_const p2 with
       | Some n2 ->
-          let an2 = Q.abs n2 in
-          assert (Q.is_int an2);
-          let t2 = Structs.Expr.int (Q.to_string an2) in
-          Structs.Expr.mk_builtin ~is_pos:true Structs.Sy.LT [ md; t2 ]
-      | None -> Structs.Expr.mk_builtin ~is_pos:true Structs.Sy.LT [ md; t2 ]
+        let an2 = Q.abs n2 in
+        assert (Q.is_int an2);
+        let t2 = Ast.Expr.int (Q.to_string an2) in
+        Ast.Expr.mk_builtin ~is_pos:true Ast.Sy.LT [ md; t2 ]
+      | None -> Ast.Expr.mk_builtin ~is_pos:true Ast.Sy.LT [ md; t2 ]
     in
-    let k = Structs.Expr.fresh_name Structs.Ty.Tint in
+    let k = Ast.Expr.fresh_name Ast.Ty.Tint in
     let t3 =
-      Structs.Expr.mk_term (Structs.Sy.Op Structs.Sy.Mult) [ t2; k ]
-        Structs.Ty.Tint
+      Ast.Expr.mk_term (Ast.Sy.Op Ast.Sy.Mult) [ t2; k ]
+        Ast.Ty.Tint
     in
     let t3 =
-      Structs.Expr.mk_term (Structs.Sy.Op Structs.Sy.Plus) [ t3; md ]
-        Structs.Ty.Tint
+      Ast.Expr.mk_term (Ast.Sy.Op Ast.Sy.Plus) [ t3; md ]
+        Ast.Ty.Tint
     in
-    let c3 = Structs.Expr.mk_eq ~iff:false t1 t3 in
+    let c3 = Ast.Expr.mk_eq ~iff:false t1 t3 in
     c3 :: c2 :: c1 :: ctx
 
   let mk_euc_division p p2 t1 t2 ctx =
     match P.to_list p2 with
     | [], coef_p2 ->
-        let md =
-          Structs.Expr.mk_term (Structs.Sy.Op Structs.Sy.Modulo) [ t1; t2 ]
-            Structs.Ty.Tint
-        in
-        let r, ctx' = X.make md in
-        let rp = P.mult_const (Q.div Q.one coef_p2) (embed r) in
-        (P.sub p rp, ctx' @ ctx)
+      let md =
+        Ast.Expr.mk_term (Ast.Sy.Op Ast.Sy.Modulo) [ t1; t2 ]
+          Ast.Ty.Tint
+      in
+      let r, ctx' = X.make md in
+      let rp = P.mult_const (Q.div Q.one coef_p2) (embed r) in
+      (P.sub p rp, ctx' @ ctx)
     | _ -> assert false
 
   let exact_sqrt_or_Exit q =
@@ -195,8 +195,8 @@ struct
     match Q.sqrt_default q with
     | None -> raise Exit
     | Some res ->
-        assert (Q.compare (Q.mult res res) q <= 0);
-        res
+      assert (Q.compare (Q.mult res res) q <= 0);
+      res
 
   let excess_sqrt_or_Exit q =
     let c = Q.sign q in
@@ -204,17 +204,17 @@ struct
     match Q.sqrt_excess q with
     | None -> raise Exit
     | Some res ->
-        assert (Q.compare (Q.mult res res) q >= 0);
-        res
+      assert (Q.compare (Q.mult res res) q >= 0);
+      res
 
   let mk_partial_interpretation_1 aux_func coef p_acc ty t x =
     let r_x, _ = X.make x in
     try
       match P.to_list (embed r_x) with
       | [], d ->
-          let d = aux_func d in
-          (* may raise Exit *)
-          P.add_const (Q.mult coef d) p_acc
+        let d = aux_func d in
+        (* may raise Exit *)
+        P.add_const (Q.mult coef d) p_acc
       | _ -> raise Exit
     with Exit ->
       let a = X.term_embed t in
@@ -230,128 +230,128 @@ struct
     with Exit -> P.add (P.create [ (coef, X.term_embed t) ] Q.zero ty) p_acc
 
   let rec mke coef p t ctx =
-    let { Structs.Expr.f = sb; xs; ty; _ } =
-      match Structs.Expr.term_view t with
-      | Structs.Expr.Not_a_term _ -> assert false
-      | Structs.Expr.Term tt -> tt
+    let { Ast.Expr.f = sb; xs; ty; _ } =
+      match Ast.Expr.term_view t with
+      | Ast.Expr.Not_a_term _ -> assert false
+      | Ast.Expr.Term tt -> tt
     in
     match (sb, xs) with
-    | (Structs.Sy.Int n | Structs.Sy.Real n), _ ->
-        let c = Q.mult coef (Q.from_string (Util.Hstring.view n)) in
-        (P.add_const c p, ctx)
-    | Structs.Sy.Op Structs.Sy.Mult, [ t1; t2 ] ->
-        let p1, ctx = mke coef (empty_polynome ty) t1 ctx in
-        let p2, ctx = mke Q.one (empty_polynome ty) t2 ctx in
-        if get_no_nla () && P.is_const p1 == None && P.is_const p2 == None then
-          (* becomes uninterpreted *)
-          let tau =
-            Structs.Expr.mk_term
-              (Structs.Sy.name ~kind:Structs.Sy.Ac "@*")
-              [ t1; t2 ] ty
-          in
-          let xtau, ctx' = X.make tau in
-          ( P.add p (P.create [ (coef, xtau) ] Q.zero ty),
-            List.rev_append ctx' ctx )
-        else (P.add p (P.mult p1 p2), ctx)
-    | Structs.Sy.Op Structs.Sy.Div, [ t1; t2 ] ->
-        let p1, ctx = mke Q.one (empty_polynome ty) t1 ctx in
-        let p2, ctx = mke Q.one (empty_polynome ty) t2 ctx in
-        if
-          get_no_nla ()
-          && (P.is_const p2 == None
-             || (ty == Structs.Ty.Tint && P.is_const p1 == None))
-        then
-          (* becomes uninterpreted *)
-          let tau = Structs.Expr.mk_term (Structs.Sy.name "@/") [ t1; t2 ] ty in
-          let xtau, ctx' = X.make tau in
-          ( P.add p (P.create [ (coef, xtau) ] Q.zero ty),
-            List.rev_append ctx' ctx )
-        else
-          let p3, ctx =
-            try
-              let p, approx = P.div p1 p2 in
-              if approx then mk_euc_division p p2 t1 t2 ctx else (p, ctx)
-            with Division_by_zero | Polynome.Maybe_zero ->
-              (P.create [ (Q.one, X.term_embed t) ] Q.zero ty, ctx)
-          in
-          (P.add p (P.mult_const coef p3), ctx)
-    | Structs.Sy.Op Structs.Sy.Plus, l ->
-        List.fold_left (fun (p, ctx) u -> mke coef p u ctx) (p, ctx) l
-    | Structs.Sy.Op Structs.Sy.Minus, [ t1; t2 ] ->
-        let p2, ctx = mke (Q.minus coef) p t2 ctx in
-        mke coef p2 t1 ctx
-    | Structs.Sy.Op Structs.Sy.Modulo, [ t1; t2 ] ->
-        let p1, ctx = mke Q.one (empty_polynome ty) t1 ctx in
-        let p2, ctx = mke Q.one (empty_polynome ty) t2 ctx in
-        if get_no_nla () && (P.is_const p1 == None || P.is_const p2 == None)
-        then
-          (* becomes uninterpreted *)
-          let tau = Structs.Expr.mk_term (Structs.Sy.name "@%") [ t1; t2 ] ty in
-          let xtau, ctx' = X.make tau in
-          ( P.add p (P.create [ (coef, xtau) ] Q.zero ty),
-            List.rev_append ctx' ctx )
-        else
-          let p3, ctx =
-            try (P.modulo p1 p2, ctx)
-            with e ->
-              let t =
-                Structs.Expr.mk_term mod_symb [ t1; t2 ] Structs.Ty.Tint
-              in
-              let ctx =
-                match e with
-                | Division_by_zero | Polynome.Maybe_zero -> ctx
-                | Polynome.Not_a_num -> mk_modulo t t1 t2 p2 ctx
-                | _ -> assert false
-              in
-              (P.create [ (Q.one, X.term_embed t) ] Q.zero ty, ctx)
-          in
-          (P.add p (P.mult_const coef p3), ctx)
+    | (Ast.Sy.Int n | Ast.Sy.Real n), _ ->
+      let c = Q.mult coef (Q.from_string (Util.Hstring.view n)) in
+      (P.add_const c p, ctx)
+    | Ast.Sy.Op Ast.Sy.Mult, [ t1; t2 ] ->
+      let p1, ctx = mke coef (empty_polynome ty) t1 ctx in
+      let p2, ctx = mke Q.one (empty_polynome ty) t2 ctx in
+      if get_no_nla () && P.is_const p1 == None && P.is_const p2 == None then
+        (* becomes uninterpreted *)
+        let tau =
+          Ast.Expr.mk_term
+            (Ast.Sy.name ~kind:Ast.Sy.Ac "@*")
+            [ t1; t2 ] ty
+        in
+        let xtau, ctx' = X.make tau in
+        ( P.add p (P.create [ (coef, xtau) ] Q.zero ty),
+          List.rev_append ctx' ctx )
+      else (P.add p (P.mult p1 p2), ctx)
+    | Ast.Sy.Op Ast.Sy.Div, [ t1; t2 ] ->
+      let p1, ctx = mke Q.one (empty_polynome ty) t1 ctx in
+      let p2, ctx = mke Q.one (empty_polynome ty) t2 ctx in
+      if
+        get_no_nla ()
+        && (P.is_const p2 == None
+            || (ty == Ast.Ty.Tint && P.is_const p1 == None))
+      then
+        (* becomes uninterpreted *)
+        let tau = Ast.Expr.mk_term (Ast.Sy.name "@/") [ t1; t2 ] ty in
+        let xtau, ctx' = X.make tau in
+        ( P.add p (P.create [ (coef, xtau) ] Q.zero ty),
+          List.rev_append ctx' ctx )
+      else
+        let p3, ctx =
+          try
+            let p, approx = P.div p1 p2 in
+            if approx then mk_euc_division p p2 t1 t2 ctx else (p, ctx)
+          with Division_by_zero | Polynome.Maybe_zero ->
+            (P.create [ (Q.one, X.term_embed t) ] Q.zero ty, ctx)
+        in
+        (P.add p (P.mult_const coef p3), ctx)
+    | Ast.Sy.Op Ast.Sy.Plus, l ->
+      List.fold_left (fun (p, ctx) u -> mke coef p u ctx) (p, ctx) l
+    | Ast.Sy.Op Ast.Sy.Minus, [ t1; t2 ] ->
+      let p2, ctx = mke (Q.minus coef) p t2 ctx in
+      mke coef p2 t1 ctx
+    | Ast.Sy.Op Ast.Sy.Modulo, [ t1; t2 ] ->
+      let p1, ctx = mke Q.one (empty_polynome ty) t1 ctx in
+      let p2, ctx = mke Q.one (empty_polynome ty) t2 ctx in
+      if get_no_nla () && (P.is_const p1 == None || P.is_const p2 == None)
+      then
+        (* becomes uninterpreted *)
+        let tau = Ast.Expr.mk_term (Ast.Sy.name "@%") [ t1; t2 ] ty in
+        let xtau, ctx' = X.make tau in
+        ( P.add p (P.create [ (coef, xtau) ] Q.zero ty),
+          List.rev_append ctx' ctx )
+      else
+        let p3, ctx =
+          try (P.modulo p1 p2, ctx)
+          with e ->
+            let t =
+              Ast.Expr.mk_term mod_symb [ t1; t2 ] Ast.Ty.Tint
+            in
+            let ctx =
+              match e with
+              | Division_by_zero | Polynome.Maybe_zero -> ctx
+              | Polynome.Not_a_num -> mk_modulo t t1 t2 p2 ctx
+              | _ -> assert false
+            in
+            (P.create [ (Q.one, X.term_embed t) ] Q.zero ty, ctx)
+        in
+        (P.add p (P.mult_const coef p3), ctx)
     (*** <begin>: partial handling of some arith/FPA operators **)
-    | Structs.Sy.Op Structs.Sy.Float, [ prec; exp; mode; x ] ->
-        let aux_func e =
-          let res, _, _ =
-            Structs.Fpa_rounding.float_of_rational prec exp mode e
-          in
-          res
+    | Ast.Sy.Op Ast.Sy.Float, [ prec; exp; mode; x ] ->
+      let aux_func e =
+        let res, _, _ =
+          Ast.Fpa_rounding.float_of_rational prec exp mode e
         in
-        (mk_partial_interpretation_1 aux_func coef p ty t x, ctx)
-    | Structs.Sy.Op Structs.Sy.Integer_round, [ mode; x ] ->
-        let aux_func = Structs.Fpa_rounding.round_to_integer mode in
-        (mk_partial_interpretation_1 aux_func coef p ty t x, ctx)
-    | Structs.Sy.Op (Structs.Sy.Abs_int | Structs.Sy.Abs_real), [ x ] ->
-        (mk_partial_interpretation_1 Q.abs coef p ty t x, ctx)
-    | Structs.Sy.Op Structs.Sy.Sqrt_real, [ x ] ->
-        (mk_partial_interpretation_1 exact_sqrt_or_Exit coef p ty t x, ctx)
-    | Structs.Sy.Op Structs.Sy.Sqrt_real_default, [ x ] ->
-        (mk_partial_interpretation_1 default_sqrt_or_Exit coef p ty t x, ctx)
-    | Structs.Sy.Op Structs.Sy.Sqrt_real_excess, [ x ] ->
-        (mk_partial_interpretation_1 excess_sqrt_or_Exit coef p ty t x, ctx)
-    | Structs.Sy.Op Structs.Sy.Real_of_int, [ x ] ->
-        (mk_partial_interpretation_1 (fun d -> d) coef p ty t x, ctx)
-    | Structs.Sy.Op Structs.Sy.Int_floor, [ x ] ->
-        (mk_partial_interpretation_1 Q.floor coef p ty t x, ctx)
-    | Structs.Sy.Op Structs.Sy.Int_ceil, [ x ] ->
-        (mk_partial_interpretation_1 Q.ceiling coef p ty t x, ctx)
-    | Structs.Sy.Op (Structs.Sy.Max_int | Structs.Sy.Max_real), [ x; y ] ->
-        let aux_func c d = if Q.compare c d >= 0 then c else d in
-        (mk_partial_interpretation_2 aux_func coef p ty t x y, ctx)
-    | Structs.Sy.Op (Structs.Sy.Min_int | Structs.Sy.Min_real), [ x; y ] ->
-        let aux_func c d = if Q.compare c d <= 0 then c else d in
-        (mk_partial_interpretation_2 aux_func coef p ty t x y, ctx)
-    | Structs.Sy.Op Structs.Sy.Integer_log2, [ x ] ->
-        let aux_func q =
-          if Q.compare_to_0 q <= 0 then raise Exit;
-          Q.from_int (Structs.Fpa_rounding.integer_log_2 q)
-        in
-        (mk_partial_interpretation_1 aux_func coef p ty t x, ctx)
-    | Structs.Sy.Op Structs.Sy.Pow, [ x; y ] ->
-        ( mk_partial_interpretation_2
-            (fun x y -> calc_power x y ty)
-            coef p ty t x y,
-          ctx )
-    | Structs.Sy.Op Structs.Sy.Fixed, _ ->
-        (* Fixed-Point arithmetic currently not implemented *)
-        assert false
+        res
+      in
+      (mk_partial_interpretation_1 aux_func coef p ty t x, ctx)
+    | Ast.Sy.Op Ast.Sy.Integer_round, [ mode; x ] ->
+      let aux_func = Ast.Fpa_rounding.round_to_integer mode in
+      (mk_partial_interpretation_1 aux_func coef p ty t x, ctx)
+    | Ast.Sy.Op (Ast.Sy.Abs_int | Ast.Sy.Abs_real), [ x ] ->
+      (mk_partial_interpretation_1 Q.abs coef p ty t x, ctx)
+    | Ast.Sy.Op Ast.Sy.Sqrt_real, [ x ] ->
+      (mk_partial_interpretation_1 exact_sqrt_or_Exit coef p ty t x, ctx)
+    | Ast.Sy.Op Ast.Sy.Sqrt_real_default, [ x ] ->
+      (mk_partial_interpretation_1 default_sqrt_or_Exit coef p ty t x, ctx)
+    | Ast.Sy.Op Ast.Sy.Sqrt_real_excess, [ x ] ->
+      (mk_partial_interpretation_1 excess_sqrt_or_Exit coef p ty t x, ctx)
+    | Ast.Sy.Op Ast.Sy.Real_of_int, [ x ] ->
+      (mk_partial_interpretation_1 (fun d -> d) coef p ty t x, ctx)
+    | Ast.Sy.Op Ast.Sy.Int_floor, [ x ] ->
+      (mk_partial_interpretation_1 Q.floor coef p ty t x, ctx)
+    | Ast.Sy.Op Ast.Sy.Int_ceil, [ x ] ->
+      (mk_partial_interpretation_1 Q.ceiling coef p ty t x, ctx)
+    | Ast.Sy.Op (Ast.Sy.Max_int | Ast.Sy.Max_real), [ x; y ] ->
+      let aux_func c d = if Q.compare c d >= 0 then c else d in
+      (mk_partial_interpretation_2 aux_func coef p ty t x y, ctx)
+    | Ast.Sy.Op (Ast.Sy.Min_int | Ast.Sy.Min_real), [ x; y ] ->
+      let aux_func c d = if Q.compare c d <= 0 then c else d in
+      (mk_partial_interpretation_2 aux_func coef p ty t x y, ctx)
+    | Ast.Sy.Op Ast.Sy.Integer_log2, [ x ] ->
+      let aux_func q =
+        if Q.compare_to_0 q <= 0 then raise Exit;
+        Q.from_int (Ast.Fpa_rounding.integer_log_2 q)
+      in
+      (mk_partial_interpretation_1 aux_func coef p ty t x, ctx)
+    | Ast.Sy.Op Ast.Sy.Pow, [ x; y ] ->
+      ( mk_partial_interpretation_2
+          (fun x y -> calc_power x y ty)
+          coef p ty t x y,
+        ctx )
+    | Ast.Sy.Op Ast.Sy.Fixed, _ ->
+      (* Fixed-Point arithmetic currently not implemented *)
+      assert false
     (*** <end>: partial handling of some arith/FPA operators **)
     | _ -> (
         let a, ctx' = X.make t in
@@ -362,7 +362,7 @@ struct
 
   let make t =
     tool_req 4 "TR-Arith-Make";
-    let ty = Structs.Expr.type_info t in
+    let ty = Ast.Expr.type_info t in
     let p, ctx = mke Q.one (empty_polynome ty) t [] in
     (is_mine p, ctx)
 
@@ -380,8 +380,8 @@ struct
   and nb_vars_in_alien r =
     match P.extract r with
     | Some p ->
-        let l, _ = P.to_list p in
-        List.fold_left (fun acc (_, x) -> max acc (nb_vars_in_alien x)) 0 l
+      let l, _ = P.to_list p in
+      List.fold_left (fun acc (_, x) -> max acc (nb_vars_in_alien x)) 0 l
     | None -> (
         match X.ac_extract r with
         | Some ac when is_mult ac.h -> number_of_vars ac.l
@@ -391,46 +391,46 @@ struct
     | [] -> 0
     | [ (_, x) ] -> nb_vars_in_alien x
     | (_, x) :: l ->
-        let acc = nb_vars_in_alien x in
-        List.fold_left (fun acc (_, x) -> max acc (nb_vars_in_alien x)) acc l
+      let acc = nb_vars_in_alien x in
+      List.fold_left (fun acc (_, x) -> max acc (nb_vars_in_alien x)) acc l
 
   let contains_a_fresh_alien xp =
     List.exists
       (fun x ->
-        match X.term_extract x with
-        | Some t, _ -> Structs.Expr.is_fresh t
-        | _ -> false)
+         match X.term_extract x with
+         | Some t, _ -> Ast.Expr.is_fresh t
+         | _ -> false)
       (X.leaves xp)
 
   let has_ac p kind =
     List.exists
       (fun (_, x) ->
-        match X.ac_extract x with Some ac -> kind ac | _ -> false)
+         match X.ac_extract x with Some ac -> kind ac | _ -> false)
       (fst (P.to_list p))
 
   let color ac =
     match ac.l with
     | [ (_, 1) ] -> assert false
     | _ ->
-        let p = unsafe_ac_to_arith ac in
-        if not ac.distribute then
-          if has_ac p (fun ac -> is_mult ac.h) then X.ac_embed ac else is_mine p
-        else
-          let xp = is_mine p in
-          if contains_a_fresh_alien xp then
-            let l, _ = P.to_list p in
-            let mx = max_list_ l in
-            if mx = 0 || mx = 1 || number_of_vars ac.l > mx then is_mine p
-            else X.ac_embed ac
-          else xp
+      let p = unsafe_ac_to_arith ac in
+      if not ac.distribute then
+        if has_ac p (fun ac -> is_mult ac.h) then X.ac_embed ac else is_mine p
+      else
+        let xp = is_mine p in
+        if contains_a_fresh_alien xp then
+          let l, _ = P.to_list p in
+          let mx = max_list_ l in
+          if mx = 0 || mx = 1 || number_of_vars ac.l > mx then is_mine p
+          else X.ac_embed ac
+        else xp
 
   let type_info p = P.type_info p
 
   module SX = Set.Make (struct
-    type t = r
+      type t = r
 
-    let compare = X.hash_cmp
-  end)
+      let compare = X.hash_cmp
+    end)
 
   let leaves p = P.leaves p
 
@@ -441,13 +441,13 @@ struct
     let p =
       List.fold_left
         (fun p (ai, xi) ->
-          let xi' = X.subst x t xi in
-          let p' =
-            match P.extract xi' with
-            | Some p' -> P.mult_const ai p'
-            | _ -> P.create [ (ai, xi') ] Q.zero ty
-          in
-          P.add p p')
+           let xi' = X.subst x t xi in
+           let p' =
+             match P.extract xi' with
+             | Some p' -> P.mult_const ai p'
+             | _ -> P.create [ (ai, xi') ] Q.zero ty
+           in
+           P.add p p')
         (P.create [] c ty) l
     in
     is_mine p
@@ -471,8 +471,8 @@ struct
   let map_monomes f l ax =
     List.fold_left
       (fun acc (a, x) ->
-        let a = f a in
-        if Q.sign a = 0 then acc else (a, x) :: acc)
+         let a = f a in
+         if Q.sign a = 0 then acc else (a, x) :: acc)
       [ ax ] l
 
   let apply_subst sb v =
@@ -482,10 +482,10 @@ struct
   let subst_bigger x l =
     List.fold_left
       (fun (l, sb) (b, y) ->
-        if X.ac_extract y != None && X.str_cmp y x > 0 then
-          let k = X.term_embed (Structs.Expr.fresh_name Structs.Ty.Tint) in
-          ((b, k) :: l, (y, embed k) :: sb)
-        else ((b, y) :: l, sb))
+         if X.ac_extract y != None && X.str_cmp y x > 0 then
+           let k = X.term_embed (Ast.Expr.fresh_name Ast.Ty.Tint) in
+           ((b, k) :: l, (y, embed k) :: sb)
+         else ((b, y) :: l, sb))
       ([], []) l
 
   let is_mine_p = List.map (fun (x, p) -> (x, is_mine p))
@@ -494,12 +494,12 @@ struct
     | [] -> assert false
     | [ c ] -> (c, [])
     | (a, x) :: s ->
-        List.fold_left
-          (fun ((a, x), l) (b, y) ->
-            if Q.compare (Q.abs a) (Q.abs b) <= 0 then ((a, x), (b, y) :: l)
-            else ((b, y), (a, x) :: l))
-          ((a, x), [])
-          s
+      List.fold_left
+        (fun ((a, x), l) (b, y) ->
+           if Q.compare (Q.abs a) (Q.abs b) <= 0 then ((a, x), (b, y) :: l)
+           else ((b, y), (a, x) :: l))
+        ((a, x), [])
+        s
 
   (* Decision Procedures. Page 131 *)
   let rec omega l b =
@@ -509,7 +509,7 @@ struct
     (* 2. substituer les aliens plus grand que x pour
        assurer l'invariant sur l'ordre AC *)
     let l, sbs = subst_bigger x l in
-    let p = P.create l b Structs.Ty.Tint in
+    let p = P.create l b Ast.Ty.Tint in
     assert (Q.sign a <> 0);
     if Q.equal a Q.one then
       (* 3.1. si a = 1 alors on a une substitution entiere pour x *)
@@ -534,7 +534,7 @@ struct
     let m = Q.add a Q.one in
 
     (* 2. on introduit une variable fraiche *)
-    let sigma = X.term_embed (Structs.Expr.fresh_name Structs.Ty.Tint) in
+    let sigma = X.term_embed (Ast.Expr.fresh_name Ast.Ty.Tint) in
 
     (* 3. l'application de la formule (5.63) nous donne la valeur du pivot x*)
     let mm_sigma = (Q.minus m, sigma) in
@@ -543,13 +543,13 @@ struct
     (* 3.1. Attention au signe de b :
        on le passe a droite avant de faire mod_sym, d'ou Q.minus *)
     let b_mod = Q.minus (mod_sym (Q.minus b) m) in
-    let p = P.create l_mod b_mod Structs.Ty.Tint in
+    let p = P.create l_mod b_mod Ast.Ty.Tint in
 
     let sbs = (x, p) :: sbs in
 
     (* 4. on substitue x par sa valeur dans l'equation de depart.
        Voir la formule (5.64) *)
-    let p' = P.add (P.mult_const a p) (P.create l b Structs.Ty.Tint) in
+    let p' = P.add (P.mult_const a p) (P.create l b Ast.Ty.Tint) in
 
     (* 5. on resoud sur l'equation simplifiee *)
     let sbs2 = solve_int p' in
@@ -595,10 +595,10 @@ struct
     let pp =
       List.fold_left
         (fun p (coef, x) ->
-          match X.ac_extract x with
-          | Some ac when is_mult ac.h ->
-              P.add p (P.mult_const coef (unsafe_ac_to_arith ac))
-          | _ -> P.add p (P.create [ (coef, x) ] Q.zero ty))
+           match X.ac_extract x with
+           | Some ac when is_mult ac.h ->
+             P.add p (P.mult_const coef (unsafe_ac_to_arith ac))
+           | _ -> P.add p (P.create [ (coef, x) ] Q.zero ty))
         (P.create [] c ty) l
     in
     if (not unsafe_mode) && has_ac pp (fun ac -> is_mult ac.h) then p else pp
@@ -609,7 +609,7 @@ struct
     let p = P.sub (embed r1) (embed r2) in
     let pp = polynome_distribution p unsafe_mode in
     let ty = P.type_info p in
-    let sbs = if ty == Structs.Ty.Treal then solve_real pp else solve_int pp in
+    let sbs = if ty == Ast.Ty.Treal then solve_real pp else solve_int pp in
     let sbs = List.fast_sort (fun (a, _) (x, _) -> X.str_cmp x a) sbs in
     sbs
 
@@ -629,7 +629,7 @@ struct
   let triangular_down sbs unsafe_mode =
     List.fold_right
       (fun (p, v) nsbs ->
-        (check_pivot_safety p nsbs unsafe_mode, apply_subst v nsbs) :: nsbs)
+         (check_pivot_safety p nsbs unsafe_mode, apply_subst v nsbs) :: nsbs)
       sbs []
 
   let is_non_lin pv =
@@ -647,9 +647,9 @@ struct
       *)
     List.iter
       (fun (p, _) ->
-        if not (SX.mem p lvs) then (
-          assert (is_non_lin p);
-          raise Unsafe))
+         if not (SX.mem p lvs) then (
+           assert (is_non_lin p);
+           raise Unsafe))
       sbs;
     sbs
 
@@ -669,12 +669,12 @@ struct
           "Try solving with unsafe mode.";
       solve_one pb r1 r2 lvs true (* true == unsafe mode *)
     with Unsafe -> (
-      try
-        if get_debug_arith () then
-          Util.Printer.print_dbg ~module_name:"Arith" ~function_name:"solve"
-            "Cancel unsafe solving mode. Try safe mode";
-        solve_one pb r1 r2 lvs false (* false == safe mode *)
-      with Unsafe -> assert false)
+        try
+          if get_debug_arith () then
+            Util.Printer.print_dbg ~module_name:"Arith" ~function_name:"solve"
+              "Cancel unsafe solving mode. Try safe mode";
+          solve_one pb r1 r2 lvs false (* false == safe mode *)
+        with Unsafe -> assert false)
 
   let make t =
     if get_timers () then (
@@ -704,7 +704,7 @@ struct
 
   let fully_interpreted sb =
     match sb with
-    | Structs.Sy.Op (Structs.Sy.Plus | Structs.Sy.Minus) -> true
+    | Ast.Sy.Op (Ast.Sy.Plus | Ast.Sy.Minus) -> true
     | _ -> false
 
   let term_extract _ = (None, false)
@@ -723,7 +723,7 @@ struct
     let max_constant distincts acc =
       List.fold_left
         (fun acc x ->
-          match P.is_const (embed x) with None -> acc | Some c -> Q.max c acc)
+           match P.is_const (embed x) with None -> acc | Some c -> Q.max c acc)
         acc distincts
     in
     fun r distincts eq ->
@@ -731,19 +731,19 @@ struct
       else if
         List.exists
           (fun (t, x) ->
-            let symb, ty =
-              match Structs.Expr.term_view t with
-              | Structs.Expr.Not_a_term _ -> assert false
-              | Structs.Expr.Term tt -> (tt.Structs.Expr.f, tt.Structs.Expr.ty)
-            in
-            is_mine_symb symb ty && X.leaves x == [])
+             let symb, ty =
+               match Ast.Expr.term_view t with
+               | Ast.Expr.Not_a_term _ -> assert false
+               | Ast.Expr.Term tt -> (tt.Ast.Expr.f, tt.Ast.Expr.ty)
+             in
+             is_mine_symb symb ty && X.leaves x == [])
           eq
       then None
       else
         let term_of_cst, cpt =
           match X.type_info r with
-          | Structs.Ty.Tint -> (Structs.Expr.int, cpt_int)
-          | Structs.Ty.Treal -> (Structs.Expr.real, cpt_real)
+          | Ast.Ty.Tint -> (Ast.Expr.int, cpt_int)
+          | Ast.Ty.Treal -> (Ast.Expr.real, cpt_real)
           | _ -> assert false
         in
         cpt := Q.add Q.one (max_constant distincts !cpt);
@@ -760,27 +760,27 @@ struct
       match P.is_const (embed r) with
       | None -> assert false
       | Some c ->
-          let sg = Q.sign c in
-          if sg = 0 then "0"
-          else if sg > 0 then pprint_positive_const c
-          else Format.sprintf "(- %s)" (pprint_positive_const (Q.abs c))
+        let sg = Q.sign c in
+        if sg = 0 then "0"
+        else if sg > 0 then pprint_positive_const c
+        else Format.sprintf "(- %s)" (pprint_positive_const (Q.abs c))
 
   let choose_adequate_model t r l =
     if get_debug_interpretation () then
       Util.Printer.print_dbg ~module_name:"Arith"
         ~function_name:"choose_adequate_model" "choose_adequate_model for %a"
-        Structs.Expr.print t;
+        Ast.Expr.print t;
     let l = List.filter (fun (_, r) -> P.is_const (embed r) != None) l in
     let r =
       match l with
       | [] ->
-          (* We do this, because terms of some semantic values created
-             by CS are not created and added to UF *)
-          assert (P.is_const (embed r) != None);
-          r
+        (* We do this, because terms of some semantic values created
+           by CS are not created and added to UF *)
+        assert (P.is_const (embed r) != None);
+        r
       | (_, r) :: l ->
-          List.iter (fun (_, x) -> assert (X.equal x r)) l;
-          r
+        List.iter (fun (_, x) -> assert (X.equal x r)) l;
+        r
     in
     (r, pprint_const_for_model r)
 end
