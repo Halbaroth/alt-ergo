@@ -1,0 +1,5 @@
+(library
+ (name alt_ergo_lib_ite)
+ (public_name alt-ergo-lib.ite)
+ (modules Theory Relation)
+ (libraries alt_ergo_lib_util alt_ergo_lib_ast alt_ergo_lib_intf))

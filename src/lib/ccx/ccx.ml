@@ -28,33 +28,34 @@
 
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
+module Intf = Alt_ergo_lib_intf
 open Format
 open Util.Options
 module X = Shostak.Combine
 module A = Ast.Xliteral
-open Sig_rel
 
+ 
 module type S = sig
   type t
   type r = Shostak.Combine.r
 
   val empty : unit -> t
-  val empty_facts : unit -> r facts
-  val add_fact : r facts -> r fact -> unit
+  val empty_facts : unit -> r Intf.Relation.facts
+  val add_fact : r Intf.Relation.facts -> r Intf.Relation.fact -> unit
 
   val add_term :
-    t -> r facts -> (* acc *)
-    Ast.Expr.t -> Ast.Ex.t -> t * r facts
+    t -> r Intf.Relation.facts -> (* acc *)
+    Ast.Expr.t -> Ast.Ex.t -> t * r Intf.Relation.facts
 
   val add :
-    t -> r facts -> (* acc *)
-    Ast.Expr.t -> Ast.Ex.t -> t * r facts
+    t -> r Intf.Relation.facts -> (* acc *)
+    Ast.Expr.t -> Ast.Ex.t -> t * r Intf.Relation.facts
 
   val assume_literals :
     t ->
-    (r literal * Ast.Ex.t * Ast.Th_util.lit_origin) list ->
-    r facts ->
-    t * (r literal * Ast.Ex.t * Ast.Th_util.lit_origin) list
+    (r Intf.Relation.literal * Ast.Ex.t * Ast.Th_util.lit_origin) list ->
+    r Intf.Relation.facts ->
+    t * (r Intf.Relation.literal * Ast.Ex.t * Ast.Th_util.lit_origin) list
 
   val case_split :
     t ->
@@ -81,7 +82,7 @@ module type S = sig
     * Ast.Expr.t list Ast.Expr.Map.t Ast.Sy.Map.t ->
     t ->
     (Ast.Expr.t -> Ast.Expr.t -> bool) ->
-    t * instances
+    t * Intf.Relation.instances
 end
 
 module Main : S = struct
@@ -97,37 +98,37 @@ module Main : S = struct
 
   let empty_facts () =
     {
-      equas = Queue.create ();
-      ineqs = Queue.create ();
-      diseqs = Queue.create ();
-      touched = Util.Util.MI.empty;
+      Intf.Relation.equas = Queue.create ();
+      Intf.Relation.ineqs = Queue.create ();
+      Intf.Relation.diseqs = Queue.create ();
+      Intf.Relation.touched = Util.Util.MI.empty;
     }
 
   let add_fact facts ((lit, _, _) as e) =
     match lit with
-    | LSem (Ast.Xliteral.Pred _) | LSem (Ast.Xliteral.Eq _) ->
-      Queue.push e facts.equas
-    | LSem (Ast.Xliteral.Distinct _) -> Queue.push e facts.diseqs
-    | LSem (Ast.Xliteral.Builtin _) -> Queue.push e facts.ineqs
-    | LTerm a -> (
+    | Intf.Relation.LSem (Ast.Xliteral.Pred _) | Intf.Relation.LSem (Ast.Xliteral.Eq _) ->
+      Queue.push e facts.Intf.Relation.equas
+    | Intf.Relation.LSem (Ast.Xliteral.Distinct _) -> Queue.push e facts.Intf.Relation.diseqs
+    | Intf.Relation.LSem (Ast.Xliteral.Builtin _) -> Queue.push e facts.Intf.Relation.ineqs
+    | Intf.Relation.LTerm a -> (
         match Ast.Expr.lit_view a with
         | Ast.Expr.Pred _ | Ast.Expr.Eq _ | Ast.Expr.Eql _ ->
-          Queue.push e facts.equas
-        | Ast.Expr.Distinct _ -> Queue.push e facts.diseqs
-        | Ast.Expr.Builtin _ -> Queue.push e facts.ineqs
+          Queue.push e facts.Intf.Relation.equas
+        | Ast.Expr.Distinct _ -> Queue.push e facts.Intf.Relation.diseqs
+        | Ast.Expr.Builtin _ -> Queue.push e facts.Intf.Relation.ineqs
         | Ast.Expr.Not_a_lit _ -> assert false)
 
   (*BISECT-IGNORE-BEGIN*)
   module Debug = struct
     open Util.Printer
 
-    let facts (f : r facts) msg =
+    let facts (f : r Intf.Relation.facts) msg =
       let aux fmt q =
         Q.iter
           (fun (lit, _, _) ->
              match lit with
-             | LSem sa -> fprintf fmt "  > LSem  %a@." LR.print (LR.make sa)
-             | LTerm a -> fprintf fmt "  > LTerm %a@." Ast.Expr.print a)
+             | Intf.Relation.LSem sa -> fprintf fmt "  > Intf.Relation.LSem  %a@." LR.print (LR.make sa)
+             | Intf.Relation.LTerm a -> fprintf fmt "  > Intf.Relation.LTerm %a@." Ast.Expr.print a)
           q
       in
       let aux2 fmt mp =
@@ -141,7 +142,7 @@ module Main : S = struct
            -----------------------------------@ Equalities:@ %a@ \
            Disequalities:@ %a@ Inequalities:@ %a@ Touched:@ %a@ ---- End   \
            Facts -----------------------------------@]"
-          msg aux f.equas aux f.diseqs aux f.ineqs aux2 f.touched
+          msg aux f.Intf.Relation.equas aux f.Intf.Relation.diseqs aux f.Intf.Relation.ineqs aux2 f.Intf.Relation.touched
 
     let cc r1 r2 =
       if get_debug_cc () then
@@ -252,7 +253,7 @@ module Main : S = struct
           in
           let a = Ast.Expr.mk_eq ~iff:false t1 t2 in
           Debug.congruent a ex;
-          Q.push (LTerm a, ex, Ast.Th_util.Other) facts.equas
+          Q.push (Intf.Relation.LTerm a, ex, Ast.Th_util.Other) facts.Intf.Relation.equas
         with Exit -> ()
 
   let congruents env facts t1 s =
@@ -343,7 +344,7 @@ module Main : S = struct
                          Ast.Expr.mk_distinct ~iff:false [ x; y ]
                        in
                        Debug.contra_congruence a ex_r;
-                       Q.push (LTerm a, ex_r, Ast.Th_util.Other) facts.diseqs
+                       Q.push (Intf.Relation.LTerm a, ex_r, Ast.Th_util.Other) facts.Intf.Relation.diseqs
                      | None -> assert false)
                | _ -> ())
             (Uf.class_of env.uf bol)
@@ -370,7 +371,7 @@ module Main : S = struct
     else if X.equal (fst (Uf.find_r env.uf r)) (X.bot ()) then
       new_facts_by_contra_congruence env facts r Ast.Expr.vrai
 
-  let congruence_closure env (facts : r facts) r1 r2 ex =
+  let congruence_closure env (facts : r Intf.Relation.facts) r1 r2 ex =
     Util.Options.exec_thread_yield ();
     Debug.cc r1 r2;
     let uf, res = Uf.union env.uf r1 r2 ex in
@@ -386,7 +387,7 @@ module Main : S = struct
          let repr_touched =
            List.map
              (fun (x, y, _) ->
-                facts.touched <- Util.Util.MI.add (X.hash x) x facts.touched;
+                facts.Intf.Relation.touched <- Util.Util.MI.add (X.hash x) x facts.Intf.Relation.touched;
                 y)
              touched
          in
@@ -410,12 +411,12 @@ module Main : S = struct
 
          (*CC of preds ?*)
          SetA.iter
-           (fun (a, ex) -> add_fact facts (LTerm a, ex, Ast.Th_util.Other))
+           (fun (a, ex) -> add_fact facts (Intf.Relation.LTerm a, ex, Ast.Th_util.Other))
            p_a;
 
          (*touched preds ?*)
          SetA.iter
-           (fun (a, ex) -> add_fact facts (LTerm a, ex, Ast.Th_util.Other))
+           (fun (a, ex) -> add_fact facts (Intf.Relation.LTerm a, ex, Ast.Th_util.Other))
            sa_others;
 
          env)
@@ -469,7 +470,7 @@ module Main : S = struct
       (* we update uf and use *)
       let nuf, ctx = Uf.add env.uf t in
       Debug.make_cst t ctx;
-      List.iter (fun a -> add_fact facts (LTerm a, ex, Ast.Th_util.Other)) ctx;
+      List.iter (fun a -> add_fact facts (Intf.Relation.LTerm a, ex, Ast.Th_util.Other)) ctx;
 
       (*or Ex.empty ?*)
       let rt, _ = Uf.find nuf t in
@@ -480,7 +481,7 @@ module Main : S = struct
       let rel, eqs = Rel.add env.relation nuf rt t in
       Debug.rel_add_cst t eqs;
       (* We add terms made from relations as fact *)
-      List.iter (fun (a, ex) -> add_fact facts (LSem a, ex, Ast.Th_util.Other)) eqs;
+      List.iter (fun (a, ex) -> add_fact facts (Intf.Relation.LSem a, ex, Ast.Th_util.Other)) eqs;
       Use.print nuse;
 
       (* we compute terms to consider for congruence *)
@@ -516,12 +517,12 @@ module Main : S = struct
 
   let semantic_view env (a, ex, orig) facts =
     match a with
-    | LTerm a ->
+    | Intf.Relation.LTerm a ->
       (* Over terms: add terms + term_canonical_view *)
       let env = add env facts a ex in
       let sa, ex = term_canonical_view env a ex in
       (env, (sa, Some a, ex, orig))
-    | LSem sa -> (
+    | Intf.Relation.LSem sa -> (
         match sa with
         | A.Builtin _ ->
           (* we put it in canonical form for FM *)
@@ -548,11 +549,11 @@ module Main : S = struct
     else { env with uf = Uf.distinct env.uf lr ex }
 
   let rec assume_equalities env choices facts =
-    if Q.is_empty facts.equas then (env, choices)
+    if Q.is_empty facts.Intf.Relation.equas then (env, choices)
     else (
       Debug.facts facts "equalities";
-      let e = Q.pop facts.equas in
-      Q.push e facts.ineqs;
+      let e = Q.pop facts.Intf.Relation.equas in
+      Q.push e facts.Intf.Relation.ineqs;
       (*XXX also added in touched by congruence_closure*)
       let env, (sa, _, ex, _) = semantic_view env e facts in
       Debug.assume_literal sa;
@@ -588,11 +589,11 @@ module Main : S = struct
       assume_equalities env choices facts)
 
   let rec assume_disequalities env choices facts =
-    if Q.is_empty facts.diseqs then (env, choices)
+    if Q.is_empty facts.Intf.Relation.diseqs then (env, choices)
     else (
       Debug.facts facts "disequalities";
-      let e = Q.pop facts.diseqs in
-      Q.push e facts.ineqs;
+      let e = Q.pop facts.Intf.Relation.diseqs in
+      Q.push e facts.Intf.Relation.ineqs;
       let env, (sa, _, ex, orig) = semantic_view env e facts in
       Debug.assume_literal sa;
       let env =
@@ -600,30 +601,30 @@ module Main : S = struct
         | A.Distinct (false, lr) -> assume_dist env facts lr ex
         | A.Distinct (true, _) -> assert false
         | A.Pred _ ->
-          Q.push (LSem sa, ex, orig) facts.equas;
+          Q.push (Intf.Relation.LSem sa, ex, orig) facts.Intf.Relation.equas;
           env
         | _ -> assert false
       in
-      if Q.is_empty facts.equas then assume_disequalities env choices facts
+      if Q.is_empty facts.Intf.Relation.equas then assume_disequalities env choices facts
       else (env, choices (* Return to give priority to equalities *)))
 
-  let rec norm_queue env ineqs (facts : r facts) =
-    if Q.is_empty facts.ineqs then (env, List.rev ineqs)
+  let rec norm_queue env ineqs (facts : r Intf.Relation.facts) =
+    if Q.is_empty facts.Intf.Relation.ineqs then (env, List.rev ineqs)
     else
-      let e = Q.pop facts.ineqs in
+      let e = Q.pop facts.Intf.Relation.ineqs in
       let env, e' = semantic_view env e facts in
       let ineqs = e' :: ineqs in
       let ineqs =
         match e with
         (* for case-split, to be sure that CS is given
            back to relations *)
-        | LSem ra, ex, ((Ast.Th_util.CS _ | Ast.Th_util.NCS _) as orig) ->
+        | Intf.Relation.LSem ra, ex, ((Ast.Th_util.CS _ | Ast.Th_util.NCS _) as orig) ->
           (ra, None, ex, orig) :: ineqs
         | _ -> ineqs
       in
       norm_queue env ineqs facts
 
-  let add_touched uf acc (facts : r facts) =
+  let add_touched uf acc (facts : r Intf.Relation.facts) =
     let acc =
       Util.Util.MI.fold
         (fun _ x acc ->
@@ -631,14 +632,14 @@ module Main : S = struct
            (*use terms ? *)
            (* PB Here: LR.mkv_eq may swap x and y *)
            ((*LR.mkv_eq x y*) A.Eq (x, y), None, ex, Ast.Th_util.Subst) :: acc)
-        facts.touched acc
+        facts.Intf.Relation.touched acc
     in
-    facts.touched <- Util.Util.MI.empty;
+    facts.Intf.Relation.touched <- Util.Util.MI.empty;
     acc
 
   let assume_inequalities env choices facts =
     Util.Options.tool_req 3 "TR-CCX-Builtin";
-    if Q.is_empty facts.ineqs then (env, choices)
+    if Q.is_empty facts.Intf.Relation.ineqs then (env, choices)
     else (
       Debug.facts facts "inequalities";
       let env, ineqs = norm_queue env [] facts in
@@ -648,17 +649,17 @@ module Main : S = struct
       (env, List.rev_append l choices))
 
   let rec assume_literals env choices facts =
-    match Q.is_empty facts.equas with
+    match Q.is_empty facts.Intf.Relation.equas with
     | false ->
       let env, choices = assume_equalities env choices facts in
       assume_literals env choices facts
     | true -> (
-        match Q.is_empty facts.diseqs with
+        match Q.is_empty facts.Intf.Relation.diseqs with
         | false ->
           let env, choices = assume_disequalities env choices facts in
           assume_literals env choices facts
         | true -> (
-            match Q.is_empty facts.ineqs with
+            match Q.is_empty facts.Intf.Relation.ineqs with
             | false ->
               let env, choices = assume_inequalities env choices facts in
               assume_literals env choices facts

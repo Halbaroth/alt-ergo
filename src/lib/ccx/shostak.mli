@@ -28,29 +28,33 @@
 
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
-module Combine : Sig.X
+module Intf = Alt_ergo_lib_intf
+module Combine : Intf.X.Sig
+
+module Ite = Alt_ergo_lib_ite
+     
 module Polynome : Polynome.T with type r = Combine.r
-module Arith : Sig.SHOSTAK with type r = Combine.r and type t = Polynome.t
+module Arith : Intf.Solvable_theory.Sig with type r = Combine.r and type t = Polynome.t
 
 module Records :
-  Sig.SHOSTAK with type r = Combine.r and type t = Combine.r Records.abstract
+  Intf.Solvable_theory.Sig with type r = Combine.r and type t = Combine.r Records.abstract
 
 module Bitv :
-  Sig.SHOSTAK with type r = Combine.r and type t = Combine.r Bitv.abstract
+  Intf.Solvable_theory.Sig with type r = Combine.r and type t = Combine.r Bitv.abstract
 
 module Arrays :
-  Sig.SHOSTAK with type r = Combine.r and type t = Combine.r Arrays.abstract
+  Intf.Solvable_theory.Sig with type r = Combine.r and type t = Combine.r Arrays.abstract
 
 module Enum :
-  Sig.SHOSTAK with type r = Combine.r and type t = Combine.r Enum.abstract
+  Intf.Solvable_theory.Sig with type r = Combine.r and type t = Combine.r Enum.abstract
 
 module Adt :
-  Sig.SHOSTAK with type r = Combine.r and type t = Combine.r Adt.abstract
+  Intf.Solvable_theory.Sig with type r = Combine.r and type t = Combine.r Adt.abstract
 
-module Ite :
-  Sig.SHOSTAK with type r = Combine.r and type t = Combine.r Ite.abstract
+module Ite_ :
+  Intf.Solvable_theory.Sig with type r = Combine.r and type t = Combine.r Ite.Theory.abstract
 
-module Ac : Ac.S with type r = Combine.r and type t = Combine.r Sig.ac
+module Ac : Ac.S with type r = Combine.r and type t = Combine.r Intf.Solvable_theory.ac
 
 module MXH : Map.S with type key = Combine.r
 (** map of semantic values using Combine.hash_cmp *)

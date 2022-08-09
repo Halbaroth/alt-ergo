@@ -28,12 +28,14 @@
 
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
+module Intf = Alt_ergo_lib_intf
+            
 open Util.Options
 open Format
 module A = Ast.Xliteral
 module L = List
 module X = Shostak.Combine
-module LR = Uf.LX
+module LR = Uf.LX 
 
 (* map get |-> { set } des associations (get,set) deja splites *)
 module Tmap = struct
@@ -111,6 +113,8 @@ type t = {
   new_terms : Ast.Expr.Set.t;
   size_splits : Util.Numbers.Q.t;
 }
+type r = Shostak.Combine.r
+type uf = Uf.t
 
 let empty _ =
   {
@@ -464,10 +468,10 @@ let assume env uf la =
   Debug.new_equalities atoms;
   let l =
     Conseq.fold
-      (fun (a, ex) l -> (Sig_rel.LTerm a, ex, Ast.Th_util.Other) :: l)
+      (fun (a, ex) l -> (Intf.Relation.LTerm a, ex, Ast.Th_util.Other) :: l)
       atoms []
   in
-  (env, { Sig_rel.assume = l; remove = [] })
+  (env, { Intf.Relation.assume = l; remove = [] })
 
 let assume env uf la =
   if get_timers () then (

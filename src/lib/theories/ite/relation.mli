@@ -9,4 +9,6 @@
 (*                                                                            *)
 (******************************************************************************)
 
-include Sig_rel.RELATION
+module Intf = Alt_ergo_lib_intf
+
+module Make (X : Intf.X.Sig) (UF : Intf.Uf.Sig) : Intf.Relation.Sig with type r = X.r and type uf = UF.t

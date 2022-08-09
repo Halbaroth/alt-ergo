@@ -9,16 +9,18 @@
 (*                                                                            *)
 (******************************************************************************)
 
+module Intf = Alt_ergo_lib_intf
+
 type 'a abstract = unit
 
 module type ALIEN = sig
-  include Sig.X
+  include Intf.X.Sig
 
   val embed : r abstract -> r
   val extract : r -> r abstract option
 end
 
-module Shostak (X : ALIEN) = struct
+module Make (X : ALIEN) = struct
   type t = X.r abstract
   type r = X.r
 

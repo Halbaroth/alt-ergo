@@ -28,18 +28,19 @@
 
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
+module Intf = Alt_ergo_lib_intf
+            
 open Format
 open Util.Options
-open Sig
 module X = Shostak.Combine
 module Ac = Shostak.Ac
 
 module LX = Ast.Xliteral.Make (struct
-    type t = X.r
+    type t = Shostak.Combine.r
 
-    let compare = X.hash_cmp
+    let compare = Shostak.Combine.hash_cmp
 
-    include X
+    include Shostak.Combine
   end)
 
 module MapL = Util.Emap.Make (LX)
@@ -55,11 +56,11 @@ end
 module SetX = Shostak.SXH
 
 module SetXX = Set.Make (struct
-    type t = X.r * X.r
+    type t = Shostak.Combine.r * Shostak.Combine.r
 
     let compare (r1, r1') (r2, r2') =
-      let c = X.hash_cmp r1 r2 in
-      if c <> 0 then c else X.hash_cmp r1' r2'
+      let c = Shostak.Combine.hash_cmp r1 r2 in
+      if c <> 0 then c else Shostak.Combine.hash_cmp r1' r2'
   end)
 
 module SetAc = Set.Make (struct
@@ -69,7 +70,7 @@ module SetAc = Set.Make (struct
   end)
 
 module SetRL = Set.Make (struct
-    type t = Ac.t * X.r * Ast.Ex.t
+    type t = Ac.t * Shostak.Combine.r * Ast.Ex.t
 
     let compare (ac1, _, _) (ac2, _, _) = Ac.compare ac1 ac2
   end)
@@ -83,14 +84,14 @@ module RS = struct
 
   let find k m = try find k m with Not_found -> SetRL.empty
 
-  let add_rule (({ h; _ }, _, _) as rul) mp =
+  let add_rule (({ Intf.Solvable_theory.h; _ }, _, _) as rul) mp =
     add h (SetRL.add rul (find h mp)) mp
 
-  let remove_rule (({ h; _ }, _, _) as rul) mp =
+  let remove_rule (({ Intf.Solvable_theory.h; _ }, _, _) as rul) mp =
     add h (SetRL.remove rul (find h mp)) mp
 end
 
-type r = X.r
+type r = Shostak.Combine.r
 
 type t = {
   (* term -> [t] *)
@@ -121,7 +122,7 @@ let terms_of_distinct env l =
              let cl = MapX.find r env.classes in
              Ast.Expr.Set.iter
                (fun t ->
-                  if X.equal (Ast.Expr.Map.find t env.make) r then
+                  if Shostak.Combine.equal (Ast.Expr.Map.find t env.make) r then
                     raise (Found_term t))
                cl;
              acc
@@ -155,7 +156,7 @@ module Debug = struct
   open Util.Printer
 
   (* unused --
-     let rs_print fmt = SetX.iter (fprintf fmt "\t%a@." X.print)
+     let rs_print fmt = SetX.iter (fprintf fmt "\t%a@." Shostak.Combine.print)
   *)
 
   let lm_print fmt =
@@ -164,7 +165,7 @@ module Debug = struct
   let pmake fmt m =
     fprintf fmt "@[<v 2>map:@,";
     Ast.Expr.Map.iter
-      (fun t r -> fprintf fmt "%a -> %a@," Ast.Expr.print t X.print r)
+      (fun t r -> fprintf fmt "%a -> %a@," Ast.Expr.print t Shostak.Combine.print r)
       m;
     fprintf fmt "@]@,"
 
@@ -173,7 +174,7 @@ module Debug = struct
       "@[<v 2>------------- UF: Representatives map ----------------@,";
     MapX.iter
       (fun r (rr, dep) ->
-         fprintf fmt "%a --> %a %a@," X.print r X.print rr Ast.Ex.print dep)
+         fprintf fmt "%a --> %a %a@," Shostak.Combine.print r Shostak.Combine.print rr Ast.Ex.print dep)
       m;
     fprintf fmt "@]@,"
 
@@ -184,7 +185,7 @@ module Debug = struct
       (fun _ srl ->
          SetRL.iter
            (fun (ac, d, dep) ->
-              fprintf fmt "%a ~~> %a %a@," X.print (X.ac_embed ac) X.print d
+              fprintf fmt "%a ~~> %a %a@," Shostak.Combine.print (Shostak.Combine.ac_embed ac) Shostak.Combine.print d
                 Ast.Ex.print dep)
            srl)
       s;
@@ -195,7 +196,7 @@ module Debug = struct
       "@[<v 2>------------- UF: Class map --------------------------@,";
     MapX.iter
       (fun k s ->
-         fprintf fmt "%a -> %a@," X.print k Ast.Expr.print_list
+         fprintf fmt "%a -> %a@," Shostak.Combine.print k Ast.Expr.print_list
            (Ast.Expr.Set.elements s))
       m;
     fprintf fmt "@]@,"
@@ -203,13 +204,13 @@ module Debug = struct
   (* unused --
      let pgamma fmt m =
      fprintf fmt "------------- UF: Gamma map --------------------------@.";
-     MapX.iter (fun k s -> fprintf fmt "%a -> \n%a" X.print k rs_print s) m
+     MapX.iter (fun k s -> fprintf fmt "%a -> \n%a" Shostak.Combine.print k rs_print s) m
   *)
 
   let pneqs fmt m =
     fprintf fmt
       "@[<v 2>------------- UF: Disequations map--------------------@ ";
-    MapX.iter (fun k s -> fprintf fmt "%a -> %a@ " X.print k lm_print s) m;
+    MapX.iter (fun k s -> fprintf fmt "%a -> %a@ " Shostak.Combine.print k lm_print s) m;
     fprintf fmt "@]@ "
 
   let all env =
@@ -226,48 +227,48 @@ module Debug = struct
 
   let canon_of r rr =
     if get_rewriting () && get_verbose () then
-      print_dbg "canon %a = %a" X.print r X.print rr
+      print_dbg "canon %a = %a" Shostak.Combine.print r Shostak.Combine.print rr
 
   let init_leaf p =
     if get_debug_uf () then
       print_dbg ~module_name:"Uf" ~function_name:"init_leaf" "init leaf : %a"
-        X.print p
+        Shostak.Combine.print p
 
   let critical_pair rx ry =
     if get_debug_uf () then
       print_dbg ~module_name:"Uf" ~function_name:"critical_pair"
-        "critical pair : %a = %a@." X.print rx X.print ry
+        "critical pair : %a = %a@." Shostak.Combine.print rx Shostak.Combine.print ry
 
   let collapse_mult g2 d2 =
     if get_debug_ac () then
       print_dbg ~module_name:"Uf" ~function_name:"collapse_mult"
-        "collapse *: %a = %a" X.print g2 X.print d2
+        "collapse *: %a = %a" Shostak.Combine.print g2 Shostak.Combine.print d2
 
   let collapse g2 d2 =
     if get_debug_ac () then
       print_dbg ~module_name:"Uf" ~function_name:"collapse" "collapse: %a = %a"
-        X.print g2 X.print d2
+        Shostak.Combine.print g2 Shostak.Combine.print d2
 
   let compose p v g d =
     if get_debug_ac () then
       print_dbg ~module_name:"Uf" ~function_name:"compose"
-        "compose : %a -> %a on %a and %a" X.print p X.print v Ac.print g X.print
+        "compose : %a -> %a on %a and %a" Shostak.Combine.print p Shostak.Combine.print v Ac.print g Shostak.Combine.print
         d
 
   let x_solve rr1 rr2 dep =
     if get_debug_uf () then
       print_dbg ~module_name:"Uf" ~function_name:"x_solve" "x-solve: %a = %a %a"
-        X.print rr1 X.print rr2 Ast.Ex.print dep
+        Shostak.Combine.print rr1 Shostak.Combine.print rr2 Ast.Ex.print dep
 
   let ac_solve p v dep =
     if get_debug_uf () then
       print_dbg ~module_name:"Uf" ~function_name:"ac_solve"
-        "ac-solve: %a |-> %a %a" X.print p X.print v Ast.Ex.print dep
+        "ac-solve: %a |-> %a %a" Shostak.Combine.print p Shostak.Combine.print v Ast.Ex.print dep
 
   let ac_x r1 r2 =
     if get_debug_uf () then
       print_dbg ~module_name:"Uf" ~function_name:"ac_x"
-        "ac(x): delta (%a) = delta (%a)" X.print r1 X.print r2
+        "ac(x): delta (%a) = delta (%a)" Shostak.Combine.print r1 Shostak.Combine.print r2
 
   let distinct d =
     if get_debug_uf () then
@@ -290,7 +291,7 @@ module Debug = struct
            List.iter
              (fun x ->
                 try
-                  if not (X.equal x (fst (MapX.find x repr))) then
+                  if not (Shostak.Combine.equal x (fst (MapX.find x repr))) then
                     let () = trace orig in
                     assert false
                 with Not_found ->
@@ -298,7 +299,7 @@ module Debug = struct
                      not AC leaves, which can be created dynamically,
                      not for other, that can be introduced by make and solve*)
                   ())
-             (X.leaves rr))
+             (Shostak.Combine.leaves rr))
         repr
 
   let check_invariants orig env =
@@ -316,12 +317,12 @@ module Env = struct
     with Not_found ->
       Debug.lookup_not_found t env;
       assert false
-  (*X.make t, Ex.empty*)
+  (*Shostak.Combine.make t, Ex.empty*)
   (* XXXX *)
 
   let lookup_by_t___without_failure t env =
     try MapX.find (Ast.Expr.Map.find t env.make) env.repr
-    with Not_found -> (fst (X.make t), Ast.Ex.empty)
+    with Not_found -> (fst (Shostak.Combine.make t), Ast.Ex.empty)
 
   let lookup_by_r r env =
     Util.Options.exec_thread_yield ();
@@ -335,7 +336,7 @@ module Env = struct
       | l, [] -> di_un (l @ l1, c, l2) ([], [])
       | [], l -> di_un (l1, c, l @ l2) ([], [])
       | (a, m) :: r, (b, n) :: s ->
-        let cmp = X.str_cmp a b in
+        let cmp = Shostak.Combine.str_cmp a b in
         if cmp = 0 then
           if m = n then di_un (l1, (a, m) :: c, l2) (r, s)
           else if m > n then di_un ((a, m - n) :: l1, (a, n) :: c, l2) (r, s)
@@ -355,7 +356,7 @@ module Env = struct
       | l, [] -> l @ l1
       | [], _ -> raise List_minus_exn
       | (a, m) :: r, (b, n) :: s ->
-        let cmp = X.str_cmp a b in
+        let cmp = Shostak.Combine.str_cmp a b in
         if cmp = 0 then
           if m = n then di_un l1 r s
           else if m > n then di_un ((a, m - n) :: l1) r s
@@ -396,16 +397,16 @@ module Env = struct
   let filter_leaves r =
     List.fold_left
       (fun (p, q) r ->
-         match X.ac_extract r with
+         match Shostak.Combine.ac_extract r with
          | None -> (SetX.add r p, q)
          | Some ac -> (p, SetAc.add ac q))
-      (SetX.empty, SetAc.empty) (X.leaves r)
+      (SetX.empty, SetAc.empty) (Shostak.Combine.leaves r)
 
   let canon_empty st env =
     SetX.fold
       (fun p ((z, ex) as acc) ->
          let q, ex_q = lookup_by_r p env in
-         if X.equal p q then acc else ((p, q) :: z, Ast.Ex.union ex_q ex))
+         if Shostak.Combine.equal p q then acc else ((p, q) :: z, Ast.Ex.union ex_q ex))
       st ([], Ast.Ex.empty)
 
   let canon_ac st env =
@@ -413,10 +414,10 @@ module Env = struct
       (fun ac (z, ex) ->
          let rac, ex_ac = apply_rs ac (RS.find ac.h env.ac_rs) in
          if Ac.compare ac rac = 0 then (z, ex)
-         else ((X.color ac, X.color rac) :: z, Ast.Ex.union ex ex_ac))
+         else ((Shostak.Combine.color ac, Shostak.Combine.color rac) :: z, Ast.Ex.union ex ex_ac))
       st ([], Ast.Ex.empty)
 
-  let canon_aux rx = List.fold_left (fun r (p, v) -> X.subst p v r) rx
+  let canon_aux rx = List.fold_left (fun r (p, v) -> Shostak.Combine.subst p v r) rx
 
   let rec canon env r ex_r =
     let se, sac = filter_leaves r in
@@ -425,7 +426,7 @@ module Env = struct
     (* explications? *)
     let r2 = canon_aux (canon_aux r subst_ac) subst in
     let ex_r2 = Ast.Ex.union (Ast.Ex.union ex_r ex_subst) ex_ac in
-    if X.equal r r2 then (r2, ex_r2) else canon env r2 ex_r2
+    if Shostak.Combine.equal r r2 then (r2, ex_r2) else canon env r2 ex_r2
 
   let normal_form env r =
     let rr, ex = canon env r Ast.Ex.empty in
@@ -463,7 +464,7 @@ module Env = struct
       (fun gamma x ->
          let s = try MapX.find x gamma with Not_found -> SetX.empty in
          MapX.add x (SetX.add r s) gamma)
-      gamma (X.leaves c)
+      gamma (Shostak.Combine.leaves c)
 
   let explain_repr_of_distinct x repr_x dep lit env =
     match LX.view lit with
@@ -477,7 +478,7 @@ module Env = struct
       List.fold_left
         (fun d r ->
            let z, ex = find_or_normal_form env r in
-           if X.equal z x || X.equal z repr_x then Ast.Ex.union d ex else d)
+           if Shostak.Combine.equal z x || Shostak.Combine.equal z repr_x then Ast.Ex.union d ex else d)
         dep l
     | _ -> assert false
 
@@ -514,7 +515,7 @@ module Env = struct
     in
     let mk_env = env.make in
     let make =
-      match X.term_extract p with
+      match Shostak.Combine.term_extract p with
       | Some t, true when not (Ast.Expr.Map.mem t mk_env) ->
         Ast.Expr.Map.add t p mk_env
       | _ -> mk_env
@@ -537,7 +538,7 @@ module Env = struct
     env
 
   let init_leaves env v =
-    let env = List.fold_left init_leaf env (X.leaves v) in
+    let env = List.fold_left init_leaf env (Shostak.Combine.leaves v) in
     init_leaf env v
 
   let init_new_ac_leaves env mkr =
@@ -546,10 +547,10 @@ module Env = struct
          match X.ac_extract x with
          | None -> env
          | Some _ -> if MapX.mem x env.repr then env else init_leaves env x)
-      env (X.leaves mkr)
+      env (Shostak.Combine.leaves mkr)
 
   let init_term env t =
-    let mkr, ctx = X.make t in
+    let mkr, ctx = Shostak.Combine.make t in
     let rp, ex = normal_form env mkr in
     let env =
       {
@@ -564,21 +565,21 @@ module Env = struct
       }
     in
     (init_new_ac_leaves env mkr, ctx)
-
-  let head_cp eqs env pac ({ h; _ } as ac) v dep =
+ 
+  let head_cp eqs env pac ({ Intf.Solvable_theory.h; _ } as ac) v dep =
     try
       (*if RS.mem h env.ac_rs then*)
       SetRL.iter
         (fun (g, d, dep_rl) ->
-           if X.equal pac (X.ac_embed g) && X.equal v d then ()
+           if Shostak.Combine.equal pac (Shostak.Combine.ac_embed g) && Shostak.Combine.equal v d then ()
            else
              match disjoint_union ac.l g.l with
              | _, [], _ -> ()
              | l1, _cm, l2 ->
-               let rx = X.color { ac with l = Ac.add h (d, 1) l1 } in
-               let ry = X.color { g with l = Ac.add h (v, 1) l2 } in
+               let rx = Shostak.Combine.color { ac with l = Ac.add h (d, 1) l1 } in
+               let ry = Shostak.Combine.color { g with l = Ac.add h (v, 1) l2 } in
                Debug.critical_pair rx ry;
-               if not (X.equal rx ry) then
+               if not (Shostak.Combine.equal rx ry) then
                  Queue.push (rx, ry, Ast.Ex.union dep dep_rl) eqs)
         (RS.find h env.ac_rs)
     with Not_found -> assert false
@@ -591,10 +592,10 @@ module Env = struct
               Util.Options.exec_thread_yield ();
               Util.Steps.incr Util.Steps.Ac;
               let env = { env with ac_rs = RS.remove_rule rul env.ac_rs } in
-              let gx = X.color g in
+              let gx = Shostak.Combine.color g in
               let g2, ex_g2 = normal_form env (Ac.subst p v g) in
-              let d2, ex_d2 = normal_form env (X.subst p v d) in
-              if X.str_cmp g2 d2 <= 0 then (
+              let d2, ex_d2 = normal_form env (Shostak.Combine.subst p v d) in
+              if Shostak.Combine.str_cmp g2 d2 <= 0 then (
                 Debug.collapse_mult g2 d2;
                 let ex =
                   Ast.Ex.union
@@ -603,7 +604,7 @@ module Env = struct
                 in
                 Queue.push (g2, d2, ex) eqs;
                 env)
-              else if X.equal g2 gx then (
+              else if Shostak.Combine.equal g2 gx then (
                 (* compose *)
                 Debug.compose p v g d;
                 let ex = Ast.Ex.union ex_d2 (Ast.Ex.union dep_rl dep) in
@@ -623,7 +624,7 @@ module Env = struct
 
   (* TODO explications: ajout de dep dans ac_rs *)
   let apply_sigma_ac eqs env ((p, v, dep) as sigma) =
-    match X.ac_extract p with
+    match Shostak.Combine.ac_extract p with
     | None -> comp_collapse eqs env sigma
     | Some r ->
       let env = { env with ac_rs = RS.add_rule (r, v, dep) env.ac_rs } in
@@ -645,9 +646,9 @@ module Env = struct
      and reduced by p, then r --> nrr should be added as a PIVOT, not just
      as TOUCHED by p |-> ... This is required for a correct update of USE *)
   let update_global_tch global_tch p r nrr ex =
-    if X.equal p r then global_tch
+    if Shostak.Combine.equal p r then global_tch
     else
-      match X.ac_extract r with
+      match Shostak.Combine.ac_extract r with
       | None -> global_tch
       | Some _ -> (r, [ (r, nrr, ex) ], nrr) :: global_tch
 
@@ -660,8 +661,8 @@ module Env = struct
           (fun r ((env, touched_p, global_tch, neqs_to_up) as acc) ->
              Util.Options.exec_thread_yield ();
              let rr, ex = MapX.find r env.repr in
-             let nrr = X.subst p v rr in
-             if X.equal rr nrr then acc
+             let nrr = Shostak.Combine.subst p v rr in
+             if Shostak.Combine.equal rr nrr then acc
              else
                let ex = Ast.Ex.union ex dep in
                let env =
@@ -690,7 +691,7 @@ module Env = struct
           (fun r (rr, ex) ((env, tch, neqs_to_up) as acc) ->
              Util.Options.exec_thread_yield ();
              let nrr, ex_nrr = normal_form env rr in
-             if X.equal nrr rr then acc
+             if Shostak.Combine.equal nrr rr then acc
              else
                let ex = Ast.Ex.union ex ex_nrr in
                let env =
@@ -701,7 +702,7 @@ module Env = struct
                  }
                in
                let tch =
-                 if X.is_a_leaf r then (r, [ (r, nrr, ex) ], nrr) :: tch else tch
+                 if Shostak.Combine.is_a_leaf r then (r, [ (r, nrr, ex) ], nrr) :: tch else tch
                in
                (env, tch, SetXX.add (rr, nrr) neqs_to_up))
           env.repr (env, tch, SetXX.empty)
@@ -728,13 +729,13 @@ let add env t =
 let ac_solve eqs dep (env, tch) (p, v) =
   Debug.ac_solve p v dep;
   let rv, ex_rv = Env.find_or_normal_form env v in
-  if not (X.equal v rv) then (
+  if not (Shostak.Combine.equal v rv) then (
     (* v is not in normal form ==> replay *)
     Queue.push (p, rv, Ast.Ex.union dep ex_rv) eqs;
     (env, tch))
   else
     let rp, ex_rp = Env.find_or_normal_form env p in
-    if not (X.equal p rp) then (
+    if not (Shostak.Combine.equal p rp) then (
       (* p is not in normal form ==> replay *)
       Queue.push (rp, v, Ast.Ex.union dep ex_rp) eqs;
       (env, tch))
@@ -747,12 +748,12 @@ let x_solve env r1 r2 dep =
   let rr2, ex_r2 = Env.find_or_normal_form env r2 in
   let dep = Ast.Ex.union dep (Ast.Ex.union ex_r1 ex_r2) in
   Debug.x_solve rr1 rr2 dep;
-  if X.equal rr1 rr2 then (
+  if Shostak.Combine.equal rr1 rr2 then (
     Util.Options.tool_req 3 "TR-CCX-Remove";
     ([], dep (* Remove rule *)))
   else (
     ignore (Env.update_neqs rr1 rr2 dep env);
-    try (X.solve rr1 rr2, dep)
+    try (Shostak.Combine.solve rr1 rr2, dep)
     with Util.Util.Unsolvable ->
       Util.Options.tool_req 3 "TR-CCX-Congruence-Conflict";
       raise (Ast.Ex.Inconsistent (dep, cl_extract env)))
@@ -819,11 +820,11 @@ let rec distinct env rl dep =
          (fun r2 ex2 env ->
             let ex = Ast.Ex.union ex1 (Ast.Ex.union ex2 dep) in
             try
-              match X.solve r1 r2 with
+              match Shostak.Combine.solve r1 r2 with
               | [ (a, b) ] ->
                 if
-                  (X.equal a r1 && X.equal b r2)
-                  || (X.equal a r2 && X.equal b r1)
+                  (Shostak.Combine.equal a r1 && Shostak.Combine.equal b r2)
+                  || (Shostak.Combine.equal a r2 && Shostak.Combine.equal b r1)
                 then env
                 else distinct env [ a; b ] ex
               | [] ->
@@ -847,7 +848,7 @@ let are_equal env t1 t2 ~added_terms =
     in
     let r1, ex_r1 = lookup t1 env in
     let r2, ex_r2 = lookup t2 env in
-    if X.equal r1 r2 then Some (Ast.Ex.union ex_r1 ex_r2, cl_extract env)
+    if Shostak.Combine.equal r1 r2 then Some (Ast.Ex.union ex_r1 ex_r2, cl_extract env)
     else None
 
 let are_distinct env t1 t2 =
@@ -890,7 +891,7 @@ let model env =
              (fun (l, to_rel) t ->
                 let rt = Ast.Expr.Map.find t env.make in
                 if get_complete_model () || Ast.Expr.is_in_model t then
-                  if X.equal rt r then (l, (t, rt) :: to_rel)
+                  if Shostak.Combine.equal rt r then (l, (t, rt) :: to_rel)
                   else (t :: l, (t, rt) :: to_rel)
                 else (l, to_rel))
              ([], [])
@@ -961,7 +962,7 @@ let empty () =
   in
   let env, _ = add env Ast.Expr.vrai in
   let env, _ = add env Ast.Expr.faux in
-  distinct env [ X.top (); X.bot () ] Ast.Ex.empty
+  distinct env [ Shostak.Combine.top (); Shostak.Combine.bot () ] Ast.Ex.empty
 
 let make uf t = Ast.Expr.Map.find t uf.make
 
@@ -982,8 +983,8 @@ let add env t =
 let is_normalized env r =
   List.for_all
     (fun x ->
-       try X.equal x (fst (MapX.find x env.repr)) with Not_found -> true)
-    (X.leaves r)
+       try Shostak.Combine.equal x (fst (MapX.find x env.repr)) with Not_found -> true)
+    (Shostak.Combine.leaves r)
 
 let distinct_from_constants rep env =
   let neqs = try MapX.find rep env.neqs with Not_found -> assert false in
@@ -996,8 +997,8 @@ let distinct_from_constants rep env =
        let acc2 =
          List.fold_left
            (fun acc r ->
-              if X.equal rep r then contains_rep := true;
-              match X.leaves r with [] -> r :: acc | _ -> acc)
+              if Shostak.Combine.equal rep r then contains_rep := true;
+              match Shostak.Combine.leaves r with [] -> r :: acc | _ -> acc)
            acc lit_vals
        in
        if !contains_rep then acc2 else acc)
@@ -1016,7 +1017,7 @@ let assign_next env =
                  eclass []
              with Not_found -> assert false
            in
-           let opt = X.assign_value r (distinct_from_constants r env) eclass in
+           let opt = Shostak.Combine.assign_value r (distinct_from_constants r env) eclass in
            match opt with
            | None -> ()
            | Some (s, is_cs) ->
@@ -1030,7 +1031,7 @@ let assign_next env =
         | Some (s, rep, is_cs) ->
           if get_debug_interpretation () then
             Util.Printer.print_dbg ~module_name:"Uf"
-              ~function_name:"assign_next" "TRY assign-next %a = %a" X.print rep
+              ~function_name:"assign_next" "TRY assign-next %a = %a" Shostak.Combine.print rep
               Ast.Expr.print s;
           (*
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1075,17 +1076,17 @@ module Profile = struct
     end)
 
   module V = Set.Make (struct
-      type t = (Ast.Expr.t * (X.r * string)) list * (X.r * string)
+      type t = (Ast.Expr.t * (Shostak.Combine.r * string)) list * (Shostak.Combine.r * string)
 
       let compare (l1, (v1, _)) (l2, (v2, _)) =
-        let c = X.hash_cmp v1 v2 in
+        let c = Shostak.Combine.hash_cmp v1 v2 in
         if c <> 0 then c
         else
           let c = ref 0 in
           try
             List.iter2
               (fun (_, (x, _)) (_, (y, _)) ->
-                 let d = X.hash_cmp x y in
+                 let d = Shostak.Combine.hash_cmp x y in
                  if d <> 0 then (
                    c := d;
                    raise Exit))
@@ -1106,7 +1107,7 @@ module Profile = struct
 end
 
 let assert_has_depth_one (e, _) =
-  match X.term_extract e with
+  match Shostak.Combine.term_extract e with
   | Some t, true -> assert (Ast.Expr.const_term t)
   | _ -> ()
 
@@ -1183,7 +1184,7 @@ end
 (* of module SMT2LikeModelOutput *)
 
 let is_a_good_model_value (x, _) =
-  match X.leaves x with [] -> true | [ y ] -> X.equal x y | _ -> false
+  match Shostak.Combine.leaves x with [] -> true | [ y ] -> Shostak.Combine.equal x y | _ -> false
 
 let model_repr_of_term t env mrepr =
   try (Ast.Expr.Map.find t mrepr, mrepr)
@@ -1200,7 +1201,7 @@ let model_repr_of_term t env mrepr =
       try List.rev_map (fun s -> (s, Ast.Expr.Map.find s env.make)) cls
       with Not_found -> assert false
     in
-    let e = X.choose_adequate_model t rep cls in
+    let e = Shostak.Combine.choose_adequate_model t rep cls in
     (e, Ast.Expr.Map.add t e mrepr)
 
 let output_concrete_model ({ make; _ } as env) =
@@ -1216,7 +1217,7 @@ let output_concrete_model ({ make; _ } as env) =
              | Ast.Expr.Term tt -> tt
            in
            if
-             X.is_solvable_theory_symbol f ty
+             Shostak.Combine.is_solvable_theory_symbol f ty
              || Ast.Expr.is_fresh t
              || Ast.Expr.is_fresh_skolem t
              || Ast.Expr.equal t Ast.Expr.vrai
@@ -1238,7 +1239,7 @@ let output_concrete_model ({ make; _ } as env) =
              | ( Ast.Sy.Op Ast.Sy.Get,
                  [ (_, (a, _)); ((_, (i, _)) as e) ],
                  _ ) -> (
-                 match X.term_extract a with
+                 match Shostak.Combine.term_extract a with
                  | Some ta, true ->
                    let { Ast.Expr.f = f_ta; xs = xs_ta; _ } =
                      match Ast.Expr.term_view ta with
@@ -1249,7 +1250,7 @@ let output_concrete_model ({ make; _ } as env) =
                    ( fprofs,
                      cprofs,
                      Profile.add
-                       (f_ta, [ X.type_info i ], ty)
+                       (f_ta, [ Shostak.Combine.type_info i ], ty)
                        ([ e ], rep) carrays,
                      mrepr )
                  | _ -> assert false)

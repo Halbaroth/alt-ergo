@@ -26,6 +26,74 @@
 (*                                                                            *)
 (******************************************************************************)
 
-module Intf = Alt_ergo_lib_intf
+module Util = Alt_ergo_lib_util
+module Ast = Alt_ergo_lib_ast
 
-include Intf.Relation.Sig with type r = Shostak.Combine.r and type uf = Uf.t
+type 'a literal = LTerm of Ast.Expr.t | LSem of 'a Ast.Xliteral.view
+
+type instances =
+  (Ast.Expr.t list * Ast.Expr.gformula * Ast.Ex.t) list
+
+type 'a input =
+  'a Ast.Xliteral.view
+  * Ast.Expr.t option
+  * Ast.Ex.t
+  * Ast.Th_util.lit_origin
+
+type 'a fact = 'a literal * Ast.Ex.t * Ast.Th_util.lit_origin
+
+type 'a facts = {
+  equas : 'a fact Queue.t;
+  diseqs : 'a fact Queue.t;
+  ineqs : 'a fact Queue.t;
+  mutable touched : 'a Util.Util.MI.t;
+}
+
+type 'a result = { assume : 'a fact list; remove : Ast.Expr.t list }
+
+module type Sig = sig
+  type t
+
+  (** Type of semantic values. *)
+  type r
+
+  (** Type of the union-find context. *)
+  type uf
+
+  val empty : Ast.Expr.Set.t list -> t
+
+  val assume :
+    t -> uf -> r input list -> t * r result
+
+  val query : t -> uf -> r input -> Ast.Th_util.answer
+
+  val case_split :
+    t ->
+    uf ->
+    for_model:bool ->
+    (r Ast.Xliteral.view * bool * Ast.Th_util.lit_origin) list
+  (** case_split env returns a list of equalities *)
+
+  val add :
+    t ->
+    uf ->
+    r ->
+    Ast.Expr.t ->
+    t * (r Ast.Xliteral.view * Ast.Ex.t) list
+  (** add a representant to take into account *)
+
+  val instantiate :
+    do_syntactic_matching:bool ->
+    Ast.Matching_types.info Ast.Expr.Map.t
+    * Ast.Expr.t list Ast.Expr.Map.t Ast.Sy.Map.t ->
+    t ->
+    uf ->
+    (Ast.Expr.t -> Ast.Expr.t -> bool) ->
+    t * instances
+
+  val print_model :
+    Format.formatter -> t -> (Ast.Expr.t * r) list -> unit
+
+  val new_terms : t -> Ast.Expr.Set.t
+  val assume_th_elt : t -> Ast.Expr.th_elt -> Ast.Ex.t -> t
+end

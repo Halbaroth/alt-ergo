@@ -26,15 +26,15 @@
 (*                                                                            *)
 (******************************************************************************)
 
-module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
-
+module Intf = Alt_ergo_lib_intf
+           
 module type S = sig
   (* the type of amalgamated AC semantic values *)
   type r
 
   (* the type of AC semantic values used by the theory *)
-  type t = r Sig.ac
+  type t = r Intf.Solvable_theory.ac
 
   (* builds an embeded semantic value from an AC term *)
   val make : Ast.Expr.t -> r * Ast.Expr.t list
@@ -71,4 +71,4 @@ module type S = sig
   val compact : (r * int) list -> (r * int) list
 end
 
-module Make (X : Sig.X) : S with type r = X.r
+module Make (X : Intf.X.Sig) : S with type r = X.r

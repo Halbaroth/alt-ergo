@@ -28,9 +28,10 @@
 
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
+module Intf = Alt_ergo_lib_intf
+            
 open Format
 open Util.Options
-open Sig
 open Ast.Matching_types
 
 module Z = Util.Numbers.Z
@@ -118,7 +119,8 @@ type t = {
   linear_dep : Ast.Expr.Set.t Ast.Expr.Map.t;
   syntactic_matching :
     (Ast.Matching_types.trigger_info * Ast.Matching_types.gsubst list) list list;
-}
+  }
+type uf = Uf.t
 
 module Sim_Wrap = struct
 
@@ -1660,7 +1662,7 @@ let assume ~query env uf la =
   in
   try
     let env = if query then env else Sim_Wrap.solve env 1 in
-    if !nb_num = 0 || query then env, {Sig_rel.assume=[]; remove = to_remove}
+    if !nb_num = 0 || query then env, {Intf.Relation.assume=[]; remove = to_remove}
     else
       (* we only call fm when new ineqs are assumed *)
       let env, eqs =
@@ -1677,9 +1679,9 @@ let assume ~query env uf la =
       Debug.implied_equalities eqs;
       let to_assume =
         List.rev_map (fun (sa, _, ex, orig) ->
-            (Sig_rel.LSem sa, ex, orig)) eqs
+            (Intf.Relation.LSem sa, ex, orig)) eqs
       in
-      env, {Sig_rel.assume = to_assume; remove = to_remove}
+      env, {Intf.Relation.assume = to_assume; remove = to_remove}
   with I.NotConsistent expl ->
     Debug.inconsistent_interval expl ;
     raise (Ast.Ex.Inconsistent (expl, env.classes))

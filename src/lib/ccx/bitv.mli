@@ -28,15 +28,16 @@
 
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
-
+module Intf = Alt_ergo_lib_intf
+            
 type 'a abstract
 
 module type ALIEN = sig
-  include Sig.X
+  include Intf.X.Sig
 
   val embed : r abstract -> r
   val extract : r -> r abstract option
 end
 
 module Shostak (X : ALIEN) :
-  Sig.SHOSTAK with type r = X.r and type t = X.r abstract
+  Intf.Solvable_theory.Sig with type r = X.r and type t = X.r abstract

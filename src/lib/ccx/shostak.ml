@@ -28,9 +28,13 @@
 
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
+module Intf = Alt_ergo_lib_intf
+
+module Ite = Alt_ergo_lib_ite 
+            
 open Format
 open Util.Options
-open Sig
+
 module H = Hashtbl.Make (Ast.Expr)
 
 (*** Combination module of Shostak theories ***)
@@ -38,7 +42,7 @@ module H = Hashtbl.Make (Ast.Expr)
 [@@@ocaml.warning "-60"]
 
 module rec CX : sig
-  include Sig.X
+  include Intf.X.Sig
 
   val extract1 : r -> X1.t option
   val embed1 : X1.t -> r
@@ -121,13 +125,13 @@ end = struct
   let embed6 x = hcons { v = X6 x; id = -1000 (* dummy *) }
   let embed7 x = hcons { v = X7 x; id = -1000 (* dummy *) }
 
-  let ac_embed ({ Sig.l; _ } as t) =
+  let ac_embed ({ Intf.Solvable_theory.l; _ } as t) =
     match l with
     | [] -> assert false
     | [ (x, 1) ] -> x
     | l ->
       let sort = List.fast_sort (fun (x, _) (y, _) -> CX.str_cmp x y) in
-      let ac = { t with Sig.l = List.rev (sort l) } in
+      let ac = { t with Intf.Solvable_theory.l = List.rev (sort l) } in
       hcons { v = Ac ac; id = -1000 (* dummy *) }
 
   let term_embed t = hcons { v = Term t; id = -1000 (* dummy *) }
@@ -327,20 +331,20 @@ end = struct
   let is_a_leaf r = match r.v with Term _ | Ac _ -> true | _ -> false
 
   let color ac =
-    match ac.Sig.l with
+    match ac.Intf.Solvable_theory.l with
     | [] -> assert false
     | [ (r, 1) ] -> r
     | _ -> (
-        let ty = ac.Sig.t in
+        let ty = ac.Intf.Solvable_theory.t in
         match
-          ( X1.is_mine_symb ac.Sig.h ty,
-            X2.is_mine_symb ac.Sig.h ty,
-            X3.is_mine_symb ac.Sig.h ty,
-            X4.is_mine_symb ac.Sig.h ty,
-            X5.is_mine_symb ac.Sig.h ty,
-            X6.is_mine_symb ac.Sig.h ty,
-            X7.is_mine_symb ac.Sig.h ty,
-            AC.is_mine_symb ac.Sig.h ty )
+          ( X1.is_mine_symb ac.Intf.Solvable_theory.h ty,
+            X2.is_mine_symb ac.Intf.Solvable_theory.h ty,
+            X3.is_mine_symb ac.Intf.Solvable_theory.h ty,
+            X4.is_mine_symb ac.Intf.Solvable_theory.h ty,
+            X5.is_mine_symb ac.Intf.Solvable_theory.h ty,
+            X6.is_mine_symb ac.Intf.Solvable_theory.h ty,
+            X7.is_mine_symb ac.Intf.Solvable_theory.h ty,
+            AC.is_mine_symb ac.Intf.Solvable_theory.h ty )
         with
         (*AC.is_mine may say F if Util.Options.get_no_ac is set to F dynamically *)
         | true, false, false, false, false, false, false, false -> X1.color ac
@@ -497,19 +501,19 @@ end = struct
     (* r1 != r2*)
     if get_debug_combine () then
       Util.Printer.print_dbg "solve uninterpreted %a = %a" print r1 print r2;
-    if CX.str_cmp r1 r2 > 0 then { pb with sbt = (r1, r2) :: pb.sbt }
-    else { pb with sbt = (r2, r1) :: pb.sbt }
+    if CX.str_cmp r1 r2 > 0 then { pb with Intf.Solvable_theory.sbt = (r1, r2) :: pb.Intf.Solvable_theory.sbt }
+    else { pb with Intf.Solvable_theory.sbt = (r2, r1) :: pb.Intf.Solvable_theory.sbt }
 
   let rec solve_list pb =
-    match pb.eqs with
+    match pb.Intf.Solvable_theory.eqs with
     | [] ->
-      Debug.print_sbt "Should be triangular and cleaned" pb.sbt;
-      pb.sbt
+      Debug.print_sbt "Should be triangular and cleaned" pb.Intf.Solvable_theory.sbt;
+      pb.Intf.Solvable_theory.sbt
     | (a, b) :: eqs ->
       let pb = { pb with eqs } in
       Debug.solve_one a b;
-      let ra = apply_subst_right a pb.sbt in
-      let rb = apply_subst_right b pb.sbt in
+      let ra = apply_subst_right a pb.Intf.Solvable_theory.sbt in
+      let rb = apply_subst_right b pb.Intf.Solvable_theory.sbt in
       if CX.equal ra rb then solve_list pb
       else
         let tya = CX.type_info ra in
@@ -634,7 +638,7 @@ end
 
 and TX1 : (Polynome.T with type r = CX.r) = Arith.Type (CX)
 
-and X1 : (Sig.SHOSTAK with type t = TX1.t and type r = CX.r) =
+and X1 : (Intf.Solvable_theory.Sig with type t = TX1.t and type r = CX.r) =
   Arith.Shostak
     (CX)
     (struct
@@ -644,7 +648,7 @@ and X1 : (Sig.SHOSTAK with type t = TX1.t and type r = CX.r) =
       let embed = CX.embed1
     end)
 
-and X2 : (Sig.SHOSTAK with type r = CX.r and type t = CX.r Records.abstract) =
+and X2 : (Intf.Solvable_theory.Sig with type r = CX.r and type t = CX.r Records.abstract) =
   Records.Shostak (struct
     include CX
 
@@ -652,7 +656,7 @@ and X2 : (Sig.SHOSTAK with type r = CX.r and type t = CX.r Records.abstract) =
     let embed = embed2
   end)
 
-and X3 : (Sig.SHOSTAK with type r = CX.r and type t = CX.r Bitv.abstract) =
+and X3 : (Intf.Solvable_theory.Sig with type r = CX.r and type t = CX.r Bitv.abstract) =
   Bitv.Shostak (struct
     include CX
 
@@ -660,7 +664,7 @@ and X3 : (Sig.SHOSTAK with type r = CX.r and type t = CX.r Bitv.abstract) =
     let embed = embed3
   end)
 
-and X4 : (Sig.SHOSTAK with type r = CX.r and type t = CX.r Arrays.abstract) =
+and X4 : (Intf.Solvable_theory.Sig with type r = CX.r and type t = CX.r Arrays.abstract) =
   Arrays.Shostak (struct
     include CX
 
@@ -668,7 +672,7 @@ and X4 : (Sig.SHOSTAK with type r = CX.r and type t = CX.r Arrays.abstract) =
     let embed = embed4
   end)
 
-and X5 : (Sig.SHOSTAK with type r = CX.r and type t = CX.r Enum.abstract) =
+and X5 : (Intf.Solvable_theory.Sig with type r = CX.r and type t = CX.r Enum.abstract) =
   Enum.Shostak (struct
     include CX
 
@@ -676,7 +680,7 @@ and X5 : (Sig.SHOSTAK with type r = CX.r and type t = CX.r Enum.abstract) =
     let embed = embed5
   end)
 
-and X6 : (Sig.SHOSTAK with type r = CX.r and type t = CX.r Adt.abstract) =
+and X6 : (Intf.Solvable_theory.Sig with type r = CX.r and type t = CX.r Adt.abstract) =
   Adt.Shostak (struct
     include CX
 
@@ -684,15 +688,15 @@ and X6 : (Sig.SHOSTAK with type r = CX.r and type t = CX.r Adt.abstract) =
     let embed = embed6
   end)
 
-and X7 : (Sig.SHOSTAK with type r = CX.r and type t = CX.r Ite.abstract) =
-  Ite.Shostak (struct
+and X7 : (Intf.Solvable_theory.Sig with type r = CX.r and type t = CX.r Ite.Theory.abstract) =
+  Ite.Theory.Make (struct
     include CX
 
     let extract = extract7
     let embed = embed7
   end)
 
-(* Its signature is not Sig.SHOSTAK because it does not provide a solver *)
+(* Its signature is not Intf.Solvable_theory.Sig because it does not provide a solver *)
 and AC : (Ac.S with type r = CX.r) = Ac.Make (CX)
 
 module Combine = struct
@@ -715,7 +719,7 @@ module Bitv = X3
 module Arrays = X4
 module Enum = X5
 module Adt = X6
-module Ite = X7
+module Ite_ = X7
 module Polynome = TX1
 module Ac = AC
 

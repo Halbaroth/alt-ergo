@@ -29,7 +29,7 @@
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
 module Ccx = Alt_ergo_lib_ccx
-           
+
 open Util.Options
 open Format
 

@@ -28,6 +28,8 @@
 
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
+module Intf = Alt_ergo_lib_intf
+module Ite = Alt_ergo_lib_ite
 
 [@@@ocaml.warning "-33"]
 
@@ -35,24 +37,28 @@ open Util.Options
 
 (*** Combination module of Relations ***)
 
-module Rel1 : Sig_rel.RELATION = IntervalCalculus
-module Rel2 : Sig_rel.RELATION = Records_rel
-module Rel3 : Sig_rel.RELATION = Bitv_rel
-module Rel4 : Sig_rel.RELATION = Arrays_rel
-module Rel5 : Sig_rel.RELATION = Enum_rel
-module Rel6 : Sig_rel.RELATION = Adt_rel
-module Rel7 : Sig_rel.RELATION = Ite_rel
-open Sig_rel
-
+module Rel1 = IntervalCalculus
+module Rel2 = Records_rel
+module Rel3 = Bitv_rel
+module Rel4 = Arrays_rel
+module Rel5 = Enum_rel
+module Rel6 = Adt_rel
+module Rel7 = Ite.Relation.Make (Shostak.Combine) (Uf)
+                                
+open Intf.Relation
+ 
 type t = {
   r1 : Rel1.t;
   r2 : Rel2.t;
   r3 : Rel3.t;
   r4 : Rel4.t;
   r5 : Rel5.t;
-  r6 : Rel6.t;
+  r6 : Rel6.t; 
   r7 : Rel7.t;
-}
+  }
+
+type r = Shostak.Combine.r
+type uf = Uf.t
 
 let empty classes =
   {

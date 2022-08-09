@@ -28,11 +28,14 @@
 
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
-
+module Intf = Alt_ergo_lib_intf
+            
 type t = unit
+type r = Shostak.Combine.r
+type uf = Uf.t
 
 let empty _ = ()
-let assume _ _ _ = ((), { Sig_rel.assume = []; remove = [] })
+let assume _ _ _ = ((), { Intf.Relation.assume = []; remove = [] })
 let query _ _ _ = None
 let case_split _ _ ~for_model:_ = []
 let add env _ _ _ = (env, [])

@@ -28,9 +28,10 @@
 
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
+module Intf = Alt_ergo_lib_intf
 open Format
 open Util.Options
-open Sig
+
 module Z = Util.Numbers.Z
 module Q = Util.Numbers.Q
 
@@ -55,7 +56,7 @@ let calc_power (c : Q.t) (d : Q.t) (ty : Ast.Ty.t) =
 let calc_power_opt (c : Q.t) (d : Q.t) (ty : Ast.Ty.t) =
   try Some (calc_power c d ty) with Exit -> None
 
-module Type (X : Sig.X) : Polynome.T with type r = X.r = struct
+module Type (X : Intf.X.Sig) : Polynome.T with type r = X.r = struct
   include Polynome.Make (struct
       include X
       module Ac = Ac.Make (X)
@@ -79,7 +80,7 @@ module Type (X : Sig.X) : Polynome.T with type r = X.r = struct
     end)
 end
 
-module Shostak (X : Sig.X) (P : Polynome.EXTENDED_Polynome with type r = X.r) =
+module Shostak (X : Intf.X.Sig) (P : Polynome.EXTENDED_Polynome with type r = X.r) =
 struct
   type t = P.t
   type r = P.r
@@ -370,7 +371,7 @@ struct
     assert (n >= 0);
     if n = 0 then acc else expand p (n - 1) (p :: acc)
 
-  let unsafe_ac_to_arith { l = rl; t = ty; _ } =
+  let unsafe_ac_to_arith { Intf.Solvable_theory.l = rl; Intf.Solvable_theory.t = ty; _ } =
     let mlt = List.fold_left (fun l (r, n) -> expand (embed r) n l) [] rl in
     List.fold_left P.mult (P.create [] Q.one ty) mlt
 
@@ -409,7 +410,7 @@ struct
       (fst (P.to_list p))
 
   let color ac =
-    match ac.l with
+    match ac.Intf.Solvable_theory.l with
     | [ (_, 1) ] -> assert false
     | _ ->
       let p = unsafe_ac_to_arith ac in
@@ -585,7 +586,7 @@ struct
       [ (x, is_mine p) ]
     with Not_found -> is_null p
 
-  let unsafe_ac_to_arith { l = rl; t = ty; _ } =
+  let unsafe_ac_to_arith { Intf.Solvable_theory.l = rl; Intf.Solvable_theory.t = ty; _ } =
     let mlt = List.fold_left (fun l (r, n) -> expand (embed r) n l) [] rl in
     List.fold_left P.mult (P.create [] Q.one ty) mlt
 
@@ -633,7 +634,7 @@ struct
       sbs []
 
   let is_non_lin pv =
-    match X.ac_extract pv with Some { Sig.h; _ } -> is_mult h | _ -> false
+    match X.ac_extract pv with Some { Intf.Solvable_theory.h; _ } -> is_mult h | _ -> false
 
   let make_idemp _ _ sbs lvs unsafe_mode =
     let sbs = triangular_down sbs unsafe_mode in
@@ -658,7 +659,7 @@ struct
     let sbt = make_idemp r1 r2 sbt lvs unsafe_mode in
     (*may raise Unsafe*)
     Debug.solve_one r1 r2 sbt;
-    { pb with sbt = List.rev_append sbt pb.sbt }
+    { pb with Intf.Solvable_theory.sbt = List.rev_append sbt pb.Intf.Solvable_theory.sbt }
 
   let solve r1 r2 pb =
     let lvs = List.fold_right SX.add (X.leaves r1) SX.empty in

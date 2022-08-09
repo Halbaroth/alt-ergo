@@ -1,0 +1,6 @@
+(library
+ (name alt_ergo_lib_intf)
+ (public_name alt-ergo-lib.intf)
+ (modules_without_implementation solvable_theory relation uf x)
+ (modules Relation Solvable_theory Uf X)
+ (libraries alt_ergo_lib_util alt_ergo_lib_ast))

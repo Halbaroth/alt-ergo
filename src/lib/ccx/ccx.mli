@@ -28,41 +28,41 @@
 
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
+module Intf = Alt_ergo_lib_intf
 
 [@@@ocaml.warning "-33"]
 
 open Util.Options
-open Sig
 
 module type S = sig
   type t
   type r = Shostak.Combine.r
 
   val empty : unit -> t
-  val empty_facts : unit -> r Sig_rel.facts
-  val add_fact : r Sig_rel.facts -> r Sig_rel.fact -> unit
+  val empty_facts : unit -> r Intf.Relation.facts
+  val add_fact : r Intf.Relation.facts -> r Intf.Relation.fact -> unit
 
   val add_term :
     t ->
-    r Sig_rel.facts ->
+    r Intf.Relation.facts ->
     (* acc *)
     Ast.Expr.t ->
     Ast.Ex.t ->
-    t * r Sig_rel.facts
+    t * r Intf.Relation.facts
 
   val add :
     t ->
-    r Sig_rel.facts ->
+    r Intf.Relation.facts ->
     (* acc *)
     Ast.Expr.t ->
     Ast.Ex.t ->
-    t * r Sig_rel.facts
+    t * r Intf.Relation.facts
 
   val assume_literals :
     t ->
-    (r Sig_rel.literal * Ast.Ex.t * Ast.Th_util.lit_origin) list ->
-    r Sig_rel.facts ->
-    t * (r Sig_rel.literal * Ast.Ex.t * Ast.Th_util.lit_origin) list
+    (r Intf.Relation.literal * Ast.Ex.t * Ast.Th_util.lit_origin) list ->
+    r Intf.Relation.facts ->
+    t * (r Intf.Relation.literal * Ast.Ex.t * Ast.Th_util.lit_origin) list
 
   val case_split :
     t ->
@@ -89,7 +89,7 @@ module type S = sig
     * Ast.Expr.t list Ast.Expr.Map.t Ast.Sy.Map.t ->
     t ->
     (Ast.Expr.t -> Ast.Expr.t -> bool) ->
-    t * Sig_rel.instances
+    t * Intf.Relation.instances
 end
 
 module Main : S

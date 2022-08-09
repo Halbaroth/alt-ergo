@@ -27,6 +27,7 @@
 (******************************************************************************)
 
 module Ast = Alt_ergo_lib_ast
+module Intf = Alt_ergo_lib_intf
 
 module type S = sig
   type t
@@ -61,7 +62,7 @@ module type S = sig
     (Ast.Expr.t -> Ast.Expr.t -> bool) ->
     int ->
     int ->
-    t * Sig_rel.instances
+    t * Intf.Relation.instances
 
   val get_assumed : t -> Ast.Expr.Set.t
 end

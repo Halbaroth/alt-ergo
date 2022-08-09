@@ -28,8 +28,8 @@
 
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
+module Intf = Alt_ergo_lib_intf
 open Format
-open Sig
 
 type sort_var = A | B | C
 type tvar = { var : int; sorte : sort_var }
@@ -50,7 +50,7 @@ type solver_simple_term_aux = S_Cte of bool | S_Var of tvar
 type solver_simple_term = solver_simple_term_aux alpha_term
 
 module type ALIEN = sig
-  include Sig.X
+  include Intf.X.Sig
 
   val embed : r abstract -> r
   val extract : r -> r abstract option
@@ -791,7 +791,7 @@ module Shostak (X : ALIEN) = struct
   let abstract_selectors v acc = (is_mine v, acc)
 
   let solve r1 r2 pb =
-    { pb with sbt = List.rev_append (solve_bis r1 r2) pb.sbt }
+    { pb with Intf.Solvable_theory.sbt = List.rev_append (solve_bis r1 r2) pb.Intf.Solvable_theory.sbt }
 
   let assign_value _ __ =
     failwith "[Bitv.assign_value] not implemented for theory Bitv"

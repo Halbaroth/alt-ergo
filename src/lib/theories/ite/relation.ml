@@ -11,7 +11,11 @@
 
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
-open Util.Options
+module Intf = Alt_ergo_lib_intf
+
+module Make (X : Intf.X.Sig) (UF : Intf.Uf.Sig) = struct
+  open Util.Options
+     
 
 module EX2 = struct
   type t = Ast.Expr.t * Ast.Expr.t
@@ -30,7 +34,10 @@ module TB = Map.Make (struct
     let compare (a1, b1) (a2, b2) =
       let c = Ast.Expr.compare a1 a2 in
       if c <> 0 then c else Stdlib.compare b1 b2
-  end)
+              end)
+
+type r = X.r
+type uf = UF.t
 
 type t = {
   pending_deds : Ast.Ex.t ME2.t;
@@ -116,14 +123,14 @@ let extract_pending_deductions env =
            Util.Printer.print_dbg ~module_name:"Ite_rel" ~function_name:"assume"
              "deduce that %a with expl %a" Ast.Expr.print a Ast.Ex.print
              ex;
-         (Sig_rel.LTerm a, ex, Ast.Th_util.Other) :: acc)
+         (Intf.Relation.LTerm a, ex, Ast.Th_util.Other) :: acc)
       env.pending_deds []
   in
   ({ env with pending_deds = ME2.empty }, l)
 
 let assume env _ la =
   if Util.Options.get_disable_ites () then
-    (env, { Sig_rel.assume = []; remove = [] })
+    (env, { Intf.Relation.assume = []; remove = [] })
   else
     let env =
       TB.fold
@@ -155,7 +162,7 @@ let assume env _ la =
         (extract_preds env la) env
     in
     let env, deds = extract_pending_deductions env in
-    (env, { Sig_rel.assume = deds; remove = [] })
+    (env, { Intf.Relation.assume = deds; remove = [] })
 
 let assume env uf la =
   if Util.Options.get_timers () then (
@@ -175,3 +182,4 @@ let print_model _ _ _ = ()
 let new_terms _ = Ast.Expr.Set.empty
 let instantiate ~do_syntactic_matching:_ _ env _ _ = (env, [])
 let assume_th_elt t _ _ = t
+end

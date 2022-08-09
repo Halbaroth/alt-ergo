@@ -28,9 +28,11 @@
 
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
+module Intf = Alt_ergo_lib_intf
+             
 open Format
 open Util.Options
-open Sig_rel
+
 module X = Shostak.Combine
 module A = Ast.Xliteral
 module LR = Uf.LX
@@ -69,7 +71,7 @@ module type S = sig
     (Ast.Expr.t -> Ast.Expr.t -> bool) ->
     int ->
     int ->
-    t * Sig_rel.instances
+    t * Intf.Relation.instances
 
   val get_assumed : t -> Ast.Expr.Set.t
 end
@@ -496,7 +498,7 @@ module Main_Default : S = struct
   let extract_terms_from_assumed =
     List.fold_left (fun acc (a, _, _) ->
         match a with
-        | LTerm r -> (
+        | Intf.Relation.LTerm r -> (
             match Ast.Expr.lit_view r with
             | Ast.Expr.Not_a_lit _ -> assert false
             | Ast.Expr.Eq (t1, t2) ->

@@ -28,13 +28,15 @@
 
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
+module Intf = Alt_ergo_lib_intf
+            
 open Util.Options
 open Format
 
 type 'a abstract = unit
 
 module type ALIEN = sig
-  include Sig.X
+  include Intf.X.Sig
 
   val embed : r abstract -> r
   val extract : r -> r abstract option

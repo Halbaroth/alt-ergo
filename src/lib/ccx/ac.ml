@@ -28,6 +28,8 @@
 
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
+module Intf = Alt_ergo_lib_intf
+            
 open Util.Options
 open Format
 
@@ -36,7 +38,7 @@ module type S = sig
   type r
 
   (* extracted AC semantic values *)
-  type t = r Sig.ac
+  type t = r Intf.Solvable_theory.ac
 
   (* builds an embeded semantic value from an AC term *)
   val make : Ast.Expr.t -> r * Ast.Expr.t list
@@ -73,11 +75,10 @@ module type S = sig
   val compact : (r * int) list -> (r * int) list
 end
 
-module Make (X : Sig.X) = struct
-  open Sig
+module Make (X : Intf.X.Sig) = struct
 
   type r = X.r
-  type t = X.r Sig.ac
+  type t = X.r Intf.Solvable_theory.ac
 
   (*BISECT-IGNORE-BEGIN*)
   module Debug = struct
@@ -99,7 +100,7 @@ module Make (X : Sig.X) = struct
         fprintf fmt "%a" print_x p;
         List.iter (fprintf fmt "%a" (pr_elt sep)) ((p, n - 1) :: l)
 
-    let print fmt { h; l; _ } =
+    let print fmt { Intf.Solvable_theory.h; l; _ } =
       if Ast.Sy.equal h (Ast.Sy.Op Ast.Sy.Mult) then
         fprintf fmt "%a" (pr_xs "'*'") l
       else fprintf fmt "%a(%a)" Ast.Sy.print h (pr_xs ",") l
@@ -195,8 +196,8 @@ module Make (X : Sig.X) = struct
     x
 
   let is_mine_symb sy _ = get_no_ac () == false && Ast.Sy.is_ac sy
-  let type_info { t = ty; _ } = ty
-  let leaves { l; _ } = List.fold_left (fun z (a, _) -> X.leaves a @ z) [] l
+  let type_info { Intf.Solvable_theory.t = ty; _ } = ty
+  let leaves { Intf.Solvable_theory.l; _ } = List.fold_left (fun z (a, _) -> X.leaves a @ z) [] l
 
   let rec mset_cmp = function
     | [], [] -> 0
@@ -228,7 +229,7 @@ module Make (X : Sig.X) = struct
     compact l
 
   (* x et y are sorted in a decreasing order *)
-  let compare { h = f; l = x; _ } { h = g; l = y; _ } =
+  let compare { Intf.Solvable_theory.h = f; Intf.Solvable_theory.l = x; _ } { Intf.Solvable_theory.h = g; Intf.Solvable_theory.l = y; _ } =
     let c = Ast.Sy.compare f g in
     if c <> 0 then c
     else
@@ -253,17 +254,17 @@ module Make (X : Sig.X) = struct
     else assert false
   *)
 
-  let equal { h = f; l = lx; _ } { h = g; l = ly; _ } =
+  let equal { Intf.Solvable_theory.h = f; Intf.Solvable_theory.l = lx; _ } { Intf.Solvable_theory.h = g; Intf.Solvable_theory.l = ly; _ } =
     Ast.Sy.equal f g
     &&
     try List.for_all2 (fun (x, m) (y, n) -> m = n && X.equal x y) lx ly
     with Invalid_argument _ -> false
 
-  let hash { h = f; l; t; _ } =
+  let hash { Intf.Solvable_theory.h = f; Intf.Solvable_theory.l; t; _ } =
     let acc = Ast.Sy.hash f + (19 * Ast.Ty.hash t) in
     abs (List.fold_left (fun acc (x, y) -> acc + (19 * (X.hash x + y))) acc l)
 
-  let subst p v ({ h; l; _ } as tm) =
+  let subst p v ({ Intf.Solvable_theory.h; l; _ } as tm) =
     Util.Options.exec_thread_yield ();
     Util.Timers.exec_timer_start Util.Timers.M_AC Util.Timers.F_subst;
     Debug.subst p v tm;
@@ -279,7 +280,7 @@ module Make (X : Sig.X) = struct
 
   let fully_interpreted _ = true
 
-  let abstract_selectors ({ l = args; _ } as ac) acc =
+  let abstract_selectors ({ Intf.Solvable_theory.l = args; _ } as ac) acc =
     let args, acc =
       List.fold_left
         (fun (args, acc) (r, i) ->

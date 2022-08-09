@@ -28,9 +28,9 @@
 
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
+module Intf = Alt_ergo_lib_intf
 open Format
 open Util.Options
-open Sig
 
 type 'a abstract =
   | Record of (Util.Hstring.t * 'a abstract) list * Ast.Ty.t
@@ -38,7 +38,7 @@ type 'a abstract =
   | Other of 'a * Ast.Ty.t
 
 module type ALIEN = sig
-  include Sig.X
+  include Intf.X.Sig
 
   val embed : r abstract -> r
   val extract : r -> r abstract option
@@ -343,7 +343,7 @@ module Shostak (X : ALIEN) = struct
 
   let orient_solved p v pb =
     if List.mem p (X.leaves v) then raise Util.Util.Unsolvable;
-    { pb with sbt = (p, v) :: pb.sbt }
+    { pb with Intf.Solvable_theory.sbt = (p, v) :: pb.Intf.Solvable_theory.sbt }
 
   let solve r1 r2 pb =
     match (embed r1, embed r2) with
@@ -353,7 +353,7 @@ module Shostak (X : ALIEN) = struct
           (fun eqs (a, b) (x, y) ->
              assert (Util.Hstring.compare a x = 0);
              (is_mine y, is_mine b) :: eqs)
-          pb.eqs l1 l2
+          pb.Intf.Solvable_theory.eqs l1 l2
       in
       { pb with eqs }
     | Other _, Other _ ->

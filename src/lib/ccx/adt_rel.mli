@@ -9,4 +9,5 @@
 (*                                                                            *)
 (******************************************************************************)
 
-include Sig_rel.RELATION
+module Intf = Alt_ergo_lib_intf
+include Intf.Relation.Sig with type r = Shostak.Combine.r and type uf = Uf.t

@@ -11,14 +11,12 @@
 
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
+module Intf = Alt_ergo_lib_intf
+            
 open Util.Options
 open Format
-module X = Shostak.Combine
 module Sh = Shostak.Adt
 open Sh
-
-type r = X.r
-type uf = Uf.t
 
 module MX = Shostak.MXH
 module LR = Uf.LX
@@ -36,8 +34,10 @@ type t = {
   selectors : (Ast.Expr.t * Ast.Ex.t) list Util.Hstring.Map.t MX.t;
   size_splits : Util.Numbers.Q.t;
   new_terms : Ast.Expr.Set.t;
-  pending_deds : (r Sig_rel.literal * Ast.Ex.t * Ast.Th_util.lit_origin) list;
-}
+  pending_deds : (r Intf.Relation.literal * Ast.Ex.t * Ast.Th_util.lit_origin) list;
+  }
+       type r = Shostak.Combine.r
+       type uf = Uf.t
 
 let empty classes =
   {
@@ -68,7 +68,7 @@ module Debug = struct
         "@ @[<v 2>--ADT env %s ---------------------------------@ " loc;
       MX.iter
         (fun r (hss, ex) ->
-           print_dbg ~flushed:false ~header:false "%a 's domain is " X.print r;
+           print_dbg ~flushed:false ~header:false "%a 's domain is " Shostak.Combine.print r;
            (match Util.Hstring.Set.elements hss with
             | [] -> ()
             | hs :: l ->
@@ -87,7 +87,7 @@ module Debug = struct
         (fun r hss ->
            Util.Hstring.Set.iter
              (fun hs ->
-                print_dbg ~flushed:false ~header:false "(%a is %a)@ " X.print r
+                print_dbg ~flushed:false ~header:false "(%a is %a)@ " Shostak.Combine.print r
                   Util.Hstring.print hs)
              hss)
         env.seen_testers;
@@ -100,7 +100,7 @@ module Debug = struct
                 List.iter
                   (fun (a, _) ->
                      print_dbg ~flushed:false ~header:false "(%a is %a) ==> %a@ "
-                       X.print r Util.Hstring.print hs Ast.Expr.print a)
+                       Shostak.Combine.print r Util.Hstring.print hs Ast.Expr.print a)
                   l)
              mhs)
         env.selectors;
@@ -110,7 +110,7 @@ module Debug = struct
      let case_split r r' =
      if get_debug_adt () then
        Util.Printer.print_dbg
-          "[ADT.case-split] %a = %a" X.print r X.print r'
+          "[ADT.case-split] %a = %a" Shostak.Combine.print r Shostak.Combine.print r'
   *)
 
   let no_case_split () =
@@ -119,7 +119,7 @@ module Debug = struct
 
   let add r =
     if get_debug_adt () then
-      print_dbg ~module_name:"Adt_rel" ~function_name:"add" "%a" X.print r
+      print_dbg ~module_name:"Adt_rel" ~function_name:"add" "%a" Shostak.Combine.print r
 end
 (*BISECT-IGNORE-END*)
 (* ################################################################ *)
@@ -142,7 +142,7 @@ let deduce_is_constr uf r h eqs env ex =
   let ex = Ast.Ex.union ex ex' in
   match embed r with
   | Adt.Alien r -> (
-      match X.term_extract r with
+      match Shostak.Combine.term_extract r with
       | Some t, _ -> (
           let eqs =
             if seen_tester r h env then eqs
@@ -154,7 +154,7 @@ let deduce_is_constr uf r h eqs env ex =
               if get_debug_adt () then
                 Util.Printer.print_dbg ~module_name:"Adt_rel"
                   ~function_name:"deduce_is_constr" "%a" Ast.Expr.print is_c;
-              (Sig_rel.LTerm is_c, ex, Ast.Th_util.Other) :: eqs
+              (Intf.Relation.LTerm is_c, ex, Ast.Th_util.Other) :: eqs
           in
           match Ast.Expr.term_view t with
           | Ast.Expr.Not_a_term _ -> assert false
@@ -193,11 +193,11 @@ let deduce_is_constr uf r h eqs env ex =
               Util.Printer.print_dbg ~module_name:"Adt_rel"
                 ~function_name:"deduce equal to constr" "%a"
                 Ast.Expr.print eq;
-            let eqs = (Sig_rel.LTerm eq, ex, Ast.Th_util.Other) :: eqs in
+            let eqs = (Intf.Relation.LTerm eq, ex, Ast.Th_util.Other) :: eqs in
             (env, eqs)
           | _ -> (env, eqs))
       | _ ->
-        Util.Printer.print_err "%a" X.print r;
+        Util.Printer.print_err "%a" Shostak.Combine.print r;
         assert false)
   | _ -> (env, eqs)
 
@@ -316,12 +316,12 @@ let add_guarded_destr env uf t hs e t_ty =
   if trivial_tester r_e c then
     {
       env with
-      pending_deds = (Sig_rel.LTerm eq, ex_e, Ast.Th_util.Other) :: env.pending_deds;
+      pending_deds = (Intf.Relation.LTerm eq, ex_e, Ast.Th_util.Other) :: env.pending_deds;
     }
   else if seen_tester r_e c env then
     {
       env with
-      pending_deds = (Sig_rel.LTerm eq, ex_e, Ast.Th_util.Other) :: env.pending_deds;
+      pending_deds = (Intf.Relation.LTerm eq, ex_e, Ast.Th_util.Other) :: env.pending_deds;
     }
   else
     let m_e =
@@ -335,7 +335,7 @@ let add_guarded_destr env uf t hs e t_ty =
           (Util.Hstring.Map.add c ((eq, ex_e) :: old) m_e)
           env.selectors;
     }
-[@@ocaml.ppwarning "working with X.term_extract r would be sufficient ?"]
+[@@ocaml.ppwarning "working with Shostak.Combine.term_extract r would be sufficient ?"]
 
 let add_aux env (uf : uf) (r : r) t =
   if get_disable_adts () then env
@@ -446,7 +446,7 @@ let assume_is_constr uf hs r dep env eqs =
   | _ ->
     if get_debug_adt () then
       Util.Printer.print_dbg ~module_name:"Adt_rel"
-        ~function_name:"assume_is_constr" "assume is constr %a %a" X.print r
+        ~function_name:"assume_is_constr" "assume is constr %a %a" Shostak.Combine.print r
         Util.Hstring.print hs;
     if seen_tester r hs env then (env, eqs)
     else
@@ -454,7 +454,7 @@ let assume_is_constr uf hs r dep env eqs =
       let eqs =
         List.fold_left
           (fun eqs (ded, dep') ->
-             (Sig_rel.LTerm ded, Ast.Ex.union dep dep', Ast.Th_util.Other)
+             (Intf.Relation.LTerm ded, Ast.Ex.union dep dep', Ast.Th_util.Other)
              :: eqs)
           eqs deds
       in
@@ -465,7 +465,7 @@ let assume_is_constr uf hs r dep env eqs =
         with Not_found -> (
             (*Cannot just put assert false !
               some terms are not well inited *)
-            match values_of (X.type_info r) with
+            match values_of (Shostak.Combine.type_info r) with
             | None -> assert false
             | Some s -> (s, Ast.Ex.empty))
       in
@@ -489,7 +489,7 @@ let assume_not_is_constr uf hs r dep env eqs =
       try MX.find r env.domains
       with Not_found -> (
           (* semantic values may be not inited with function add *)
-          match values_of (X.type_info r) with
+          match values_of (Shostak.Combine.type_info r) with
           | Some s -> (s, Ast.Ex.empty)
           | None -> assert false)
     in
@@ -549,7 +549,7 @@ let add_aux env r =
   Debug.add r;
   match embed r with
   | Adt.Alien r when not (MX.mem r env.domains) -> (
-      match values_of (X.type_info r) with
+      match values_of (Shostak.Combine.type_info r) with
       | Some s ->
         { env with domains = MX.add r (s, Ast.Ex.empty) env.domains }
       | None -> env)
@@ -557,7 +557,7 @@ let add_aux env r =
 
 (* needed for models generation because fresh terms are not
    added with function add *)
-let add_rec env r = List.fold_left add_aux env (X.leaves r)
+let add_rec env r = List.fold_left add_aux env (Shostak.Combine.leaves r)
 
 let update_cs_modulo_eq r1 r2 ex env eqs =
   (* PB Here: even if Subst, we are not sure that it was
@@ -567,7 +567,7 @@ let update_cs_modulo_eq r1 r2 ex env eqs =
     if get_debug_adt () then
       Util.Printer.print_dbg ~flushed:false ~module_name:"Adt_rel"
         ~function_name:"update_cs_modulo_eq"
-        "update selectors modulo eq: %a |-> %a@ " X.print r1 X.print r2;
+        "update selectors modulo eq: %a |-> %a@ " Shostak.Combine.print r1 Shostak.Combine.print r2;
     let mhs =
       try MX.find r2 env.selectors with Not_found -> Util.Hstring.Map.empty
     in
@@ -578,11 +578,11 @@ let update_cs_modulo_eq r1 r2 ex env eqs =
            if trivial_tester r2 hs then (
              if get_debug_adt () then
                Util.Printer.print_dbg ~flushed:false ~header:false
-                 "make deduction because %a ? %a is trivial@ " X.print r2
+                 "make deduction because %a ? %a is trivial@ " Shostak.Combine.print r2
                  Util.Hstring.print hs;
              List.iter
                (fun (a, dep) ->
-                  eqs := (Sig_rel.LTerm a, dep, Ast.Th_util.Other) :: !eqs)
+                  eqs := (Intf.Relation.LTerm a, dep, Ast.Th_util.Other) :: !eqs)
                l);
            let l =
              List.rev_map (fun (a, dep) -> (a, Ast.Ex.union ex dep)) l
@@ -606,7 +606,7 @@ let remove_redundancies la =
     la
 
 let assume env uf la =
-  if get_disable_adts () then (env, { Sig_rel.assume = []; remove = [] })
+  if get_disable_adts () then (env, { Intf.Relation.assume = []; remove = [] })
   else
     let la = remove_redundancies la in
     (* should be done globally in CCX *)
@@ -634,12 +634,12 @@ let assume env uf la =
                  update_cs_modulo_eq r1 r2 ex env eqs
                else (env, eqs)
              in
-             aux true r1 r2 ex env eqs (values_of (X.type_info r1))
+             aux true r1 r2 ex env eqs (values_of (Shostak.Combine.type_info r1))
            | Ast.Xliteral.Distinct (false, [ r1; r2 ]), _, ex, _ ->
              (* needed for models generation because fresh terms are not
                 added with function add *)
              let env = add_rec (add_rec env r1) r2 in
-             aux false r1 r2 ex env eqs (values_of (X.type_info r1))
+             aux false r1 r2 ex env eqs (values_of (Shostak.Combine.type_info r1))
            | ( Ast.Xliteral.Builtin (true, Ast.Sy.IsConstr hs, [ e ]),
                _,
                ex,
@@ -660,7 +660,7 @@ let assume env uf la =
     Debug.print_env "after assume" env;
     let print fmt (a, _, _) =
       match a with
-      | Sig_rel.LTerm a -> fprintf fmt "%a" Ast.Expr.print a
+      | Intf.Relation.LTerm a -> fprintf fmt "%a" Ast.Expr.print a
       | _ -> assert false
     in
     if get_debug_adt () then
@@ -668,7 +668,7 @@ let assume env uf la =
         "assume deduced %d equalities@ %a" (List.length eqs)
         (Util.Printer.pp_list_no_space print)
         eqs;
-    (env, { Sig_rel.assume = eqs; remove = [] })
+    (env, { Intf.Relation.assume = eqs; remove = [] })
 
 (* ################################################################ *)
 
@@ -683,7 +683,7 @@ let case_split env _ ~for_model =
       let r, mhs = MX.choose env.selectors in
       if get_debug_adt () then
         Util.Printer.print_dbg ~flushed:false ~module_name:"Adt_rel"
-          ~function_name:"case_split" "found r = %a@ " X.print r;
+          ~function_name:"case_split" "found r = %a@ " Shostak.Combine.print r;
       let hs, _ = Util.Hstring.Map.choose mhs in
       if get_debug_adt () then
         Util.Printer.print_dbg ~header:false "found hs = %a" Util.Hstring.print

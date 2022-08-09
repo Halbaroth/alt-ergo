@@ -28,14 +28,15 @@
 
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
+module Intf = Alt_ergo_lib_intf
+           
 open Util.Options
 open Format
-open Sig
 
 type 'a abstract = Cons of Util.Hstring.t * Ast.Ty.t | Alien of 'a
 
 module type ALIEN = sig
-  include Sig.X
+  include Intf.X.Sig
 
   val embed : r abstract -> r
   val extract : r -> r abstract option
@@ -149,7 +150,8 @@ module Shostak (X : ALIEN) = struct
   let term_extract _ = (None, false)
 
   let solve r1 r2 pb =
-    { pb with sbt = List.rev_append (solve_bis r1 r2) pb.sbt }
+    { pb with Intf.Solvable_theory.sbt =
+                List.rev_append (solve_bis r1 r2) pb.Intf.Solvable_theory.sbt }
 
   let solve r1 r2 pb =
     if Util.Options.get_timers () then (

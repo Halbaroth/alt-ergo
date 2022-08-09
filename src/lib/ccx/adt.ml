@@ -11,9 +11,9 @@
 
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
+module Intf = Alt_ergo_lib_intf
 open Util.Options
 open Format
-open Sig
 
 type 'a abstract =
   | Constr of {
@@ -27,7 +27,7 @@ type 'a abstract =
   | Alien of 'a
 
 module type ALIEN = sig
-  include Sig.X
+  include Intf.X.Sig
 
   val embed : r abstract -> r
   val extract : r -> r abstract option
@@ -347,7 +347,7 @@ module Shostak (X : ALIEN) = struct
     | Alien _, Alien _ ->
       {
         pb with
-        sbt = (if X.str_cmp r1 r2 > 0 then (r1, r2) else (r2, r1)) :: pb.sbt;
+        Intf.Solvable_theory.sbt = (if X.str_cmp r1 r2 > 0 then (r1, r2) else (r2, r1)) :: pb.Intf.Solvable_theory.sbt;
       }
     | Alien r, Constr _ ->
       if is_alien_of r2 r then raise Util.Util.Unsolvable;

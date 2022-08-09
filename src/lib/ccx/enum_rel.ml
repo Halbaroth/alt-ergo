@@ -28,6 +28,8 @@
 
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
+module Intf = Alt_ergo_lib_intf
+            
 open Util.Options
 module A = Ast.Xliteral
 module L = List
@@ -53,7 +55,9 @@ type t = {
   mx : (HSS.t * Ast.Ex.t) MX.t;
   classes : Ast.Expr.Set.t list;
   size_splits : Util.Numbers.Q.t;
-}
+  }
+type r = Shostak.Combine.r
+type uf = Uf.t
 
 let empty classes = { mx = MX.empty; classes; size_splits = Util.Numbers.Q.one }
 
@@ -131,7 +135,7 @@ let add_diseq hss sm1 sm2 dep env eqs =
       if HSS.cardinal enum = 1 then
         let h' = HSS.choose enum in
         ( env,
-          ( Sig_rel.LSem (LR.mkv_eq r (is_mine (Cons (h', ty)))),
+          ( Intf.Relation.LSem (LR.mkv_eq r (is_mine (Cons (h', ty)))),
             ex,
             Ast.Th_util.Other )
           :: eqs )
@@ -149,7 +153,7 @@ let add_diseq hss sm1 sm2 dep env eqs =
         let ex = Ast.Ex.union dep ex1 in
         let h' = HSS.choose enum1 in
         let ty = X.type_info r1 in
-        ( Sig_rel.LSem (LR.mkv_eq r1 (is_mine (Cons (h', ty)))),
+        ( Intf.Relation.LSem (LR.mkv_eq r1 (is_mine (Cons (h', ty)))),
           ex,
           Ast.Th_util.Other )
         :: eqs
@@ -160,7 +164,7 @@ let add_diseq hss sm1 sm2 dep env eqs =
         let ex = Ast.Ex.union dep ex2 in
         let h' = HSS.choose enum2 in
         let ty = X.type_info r2 in
-        ( Sig_rel.LSem (LR.mkv_eq r2 (is_mine (Cons (h', ty)))),
+        ( Intf.Relation.LSem (LR.mkv_eq r2 (is_mine (Cons (h', ty)))),
           ex,
           Ast.Th_util.Other )
         :: eqs
@@ -196,7 +200,7 @@ let add_eq hss sm1 sm2 dep env eqs =
       let h' = HSS.choose diff in
       let ty = X.type_info r1 in
       ( env,
-        ( Sig_rel.LSem (LR.mkv_eq r1 (is_mine (Cons (h', ty)))),
+        ( Intf.Relation.LSem (LR.mkv_eq r1 (is_mine (Cons (h', ty)))),
           ex,
           Ast.Th_util.Other )
         :: eqs )
@@ -254,7 +258,7 @@ let assume env uf la =
          | _ -> (env, eqs))
       (env, []) la
   in
-  (env, { Sig_rel.assume = eqs; remove = [] })
+  (env, { Intf.Relation.assume = eqs; remove = [] })
 
 let add env _ r _ = (add_aux env r, [])
 

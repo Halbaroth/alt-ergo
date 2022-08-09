@@ -28,6 +28,8 @@
 
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
+module Intf = Alt_ergo_lib_intf
+            
 open Format
 open Util.Options
 module Z = Util.Numbers.Z
@@ -37,7 +39,7 @@ exception Not_a_num
 exception Maybe_zero
 
 module type S = sig
-  include Sig.X
+  include Intf.X.Sig
 
   val mult : r -> r -> r
 end
