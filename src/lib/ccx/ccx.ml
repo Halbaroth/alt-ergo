@@ -34,7 +34,7 @@ open Util.Options
 module X = Shostak.Combine
 module A = Ast.Xliteral
 
- 
+
 module type S = sig
   type t
   type r = Shostak.Combine.r

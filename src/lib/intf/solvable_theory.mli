@@ -64,7 +64,9 @@ module type Sig = sig
   (** Give the leaves of a term of the theory *)
 
   val subst : r -> r -> t -> r
-  val compare : t -> t -> int
+  
+  val str_cmp : t -> t -> int
+  (** Structural comparaison of two semantic values of the theory. *)
 
   (* tests if two values are equal (using tags) *)
   val equal : t -> t -> bool

@@ -189,13 +189,13 @@ end = struct
     if CX.equal a b then 0
     else
       match (a.v, b.v) with
-      | X1 x, X1 y -> X1.compare x y
-      | X2 x, X2 y -> X2.compare x y
-      | X3 x, X3 y -> X3.compare x y
-      | X4 x, X4 y -> X4.compare x y
-      | X5 x, X5 y -> X5.compare x y
-      | X6 x, X6 y -> X6.compare x y
-      | X7 x, X7 y -> X7.compare x y
+      | X1 x, X1 y -> X1.str_cmp x y
+      | X2 x, X2 y -> X2.str_cmp x y
+      | X3 x, X3 y -> X3.str_cmp x y
+      | X4 x, X4 y -> X4.str_cmp x y
+      | X5 x, X5 y -> X5.str_cmp x y
+      | X6 x, X6 y -> X6.str_cmp x y
+      | X7 x, X7 y -> X7.str_cmp x y
       | Term x, Term y -> Ast.Expr.compare x y
       | Ac x, Ac y -> AC.compare x y
       | va, vb -> compare_tag va vb

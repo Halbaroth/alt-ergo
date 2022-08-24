@@ -44,16 +44,16 @@ module Rel4 = Arrays_rel
 module Rel5 = Enum_rel
 module Rel6 = Adt_rel
 module Rel7 = Ite.Relation.Make (Shostak.Combine) (Uf)
-                                
+
 open Intf.Relation
- 
+
 type t = {
   r1 : Rel1.t;
   r2 : Rel2.t;
   r3 : Rel3.t;
   r4 : Rel4.t;
   r5 : Rel5.t;
-  r6 : Rel6.t; 
+  r6 : Rel6.t;
   r7 : Rel7.t;
   }
 

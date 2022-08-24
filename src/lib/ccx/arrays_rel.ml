@@ -29,13 +29,13 @@
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
 module Intf = Alt_ergo_lib_intf
-            
+
 open Util.Options
 open Format
 module A = Ast.Xliteral
 module L = List
 module X = Shostak.Combine
-module LR = Uf.LX 
+module LR = Uf.LX
 
 (* map get |-> { set } des associations (get,set) deja splites *)
 module Tmap = struct

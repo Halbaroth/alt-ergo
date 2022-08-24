@@ -131,7 +131,7 @@ module Shostak (X : ALIEN) = struct
   let embed r =
     match X.extract r with Some p -> p | None -> Other (r, X.type_info r)
 
-  let compare t u = raw_compare (normalize t) (normalize u)
+  let str_cmp t u = raw_compare (normalize t) (normalize u)
 
   let rec equal r1 r2 =
     match (r1, r2) with

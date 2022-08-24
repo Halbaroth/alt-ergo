@@ -29,7 +29,7 @@
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
 module Intf = Alt_ergo_lib_intf
-           
+
 open Util.Options
 open Format
 
@@ -87,7 +87,7 @@ module Shostak (X : ALIEN) = struct
   let embed r = match X.extract r with Some c -> c | None -> Alien r
   let is_mine = function Alien r -> r | Cons _ as c -> X.embed c
 
-  let compare c1 c2 =
+  let str_cmp c1 c2 =
     match (c1, c2) with
     | Cons (h1, ty1), Cons (h2, ty2) ->
       let n = Util.Hstring.compare h1 h2 in

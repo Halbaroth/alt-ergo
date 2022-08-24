@@ -29,7 +29,7 @@
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
 module Intf = Alt_ergo_lib_intf
-            
+
 type 'a abstract
 
 module type ALIEN = sig

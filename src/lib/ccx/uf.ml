@@ -29,7 +29,7 @@
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
 module Intf = Alt_ergo_lib_intf
-            
+
 open Format
 open Util.Options
 module X = Shostak.Combine
@@ -565,7 +565,7 @@ module Env = struct
       }
     in
     (init_new_ac_leaves env mkr, ctx)
- 
+
   let head_cp eqs env pac ({ Intf.Solvable_theory.h; _ } as ac) v dep =
     try
       (*if RS.mem h env.ac_rs then*)

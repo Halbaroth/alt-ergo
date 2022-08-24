@@ -29,7 +29,7 @@
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
 module Intf = Alt_ergo_lib_intf
-            
+
 open Util.Options
 module A = Ast.Xliteral
 module L = List

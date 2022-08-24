@@ -29,7 +29,7 @@
 module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
 module Intf = Alt_ergo_lib_intf
-            
+
 open Util.Options
 open Format
 
@@ -54,7 +54,7 @@ module Shostak (X : ALIEN) = struct
   let print _ _ = assert false
   let embed _ = assert false
   let is_mine _ = assert false
-  let compare _ _ = assert false
+  let str_cmp _ _ = assert false
   let equal _ _ = assert false
   let hash _ = assert false
   let leaves _ = assert false

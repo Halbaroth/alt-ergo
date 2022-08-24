@@ -641,7 +641,7 @@ module Shostak (X : ALIEN) = struct
     in
     comp b1 b2
 
-  let compare = compare
+  let str_cmp = compare
 
   (* should use hashed compare to be faster, not structural comparison *)
   let equal bv1 bv2 = compare_mine bv1 bv2 = 0

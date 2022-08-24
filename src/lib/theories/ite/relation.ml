@@ -15,7 +15,7 @@ module Intf = Alt_ergo_lib_intf
 
 module Make (X : Intf.X.Sig) (UF : Intf.Uf.Sig) = struct
   open Util.Options
-     
+
 
 module EX2 = struct
   type t = Ast.Expr.t * Ast.Expr.t

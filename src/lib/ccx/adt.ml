@@ -228,7 +228,7 @@ module Shostak (X : ALIEN) = struct
     | Select { d_ty; _ } -> d_ty
     | Tester _ -> Ast.Ty.Tbool
 
-  let compare s1 s2 =
+  let str_cmp s1 s2 =
     match (s1, s2) with
     | Alien r1, Alien r2 -> X.str_cmp r1 r2
     | Alien _, _ -> 1

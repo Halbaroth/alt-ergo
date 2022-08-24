@@ -28,7 +28,7 @@
 
 module Ast = Alt_ergo_lib_ast
 module Intf = Alt_ergo_lib_intf
-           
+
 module type S = sig
   (* the type of amalgamated AC semantic values *)
   type r

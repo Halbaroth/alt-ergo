@@ -453,7 +453,7 @@ struct
     in
     is_mine p
 
-  let compare = P.compare 
+  let str_cmp = P.compare
   let equal p1 p2 = P.equal p1 p2
   let hash = P.hash
 
