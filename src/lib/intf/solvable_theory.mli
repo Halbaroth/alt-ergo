@@ -40,13 +40,13 @@ type 'a solve_pb = { sbt : ('a * 'a) list; eqs : ('a * 'a) list }
 
 module type Sig = sig
   type t
-  (**Type of terms of the theory*)
+  (** Type of the semantic values of the theory. *)
 
   type r
-  (**Type of representants of terms of the theory*)
+  (** Type of the semantic values of the super theory. *)
 
   val name : string
-  (** Name of the theory*)
+  (** Name of the theory. *)
 
   val is_mine_symb : Ast.Sy.t -> Ast.Ty.t -> bool
   (** return true if the symbol and the type are owned by the theory*)
@@ -64,7 +64,7 @@ module type Sig = sig
   (** Give the leaves of a term of the theory *)
 
   val subst : r -> r -> t -> r
-  val compare : r -> r -> int
+  val compare : t -> t -> int
 
   (* tests if two values are equal (using tags) *)
   val equal : t -> t -> bool

@@ -453,7 +453,7 @@ struct
     in
     is_mine p
 
-  let compare x y = P.compare (embed x) (embed y)
+  let compare = P.compare 
   let equal p1 p2 = P.equal p1 p2
   let hash = P.hash
 
