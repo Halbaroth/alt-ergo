@@ -122,7 +122,7 @@ let terms_of_distinct env l =
              let cl = MapX.find r env.classes in
              Ast.Expr.Set.iter
                (fun t ->
-                  if Shostak.Combine.equal (Ast.Expr.Map.find t env.make) r then
+                  if Shostak.Combine.hash_equal (Ast.Expr.Map.find t env.make) r then
                     raise (Found_term t))
                cl;
              acc
@@ -291,7 +291,7 @@ module Debug = struct
            List.iter
              (fun x ->
                 try
-                  if not (Shostak.Combine.equal x (fst (MapX.find x repr))) then
+                  if not (Shostak.Combine.hash_equal x (fst (MapX.find x repr))) then
                     let () = trace orig in
                     assert false
                 with Not_found ->
@@ -406,7 +406,7 @@ module Env = struct
     SetX.fold
       (fun p ((z, ex) as acc) ->
          let q, ex_q = lookup_by_r p env in
-         if Shostak.Combine.equal p q then acc else ((p, q) :: z, Ast.Ex.union ex_q ex))
+         if Shostak.Combine.hash_equal p q then acc else ((p, q) :: z, Ast.Ex.union ex_q ex))
       st ([], Ast.Ex.empty)
 
   let canon_ac st env =
@@ -426,7 +426,7 @@ module Env = struct
     (* explications? *)
     let r2 = canon_aux (canon_aux r subst_ac) subst in
     let ex_r2 = Ast.Ex.union (Ast.Ex.union ex_r ex_subst) ex_ac in
-    if Shostak.Combine.equal r r2 then (r2, ex_r2) else canon env r2 ex_r2
+    if Shostak.Combine.hash_equal r r2 then (r2, ex_r2) else canon env r2 ex_r2
 
   let normal_form env r =
     let rr, ex = canon env r Ast.Ex.empty in
@@ -478,7 +478,7 @@ module Env = struct
       List.fold_left
         (fun d r ->
            let z, ex = find_or_normal_form env r in
-           if Shostak.Combine.equal z x || Shostak.Combine.equal z repr_x then Ast.Ex.union d ex else d)
+           if Shostak.Combine.hash_equal z x || Shostak.Combine.hash_equal z repr_x then Ast.Ex.union d ex else d)
         dep l
     | _ -> assert false
 
@@ -571,7 +571,7 @@ module Env = struct
       (*if RS.mem h env.ac_rs then*)
       SetRL.iter
         (fun (g, d, dep_rl) ->
-           if Shostak.Combine.equal pac (Shostak.Combine.ac_embed g) && Shostak.Combine.equal v d then ()
+           if Shostak.Combine.hash_equal pac (Shostak.Combine.ac_embed g) && Shostak.Combine.hash_equal v d then ()
            else
              match disjoint_union ac.l g.l with
              | _, [], _ -> ()
@@ -579,7 +579,7 @@ module Env = struct
                let rx = Shostak.Combine.color { ac with l = Ac.add h (d, 1) l1 } in
                let ry = Shostak.Combine.color { g with l = Ac.add h (v, 1) l2 } in
                Debug.critical_pair rx ry;
-               if not (Shostak.Combine.equal rx ry) then
+               if not (Shostak.Combine.hash_equal rx ry) then
                  Queue.push (rx, ry, Ast.Ex.union dep dep_rl) eqs)
         (RS.find h env.ac_rs)
     with Not_found -> assert false
@@ -604,7 +604,7 @@ module Env = struct
                 in
                 Queue.push (g2, d2, ex) eqs;
                 env)
-              else if Shostak.Combine.equal g2 gx then (
+              else if Shostak.Combine.hash_equal g2 gx then (
                 (* compose *)
                 Debug.compose p v g d;
                 let ex = Ast.Ex.union ex_d2 (Ast.Ex.union dep_rl dep) in
@@ -646,7 +646,7 @@ module Env = struct
      and reduced by p, then r --> nrr should be added as a PIVOT, not just
      as TOUCHED by p |-> ... This is required for a correct update of USE *)
   let update_global_tch global_tch p r nrr ex =
-    if Shostak.Combine.equal p r then global_tch
+    if Shostak.Combine.hash_equal p r then global_tch
     else
       match Shostak.Combine.ac_extract r with
       | None -> global_tch
@@ -662,7 +662,7 @@ module Env = struct
              Util.Options.exec_thread_yield ();
              let rr, ex = MapX.find r env.repr in
              let nrr = Shostak.Combine.subst p v rr in
-             if Shostak.Combine.equal rr nrr then acc
+             if Shostak.Combine.hash_equal rr nrr then acc
              else
                let ex = Ast.Ex.union ex dep in
                let env =
@@ -691,7 +691,7 @@ module Env = struct
           (fun r (rr, ex) ((env, tch, neqs_to_up) as acc) ->
              Util.Options.exec_thread_yield ();
              let nrr, ex_nrr = normal_form env rr in
-             if Shostak.Combine.equal nrr rr then acc
+             if Shostak.Combine.hash_equal nrr rr then acc
              else
                let ex = Ast.Ex.union ex ex_nrr in
                let env =
@@ -729,13 +729,13 @@ let add env t =
 let ac_solve eqs dep (env, tch) (p, v) =
   Debug.ac_solve p v dep;
   let rv, ex_rv = Env.find_or_normal_form env v in
-  if not (Shostak.Combine.equal v rv) then (
+  if not (Shostak.Combine.hash_equal v rv) then (
     (* v is not in normal form ==> replay *)
     Queue.push (p, rv, Ast.Ex.union dep ex_rv) eqs;
     (env, tch))
   else
     let rp, ex_rp = Env.find_or_normal_form env p in
-    if not (Shostak.Combine.equal p rp) then (
+    if not (Shostak.Combine.hash_equal p rp) then (
       (* p is not in normal form ==> replay *)
       Queue.push (rp, v, Ast.Ex.union dep ex_rp) eqs;
       (env, tch))
@@ -748,7 +748,7 @@ let x_solve env r1 r2 dep =
   let rr2, ex_r2 = Env.find_or_normal_form env r2 in
   let dep = Ast.Ex.union dep (Ast.Ex.union ex_r1 ex_r2) in
   Debug.x_solve rr1 rr2 dep;
-  if Shostak.Combine.equal rr1 rr2 then (
+  if Shostak.Combine.hash_equal rr1 rr2 then (
     Util.Options.tool_req 3 "TR-CCX-Remove";
     ([], dep (* Remove rule *)))
   else (
@@ -823,8 +823,8 @@ let rec distinct env rl dep =
               match Shostak.Combine.solve r1 r2 with
               | [ (a, b) ] ->
                 if
-                  (Shostak.Combine.equal a r1 && Shostak.Combine.equal b r2)
-                  || (Shostak.Combine.equal a r2 && Shostak.Combine.equal b r1)
+                  (Shostak.Combine.hash_equal a r1 && Shostak.Combine.hash_equal b r2)
+                  || (Shostak.Combine.hash_equal a r2 && Shostak.Combine.hash_equal b r1)
                 then env
                 else distinct env [ a; b ] ex
               | [] ->
@@ -848,7 +848,7 @@ let are_equal env t1 t2 ~added_terms =
     in
     let r1, ex_r1 = lookup t1 env in
     let r2, ex_r2 = lookup t2 env in
-    if Shostak.Combine.equal r1 r2 then Some (Ast.Ex.union ex_r1 ex_r2, cl_extract env)
+    if Shostak.Combine.hash_equal r1 r2 then Some (Ast.Ex.union ex_r1 ex_r2, cl_extract env)
     else None
 
 let are_distinct env t1 t2 =
@@ -891,7 +891,7 @@ let model env =
              (fun (l, to_rel) t ->
                 let rt = Ast.Expr.Map.find t env.make in
                 if get_complete_model () || Ast.Expr.is_in_model t then
-                  if Shostak.Combine.equal rt r then (l, (t, rt) :: to_rel)
+                  if Shostak.Combine.hash_equal rt r then (l, (t, rt) :: to_rel)
                   else (t :: l, (t, rt) :: to_rel)
                 else (l, to_rel))
              ([], [])
@@ -983,7 +983,7 @@ let add env t =
 let is_normalized env r =
   List.for_all
     (fun x ->
-       try Shostak.Combine.equal x (fst (MapX.find x env.repr)) with Not_found -> true)
+       try Shostak.Combine.hash_equal x (fst (MapX.find x env.repr)) with Not_found -> true)
     (Shostak.Combine.leaves r)
 
 let distinct_from_constants rep env =
@@ -997,7 +997,7 @@ let distinct_from_constants rep env =
        let acc2 =
          List.fold_left
            (fun acc r ->
-              if Shostak.Combine.equal rep r then contains_rep := true;
+              if Shostak.Combine.hash_equal rep r then contains_rep := true;
               match Shostak.Combine.leaves r with [] -> r :: acc | _ -> acc)
            acc lit_vals
        in
@@ -1184,7 +1184,7 @@ end
 (* of module SMT2LikeModelOutput *)
 
 let is_a_good_model_value (x, _) =
-  match Shostak.Combine.leaves x with [] -> true | [ y ] -> Shostak.Combine.equal x y | _ -> false
+  match Shostak.Combine.leaves x with [] -> true | [ y ] -> Shostak.Combine.hash_equal x y | _ -> false
 
 let model_repr_of_term t env mrepr =
   try (Ast.Expr.Map.find t mrepr, mrepr)

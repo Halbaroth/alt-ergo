@@ -68,8 +68,8 @@ module type Sig = sig
   val str_cmp : t -> t -> int
   (** Structural comparaison of two semantic values of the theory. *)
 
-  (* tests if two values are equal (using tags) *)
-  val equal : t -> t -> bool
+  val hash_equal : t -> t -> bool
+  (** Comparaison of two semantic values according to their hash id. *)
 
   val hash : t -> int
   (** solve r1 r2, solve the equality r1=r2 and return the substitution *)

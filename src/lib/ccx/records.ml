@@ -133,18 +133,18 @@ module Shostak (X : ALIEN) = struct
 
   let str_cmp t u = raw_compare (normalize t) (normalize u)
 
-  let rec equal r1 r2 =
+  let rec hash_equal r1 r2 =
     match (r1, r2) with
     | Other (u1, ty1), Other (u2, ty2) ->
-      Ast.Ty.equal ty1 ty2 && X.equal u1 u2
+      Ast.Ty.equal ty1 ty2 && X.hash_equal u1 u2
     | Access (s1, u1, ty1), Access (s2, u2, ty2) ->
-      Util.Hstring.equal s1 s2 && Ast.Ty.equal ty1 ty2 && equal u1 u2
+      Util.Hstring.equal s1 s2 && Ast.Ty.equal ty1 ty2 && hash_equal u1 u2
     | Record (lbs1, ty1), Record (lbs2, ty2) ->
       Ast.Ty.equal ty1 ty2 && equal_list lbs1 lbs2
     | Other _, _ | _, Other _ | Access _, _ | _, Access _ -> false
 
   and equal_list l1 l2 =
-    try List.for_all2 (fun (_, r1) (_, r2) -> equal r1 r2) l1 l2
+    try List.for_all2 (fun (_, r1) (_, r2) -> hash_equal r1 r2) l1 l2
     with Invalid_argument _ -> false
 
   let is_mine t = match normalize t with Other (r, _) -> r | x -> X.embed x
@@ -219,7 +219,7 @@ module Shostak (X : ALIEN) = struct
 
   let rec subst_rec p v r =
     match r with
-    | Other (t, _) -> embed (if X.equal p t then v else X.subst p v t)
+    | Other (t, _) -> embed (if X.hash_equal p t then v else X.subst p v t)
     | Access (a, t, ty) -> Access (a, subst_rec p v t, ty)
     | Record (lbs, ty) ->
       let lbs = List.map (fun (lb, t) -> (lb, subst_rec p v t)) lbs in

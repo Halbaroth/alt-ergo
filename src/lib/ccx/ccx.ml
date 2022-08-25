@@ -366,9 +366,9 @@ module Main : S = struct
 
   let contra_congruence env facts r =
     Util.Options.exec_thread_yield ();
-    if X.equal (fst (Uf.find_r env.uf r)) (X.top ()) then
+    if X.hash_equal (fst (Uf.find_r env.uf r)) (X.top ()) then
       new_facts_by_contra_congruence env facts r Ast.Expr.faux
-    else if X.equal (fst (Uf.find_r env.uf r)) (X.bot ()) then
+    else if X.hash_equal (fst (Uf.find_r env.uf r)) (X.bot ()) then
       new_facts_by_contra_congruence env facts r Ast.Expr.vrai
 
   let congruence_closure env (facts : r Intf.Relation.facts) r1 r2 ex =

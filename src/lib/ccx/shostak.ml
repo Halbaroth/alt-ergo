@@ -30,8 +30,8 @@ module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
 module Intf = Alt_ergo_lib_intf
 
-module Ite = Alt_ergo_lib_ite 
-            
+module Ite = Alt_ergo_lib_ite
+
 open Format
 open Util.Options
 
@@ -96,15 +96,15 @@ end = struct
 
     let eq r1 r2 =
       match (r1.v, r2.v) with
-      | X1 x, X1 y -> X1.equal x y
-      | X2 x, X2 y -> X2.equal x y
-      | X3 x, X3 y -> X3.equal x y
-      | X4 x, X4 y -> X4.equal x y
-      | X5 x, X5 y -> X5.equal x y
-      | X6 x, X6 y -> X6.equal x y
-      | X7 x, X7 y -> X7.equal x y
+      | X1 x, X1 y -> X1.hash_equal x y
+      | X2 x, X2 y -> X2.hash_equal x y
+      | X3 x, X3 y -> X3.hash_equal x y
+      | X4 x, X4 y -> X4.hash_equal x y
+      | X5 x, X5 y -> X5.hash_equal x y
+      | X6 x, X6 y -> X6.hash_equal x y
+      | X7 x, X7 y -> X7.hash_equal x y
       | Term x, Term y -> Ast.Expr.equal x y
-      | Ac x, Ac y -> AC.equal x y
+      | Ac x, Ac y -> AC.hash_equal x y
       | _ -> false
 
     let initial_size = 9001
@@ -186,7 +186,7 @@ end = struct
   let compare_tag a b = theory_num a - theory_num b
 
   let str_cmp a b =
-    if CX.equal a b then 0
+    if CX.hash_equal a b then 0
     else
       match (a.v, b.v) with
       | X1 x, X1 y -> X1.str_cmp x y
@@ -215,7 +215,7 @@ end = struct
 
    ***)
 
-  let equal a b = a.id = b.id
+  let hash_equal a b = a.id = b.id
   let hash v = v.id
   let hash_cmp a b = a.id - b.id
 
@@ -249,7 +249,7 @@ end = struct
     | Term _ -> [ r ]
 
   let subst p v r =
-    if equal p v then r
+    if hash_equal p v then r
     else
       match r.v with
       | X1 t -> X1.subst p v t
@@ -259,8 +259,8 @@ end = struct
       | X5 t -> X5.subst p v t
       | X6 t -> X6.subst p v t
       | X7 t -> X7.subst p v t
-      | Ac t -> if equal p r then v else AC.subst p v t
-      | Term _ -> if equal p r then v else r
+      | Ac t -> if hash_equal p r then v else AC.subst p v t
+      | Term _ -> if hash_equal p r then v else r
 
   let make t =
     let { Ast.Expr.f = sb; ty; _ } =
@@ -514,7 +514,7 @@ end = struct
       Debug.solve_one a b;
       let ra = apply_subst_right a pb.Intf.Solvable_theory.sbt in
       let rb = apply_subst_right b pb.Intf.Solvable_theory.sbt in
-      if CX.equal ra rb then solve_list pb
+      if CX.hash_equal ra rb then solve_list pb
       else
         let tya = CX.type_info ra in
         let tyb = CX.type_info rb in
@@ -545,7 +545,7 @@ end = struct
     | _ -> make_idemp oa ob (List.rev_append sbt sbt')
 
   let solve a b =
-    if CX.equal a b then []
+    if CX.hash_equal a b then []
     else
       let a', b', acc = abstract_equality a b in
       let sbs = solve_abstracted a b a' b' acc in

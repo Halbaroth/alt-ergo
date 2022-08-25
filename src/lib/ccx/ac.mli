@@ -46,7 +46,7 @@ module type S = sig
   val compare : t -> t -> int
 
   (* tests if two values are equal (using tags) *)
-  val equal : t -> t -> bool
+  val hash_equal : t -> t -> bool
 
   (* hash function for ac values *)
   val hash : t -> int

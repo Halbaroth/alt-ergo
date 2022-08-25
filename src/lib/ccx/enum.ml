@@ -96,11 +96,11 @@ module Shostak (X : ALIEN) = struct
     | Alien _, Cons _ -> 1
     | Cons _, Alien _ -> -1
 
-  let equal s1 s2 =
+  let hash_equal s1 s2 =
     match (s1, s2) with
     | Cons (h1, ty1), Cons (h2, ty2) ->
       Util.Hstring.equal h1 h2 && Ast.Ty.equal ty1 ty2
-    | Alien r1, Alien r2 -> X.equal r1 r2
+    | Alien r1, Alien r2 -> X.hash_equal r1 r2
     | Alien _, Cons _ | Cons _, Alien _ -> false
 
   let hash = function
@@ -111,7 +111,7 @@ module Shostak (X : ALIEN) = struct
 
   let subst p v c =
     let cr = is_mine c in
-    if X.equal p cr then v
+    if X.hash_equal p cr then v
     else match c with Cons _ -> cr | Alien r -> X.subst p v r
 
   let make t =
@@ -176,7 +176,7 @@ module Shostak (X : ALIEN) = struct
     let r =
       match l with
       | (_, r) :: l ->
-        List.iter (fun (_, x) -> assert (X.equal x r)) l;
+        List.iter (fun (_, x) -> assert (X.hash_equal x r)) l;
         r
       | [] -> (
           (* We do this, because terms of some semantic values created

@@ -38,7 +38,7 @@ module type Sig = sig
   val type_info : r -> Ast.Ty.t
   val str_cmp : r -> r -> int
   val hash_cmp : r -> r -> int
-  val equal : r -> r -> bool
+  val hash_equal : r -> r -> bool
   val hash : r -> int
   val leaves : r -> r list
   val subst : r -> r -> r -> r

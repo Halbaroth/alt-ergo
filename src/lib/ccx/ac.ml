@@ -50,7 +50,7 @@ module type S = sig
   val compare : t -> t -> int
 
   (* tests if two values are equal (using tags) *)
-  val equal : t -> t -> bool
+  val hash_equal : t -> t -> bool
 
   (* hash function for ac values *)
   val hash : t -> int
@@ -86,7 +86,7 @@ module Make (X : Intf.X.Sig) = struct
 
     let print_x fmt v =
       match X.leaves v with
-      | [ w ] when X.equal v w -> fprintf fmt "%a" X.print v
+      | [ w ] when X.hash_equal v w -> fprintf fmt "%a" X.print v
       | _ -> fprintf fmt "(%a)" X.print v
 
     let rec pr_elt sep fmt (e, n) =
@@ -137,7 +137,7 @@ module Make (X : Intf.X.Sig) = struct
       | [] -> acc
       | [ (x, n) ] -> (x, n) :: acc
       | (x, n) :: (y, m) :: r ->
-        if X.equal x y then f acc ((x, n + m) :: r)
+        if X.hash_equal x y then f acc ((x, n + m) :: r)
         else f ((x, n) :: acc) ((y, m) :: r)
     in
     f [] (sort xs)
@@ -254,10 +254,10 @@ module Make (X : Intf.X.Sig) = struct
     else assert false
   *)
 
-  let equal { Intf.Solvable_theory.h = f; Intf.Solvable_theory.l = lx; _ } { Intf.Solvable_theory.h = g; Intf.Solvable_theory.l = ly; _ } =
+  let hash_equal { Intf.Solvable_theory.h = f; Intf.Solvable_theory.l = lx; _ } { Intf.Solvable_theory.h = g; Intf.Solvable_theory.l = ly; _ } =
     Ast.Sy.equal f g
     &&
-    try List.for_all2 (fun (x, m) (y, n) -> m = n && X.equal x y) lx ly
+    try List.for_all2 (fun (x, m) (y, n) -> m = n && X.hash_equal x y) lx ly
     with Invalid_argument _ -> false
 
   let hash { Intf.Solvable_theory.h = f; Intf.Solvable_theory.l; t; _ } =

@@ -110,9 +110,9 @@ module Shostak (X : ALIEN) = struct
               assert false)
         | _ -> X.embed u)
 
-  let equal s1 s2 =
+  let hash_equal s1 s2 =
     match (s1, s2) with
-    | Alien r1, Alien r2 -> X.equal r1 r2
+    | Alien r1, Alien r2 -> X.hash_equal r1 r2
     | Constr c1, Constr c2 -> (
         Util.Hstring.equal c1.c_name c2.c_name
         && Ast.Ty.equal c1.c_ty c2.c_ty
@@ -121,7 +121,7 @@ module Shostak (X : ALIEN) = struct
           List.iter2
             (fun (hs1, v1) (hs2, v2) ->
                assert (Util.Hstring.equal hs1 hs2);
-               if not (X.equal v1 v2) then raise Exit)
+               if not (X.hash_equal v1 v2) then raise Exit)
             c1.c_args c2.c_args;
           true
         with
@@ -130,9 +130,9 @@ module Shostak (X : ALIEN) = struct
     | Select d1, Select d2 ->
       Util.Hstring.equal d1.d_name d2.d_name
       && Ast.Ty.equal d1.d_ty d2.d_ty
-      && X.equal d1.d_arg d2.d_arg
+      && X.hash_equal d1.d_arg d2.d_arg
     | Tester t1, Tester t2 ->
-      Util.Hstring.equal t1.t_name t2.t_name && X.equal t1.t_arg t2.t_arg
+      Util.Hstring.equal t1.t_name t2.t_name && X.hash_equal t1.t_arg t2.t_arg
     | _ -> false
 
   let make t =
@@ -288,7 +288,7 @@ module Shostak (X : ALIEN) = struct
     | Tester { t_arg; _ } ->
       let s_arg, acc = X.abstract_selectors t_arg acc in
       if
-        not (X.equal s_arg t_arg)
+        not (X.hash_equal s_arg t_arg)
         [@ocaml.ppwarning "TODO: abstract Selectors: case to test"]
       then assert false;
       (is_mine p, acc)
@@ -303,7 +303,7 @@ module Shostak (X : ALIEN) = struct
       *)
         let s_arg, acc = X.abstract_selectors d_arg acc in
         if
-          not (X.equal s_arg d_arg)
+          not (X.hash_equal s_arg d_arg)
           [@ocaml.ppwarning "TODO: abstract Selectors"]
         then assert false;
         let x = is_mine @@ Select { s with d_arg = s_arg } in
@@ -334,7 +334,7 @@ module Shostak (X : ALIEN) = struct
           (xx, acc)
         | _ -> (x, acc))
 
-  let is_alien_of e x = List.exists (fun y -> X.equal x y) (X.leaves e)
+  let is_alien_of e x = List.exists (fun y -> X.hash_equal x y) (X.leaves e)
 
   let solve r1 r2 pb =
     if get_debug_adt () then
@@ -374,7 +374,7 @@ module Shostak (X : ALIEN) = struct
     (*TODO: detect when there are no changes to improve *)
     assert (not (get_disable_adts ()));
     match s with
-    | Alien r -> if X.equal p r then v else X.subst p v r
+    | Alien r -> if X.hash_equal p r then v else X.subst p v r
     | Constr c ->
       is_mine
       @@ Constr

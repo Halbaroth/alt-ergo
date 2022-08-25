@@ -758,12 +758,12 @@ and update_monome are_eq expl use_x env x =
           | Ast.Expr.Term { Ast.Expr.f = (Ast.Sy.Op Ast.Sy.Div); xs = [a; b]; _ } ->
             let ra, ea =
               let (ra, _) as e = Uf.find env.new_uf a in
-              if List.filter (X.equal x) (X.leaves ra) == [] then e
+              if List.filter (X.hash_equal x) (X.leaves ra) == [] then e
               else fst (X.make a), Ast.Ex.empty (*otherwise, we loop*)
             in
             let rb, eb =
               let (rb, _) as e = Uf.find env.new_uf b in
-              if List.filter (X.equal x) (X.leaves rb) == [] then e
+              if List.filter (X.hash_equal x) (X.leaves rb) == [] then e
               else fst (X.make b), Ast.Ex.empty (*otherwise, we loop*)
             in
             let expl = Ast.Ex.union expl (Ast.Ex.union ea eb) in
@@ -1160,7 +1160,7 @@ let split_problem env ineqs aliens =
 let is_normalized_poly uf p =
   let p = alien_of p in
   let rp, _  = Uf.find_r uf p in
-  if X.equal p rp then true
+  if X.hash_equal p rp then true
   else begin
     Util.Printer.print_err
       "%a <= 0 NOT normalized@,It is equal to %a"
@@ -1815,7 +1815,7 @@ let add_used_by t r env =
     begin
       match calc_pow a b ty env.new_uf with
       | Some (res,ex) ->
-        if X.equal res r then
+        if X.hash_equal res r then
           (* in this case, Arith.make already reduced "t" to a constant "r" *)
           env, []
         else

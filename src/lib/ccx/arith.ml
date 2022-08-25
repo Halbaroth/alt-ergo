@@ -454,7 +454,7 @@ struct
     is_mine p
 
   let str_cmp = P.compare
-  let equal p1 p2 = P.equal p1 p2
+  let hash_equal p1 p2 = P.equal p1 p2
   let hash = P.hash
 
   (* symmetric modulo p 131 *)
@@ -559,7 +559,7 @@ struct
     let sbs = List.map (fun (x, v) -> (x, apply_subst sbs2 v)) sbs in
 
     (* 7. on supprime les liaisons inutiles de sbs2 et on merge avec sbs *)
-    let sbs2 = List.filter (fun (y, _) -> not (X.equal y sigma)) sbs2 in
+    let sbs2 = List.filter (fun (y, _) -> not (X.hash_equal y sigma)) sbs2 in
     List.rev_append sbs sbs2
 
   and solve_int p =
@@ -620,7 +620,7 @@ struct
 
   let check_pivot_safety p nsbs unsafe_mode =
     let q = apply_subst p nsbs in
-    if X.equal p q then p
+    if X.hash_equal p q then p
     else
       match X.ac_extract p with
       | Some _ when unsafe_mode -> raise Unsafe
@@ -644,7 +644,7 @@ struct
     (*
         This assert is not TRUE because of AC and distributivity of '*'
         assert (not (get_enable_assertions ()) ||
-        X.equal (apply_subst a sbs) (apply_subst b sbs));
+        X.hash_equal (apply_subst a sbs) (apply_subst b sbs));
       *)
     List.iter
       (fun (p, _) ->
@@ -780,7 +780,7 @@ struct
         assert (P.is_const (embed r) != None);
         r
       | (_, r) :: l ->
-        List.iter (fun (_, x) -> assert (X.equal x r)) l;
+        List.iter (fun (_, x) -> assert (X.hash_equal x r)) l;
         r
     in
     (r, pprint_const_for_model r)

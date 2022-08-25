@@ -643,8 +643,8 @@ module Shostak (X : ALIEN) = struct
 
   let str_cmp = compare
 
-  (* should use hashed compare to be faster, not structural comparison *)
-  let equal bv1 bv2 = compare_mine bv1 bv2 = 0
+  (* TODO : should use hashed compare to be faster, not structural comparison *)
+  let hash_equal bv1 bv2 = compare_mine bv1 bv2 = 0
 
   let hash_xterm = function
     | Var { var = i; sorte = A } -> 11 * i
@@ -747,7 +747,7 @@ module Shostak (X : ALIEN) = struct
     | Canonizer.I_Other (Var y), Var z when y = z -> extract subs biv.sz
     | Canonizer.I_Other (Var _), _ -> biv
     | Canonizer.I_Other (Alien tt), _ ->
-      if X.equal x tt then extract subs biv.sz
+      if X.hash_equal x tt then extract subs biv.sz
       else extract (X.subst x subs tt) biv.sz
     | Canonizer.I_Ext (t, i, j), _ ->
       { biv with bv = Canonizer.I_Ext (subst_rec x subs t, i, j) }
