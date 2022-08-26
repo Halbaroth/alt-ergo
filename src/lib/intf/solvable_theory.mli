@@ -49,22 +49,24 @@ module type Sig = sig
   (** Name of the theory. *)
 
   val is_mine_symb : Ast.Sy.t -> Ast.Ty.t -> bool
-  (** return true if the symbol and the type are owned by the theory*)
+  (** Return true if the symbol and the type are owned by the theory. *)
 
   val make : Ast.Expr.t -> r * Ast.Expr.t list
-  (** Give a representant of a term of the theory*)
+  (** Give a semantic value of a term of the theory. *)
 
   val term_extract : r -> Ast.Expr.t option * bool (* original term ? *)
   val color : r ac -> r
   val type_info : t -> Ast.Ty.t
+  (** Return the type of a semantic value. *)
+
   val embed : r -> t
   val is_mine : t -> r
 
   val leaves : t -> r list
-  (** Give the leaves of a term of the theory *)
+  (** Give the leaves of a term of the theory. *)
 
   val subst : r -> r -> t -> r
-  
+
   val str_cmp : t -> t -> int
   (** Structural comparaison of two semantic values of the theory. *)
 
@@ -72,9 +74,10 @@ module type Sig = sig
   (** Comparaison of two semantic values according to their hash id. *)
 
   val hash : t -> int
-  (** solve r1 r2, solve the equality r1=r2 and return the substitution *)
 
   val solve : r -> r -> r solve_pb -> r solve_pb
+  (** [solve v1 v2] solves the equality [v1=v2] and return the substitution. *)
+  
   val print : Format.formatter -> t -> unit
   val fully_interpreted : Ast.Sy.t -> bool
   val abstract_selectors : t -> (r * r) list -> r * (r * r) list
