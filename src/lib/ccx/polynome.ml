@@ -48,10 +48,12 @@ module type T = sig
   type r
   type t
 
+  val create : (Q.t * r) list -> Q.t -> Ast.Ty.t -> t
+  
   val compare : t -> t -> int
   val equal : t -> t -> bool
   val hash : t -> int
-  val create : (Q.t * r) list -> Q.t -> Ast.Ty.t -> t
+  
   val add : t -> t -> t
   val sub : t -> t -> t
   val mult : t -> t -> t
@@ -130,6 +132,7 @@ module Make (X : S) = struct
         let c = compare_maps (map_to_list p1.m) (map_to_list p2.m) in
         if c = 0 then Q.compare p1.c p2.c else c
 
+  (** BUG: The function does not test the type of the polynomials. *)
   let equal { m = m1; c = c1; _ } { m = m2; c = c2; _ } =
     Q.equal c1 c2 && M.equal Q.equal m1 m2
 
@@ -179,8 +182,12 @@ module Make (X : S) = struct
 
   let print = Debug.print
   let is_const p = if M.is_empty p.m then Some p.c else None
+
+  (** TODO: rename this function. *)
   let find x m = try M.find x m with Not_found -> Q.zero
 
+  (** TODO: rename this function. *)
+  (** BUG: not checking of the AE type of the elements in the list. *)
   let create l c ty =
     let m =
       List.fold_left
@@ -201,13 +208,26 @@ module Make (X : S) = struct
         p2.m p1.m
     in
     { m; c = Q.add p1.c p2.c; ty = p1.ty }
+  
+  let sub p1 p2 =
+    Util.Options.tool_req 4 "TR-Arith-Poly moins"; (** TODO: remove french. *)
+    let m =
+      M.fold
+        (fun x a m ->
+           let a' = Q.sub (find x m) a in
+           if Q.sign a' = 0 then M.remove x m else M.add x a' m)
+        p2.m p1.m
+    in
+    { m; c = Q.sub p1.c p2.c; ty = p1.ty }
+
+  let add_const n p = { p with c = Q.add p.c n }
 
   let mult_const n p =
     if Q.sign n = 0 then { m = M.empty; c = Q.zero; ty = p.ty }
     else { p with m = M.map (Q.mult n) p.m; c = Q.mult n p.c }
-
-  let add_const n p = { p with c = Q.add p.c n }
-
+  
+  (* Multiply the polynome p by the monome ax. *)
+  (** TODO: rename the function. Monome is not an english word. *)
   let mult_monome a x p =
     let ax = { m = M.add x a M.empty; c = Q.zero; ty = p.ty } in
     let acx = mult_const p.c ax in
@@ -220,24 +240,16 @@ module Make (X : S) = struct
     Util.Options.tool_req 4 "TR-Arith-Poly mult";
     let p = mult_const p1.c p2 in
     M.fold (fun x a p -> add (mult_monome a x p2) p) p1.m p
-
-  let sub p1 p2 =
-    Util.Options.tool_req 4 "TR-Arith-Poly moins";
-    let m =
-      M.fold
-        (fun x a m ->
-           let a' = Q.sub (find x m) a in
-           if Q.sign a' = 0 then M.remove x m else M.add x a' m)
-        p2.m p1.m
-    in
-    { m; c = Q.sub p1.c p2.c; ty = p1.ty }
-
+  
+  (* TODO: move this function. *)
   let euc_mod_num c1 c2 =
     let c = Q.modulo c1 c2 in
     if Q.sign c < 0 then Q.add c (Q.abs c2) else c
 
+  (* TODO: move this function. *)
   let euc_div_num c1 c2 = Q.div (Q.sub c1 (euc_mod_num c1 c2)) c2
 
+  (* TODO: remove this function. *)
   let div p1 p2 =
     Util.Options.tool_req 4 "TR-Arith-Poly div";
     if not (M.is_empty p2.m) then raise Maybe_zero;
@@ -249,6 +261,7 @@ module Make (X : S) = struct
     | false, Ast.Ty.Tint -> (p, true (* XXX *))
     | _ -> assert false
 
+  (** TODO: remove this function. *)
   let modulo p1 p2 =
     Util.Options.tool_req 4 "TR-Arith-Poly mod";
     if not (M.is_empty p2.m) then raise Maybe_zero;
@@ -256,9 +269,13 @@ module Make (X : S) = struct
     if not (M.is_empty p1.m) then raise Not_a_num;
     { p1 with c = euc_mod_num p1.c p2.c }
 
+  (** TODO: rename this function. *)
   let find x p = M.find x p.m
+  
+  (** TODO: rename this function. *)
   let is_empty p = M.is_empty p.m
 
+  (** TODO: rename this function. *)
   let choose p =
     let tn = ref None in
     (*version I : prend le premier element de la table*)
@@ -280,6 +297,8 @@ module Make (X : S) = struct
     with Not_found -> p2
 
   let remove x p = { p with m = M.remove x p.m }
+
+  (** TODO: rename this function. *)
   let to_list p = (map_to_list p.m, p.c)
 
   module SX = Set.Make (struct
@@ -303,10 +322,12 @@ module Make (X : S) = struct
         p.m None
     with Exit -> None
 
+  (** TODO: rename this function. *)
   let ppmc_denominators { m; _ } =
     let res = M.fold (fun _ c acc -> Z.my_lcm (Q.den c) acc) m Z.one in
     Q.abs (Q.from_z res)
 
+  (** TODO: rename this function. *)
   let pgcd_numerators { m; _ } =
     let res = M.fold (fun _ c acc -> Z.my_gcd (Q.num c) acc) m Z.zero in
     Q.abs (Q.from_z res)
