@@ -143,7 +143,7 @@ module Container : Container_SIG = struct
         in
         { ple0 = p; is_le; dep; expl; age = !age_cpt }
 
-    (* TODO: rename the function *)    
+    (* TODO: rename the function *)
     let find_coefficient x ineq = P.coef x ineq.ple0
 
     let split_pos_neg _ ({ ple0 = p; age; _ }, _) (mx, nb_max) =

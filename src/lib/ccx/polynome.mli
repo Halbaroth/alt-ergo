@@ -46,30 +46,36 @@ end
 
 (** Module type of polynomials of semantic values. *)
 module type T = sig
-  (** Let [ty] denotes an {{!type:Ast.Ty.t}Alt-Ergo type}. 
-      A polynomial [p] of type [ty] is an expression of the form 
-      {math p = c + \sum_{v \in V} a_v \cdot v} 
-      where {m V} is the set of {{!type:r}semantic values} of Alt-Ergo 
-      type [ty], {m a_v} and {m c} are rational numbers and all but 
-      finitely many of the {m a_v} are zero. 
+  (** Let [ty] denotes an {{!type:Ast.Ty.t}Alt-Ergo type}.
+      A polynomial [p] of type [ty] is an expression of the form
+      {math p = c + \sum_{v \in V} a_v \cdot v}
+      where {m V} is the set of {{!type:r}semantic values} of Alt-Ergo
+      type [ty], {m a_v} and {m c} are rational numbers and all but
+      finitely many of the {m a_v} are zero.
       The nonzero numbers {m a_v} are the {e coefficients}
-      of [p], {m c} is the {e constant term} of [p] and the expressions 
-      {m a_v \cdot v} are its monomials. 
+      of [p], {m c} is the {e constant term} of [p] and the expressions
+      {m a_v \cdot v} are its monomials.
 
-      The monomials of [p] are ordered using the 
-      {{:https://en.wikipedia.org/wiki/Duality_(order_theory)}dual order} 
+      The monomials of [p] are ordered using the
+      {{:https://en.wikipedia.org/wiki/Duality_(order_theory)}dual order}
       of the total order given by the function {!val:S.str_cmp}. *)
 
   (** {1 Types} *)
 
   type r
-  (** Type of {{!type:Shostak.Combine.r}semantic values} appearing in 
-      polynomials. *) 
-  
+  (** Type of {{!type:Shostak.Combine.r}semantic values} appearing in
+      polynomials. *)
+
   type t
   (** Type of {e polynomials}. *)
 
   (** {1 Constructors and destructors} *)
+
+  val zero : Ast.Ty.t -> t
+  (** [zero ty] is the zero polynomial of type [ty]. *)
+
+  val one  : Ast.Ty.t -> t
+  (** [one ty] is the one polynomial of type [ty]. *)
 
   val create :
     (Util.Numbers.Q.t * r) list -> Util.Numbers.Q.t -> Ast.Ty.t -> t
@@ -78,145 +84,145 @@ module type T = sig
       is [ty]. *)
 
   val to_list : t -> (Util.Numbers.Q.t * r) list * Util.Numbers.Q.t
-  (** [to_list p] converts the polynomial [p] to a list. 
+  (** [to_list p] converts the polynomial [p] to a list.
 
-      @returns [(lst, c)] where [lst] is the list of the monomial 
+      @returns [(lst, c)] where [lst] is the list of the monomial
       of [p] and [c] is its constant term. *)
 
   val is_monomial : t -> (Util.Numbers.Q.t * r * Util.Numbers.Q.t) option
   (** [is_monomial p] converts [p] to a monomial description.contents
-      
-      @returns [Some (a, v, c)] if [p] is the monomial {m av + c}. 
+
+      @returns [Some (a, v, c)] if [p] is the monomial {m av + c}.
       Otherwise the function returns [None]. *)
 
   val is_const : t -> Util.Numbers.Q.t option
   (** [is_const p] converts [p] to a rational representation.
 
-      @returns [Some c] if [p] is constant and [c] 
+      @returns [Some c] if [p] is constant and [c]
       is its constant term. Otherwise, the function returns [None]. *)
 
   val coef : r -> t -> Util.Numbers.Q.t
-  (** [coef v p] gives the coefficient of the semantic value [v] 
+  (** [coef v p] gives the coefficient of the semantic value [v]
       in the polynomial [p]. *)
 
   val choose : t -> Util.Numbers.Q.t * r
   (** [choose p] returns the smallest monome of [p]. The order on the monome
-      is given by the dual order of the order {!val:S.str_cmp} on 
+      is given by the dual order of the order {!val:S.str_cmp} on
       semantic values. *)
 
   (** {1 Comparison functions} *)
 
   val compare : t -> t -> int
-  (** [compare p q] compares the polynomial [p] and [q] using a 
+  (** [compare p q] compares the polynomial [p] and [q] using a
       lexicographic order. *)
-  
+
   val equal : t -> t -> bool
-  (** [equal p q] is true if and only if [p] and [q] have the 
+  (** [equal p q] is true if and only if [p] and [q] have the
       same coefficients and constant terms. *)
 
   val hash : t -> int
-  (** [hash p] computes the hash of the polynomial [p]. If 
-      {m p = c + \sum_{i=1}^d a_i \cdot v_i} with {m (v_i)} is a 
-      decreasing sequence for the order {!val:S.str_cmp}, the hash is 
-      given by the formula 
-      {math  23^d(19 h_c + 17 h_{ty}) + \sum_{i=1}^d 23^{d-i} h_{a_i} h_{v_i}} 
-      where 
-      {ul 
-        {- {m h_c} is the hash of the constant term given by the function 
+  (** [hash p] computes the hash of the polynomial [p]. If
+      {m p = c + \sum_{i=1}^d a_i \cdot v_i} with {m (v_i)} is a
+      decreasing sequence for the order {!val:S.str_cmp}, the hash is
+      given by the formula
+      {math  23^d(19 h_c + 17 h_{ty}) + \sum_{i=1}^d 23^{d-i} h_{a_i} h_{v_i}}
+      where
+      {ul
+        {- {m h_c} is the hash of the constant term given by the function
            {!val:Util.Numbers.Q.hash}.}
         {- {m h_{ty}} is the hash of the Alt-Ergo type [ty] of [p] given
            by the function {!val:Ast.Ty.hash}.}
-        {- {m h_{a_i}} is the hash of the coefficient {m a_i} given by 
+        {- {m h_{a_i}} is the hash of the coefficient {m a_i} given by
            the function {!val:Util.Numbers.Q.hash}.}
         {- {m h_{v_i}} is the hash of the semantic value {m v_i} given
            by the function {!val:S.hash}.}}
       *)
 
   (** {1 Operations} *)
-  
+
   (** {2 Algebraic operations} *)
 
   val add : t -> t -> t
-  (** [add p q] computes the addition of the polynomials [p] and [q]. If 
-      {m p = c + \sum_{v \in V} a_v \cdot v} 
+  (** [add p q] computes the addition of the polynomials [p] and [q]. If
+      {m p = c + \sum_{v \in V} a_v \cdot v}
       and {m q = d + \sum_{v \in V} b_v \cdot v},
       then the result is of the form
       {math c + d + \sum_{v \in V} (a_v + b_v) \cdot v} *)
-  
+
   val sub : t -> t -> t
-  (** [sub p q] computes the substraction of the polynomials [p] and [q]. If 
-      {m p = c + \sum_{v \in V} a_v \cdot v} 
+  (** [sub p q] computes the substraction of the polynomials [p] and [q]. If
+      {m p = c + \sum_{v \in V} a_v \cdot v}
       and {m q = d + \sum_{v \in V} b_v \cdot v},
       then the result is of the form
       {math c - d + \sum_{v \in V} (a_v - b_v) \cdot v} *)
- 
+
   val mult : t -> t -> t
-  (** [mult p q] multiplies the polynomial [p] by [q]. If 
-      {m p = c + \sum_{v \in V} a_v \cdot v} and 
+  (** [mult p q] multiplies the polynomial [p] by [q]. If
+      {m p = c + \sum_{v \in V} a_v \cdot v} and
       {m q = d + \sum_{v \in V} b_v \cdot v},
       then the result is of the form
       {math c \cdot d + \sum_{v, w \in V} a_v d_w \cdot v w}
-      where the multiplication {m vw} is performed by 
+      where the multiplication {m vw} is performed by
       the function {!val:S.mult}. *)
-  
-  val add_const : Util.Numbers.Q.t -> t -> t 
-  (** [add_const q p] adds the rational number [q] to the constant term of 
+
+  val add_const : Util.Numbers.Q.t -> t -> t
+  (** [add_const q p] adds the rational number [q] to the constant term of
       [p]. If {m p = b + \sum_{v \in V} a_v \cdot v},
       then the result is of the form
       {math p = b + q + \sum_{v \in V} a_v \cdot v} *)
-  
+
   val mult_const : Util.Numbers.Q.t -> t -> t
-  (** [mult_const q p] multiplies the coefficients and the constant 
-      term of [p] by the rational number [q]. 
+  (** [mult_const q p] multiplies the coefficients and the constant
+      term of [p] by the rational number [q].
       If {m p = c + \sum_{v \in V} a_v \cdot v}
       then the result is of the form
       {math p = qc + \sum_{v \in V} q a_v \cdot v} *)
 
   (** {2 Arithmetical operations} *)
-  
+
   val ppmc_denominators : t -> Util.Numbers.Q.t
-  (** [ppmc_denominators p] carries on the {e positive lcm} of the denominators 
-      of the coefficients of [p]. If {m p = c + \sum_{v \in V} a_v \cdot v } 
-      and {m a_v = \frac{n_v}{d_v}} with {m n_v} and {m d_v} two integers such 
-      that {m n_v \wedge d_v = 1}, then the 
+  (** [ppmc_denominators p] carries on the {e positive lcm} of the denominators
+      of the coefficients of [p]. If {m p = c + \sum_{v \in V} a_v \cdot v }
+      and {m a_v = \frac{n_v}{d_v}} with {m n_v} and {m d_v} two integers such
+      that {m n_v \wedge d_v = 1}, then the
       result is {m \wedge_{v \in V} d_v}. *)
 
   val pgcd_numerators : t -> Util.Numbers.Q.t
-  (** [pgcd_numerators p] carries on the {e positive gcd} of the numerators of 
-      the coefficients of [p]. If {m p = c + \sum_{v \in V} a_v \cdot v } 
-      and {m a_v = \frac{n_v}{d_v}} with {m n_v} and {m d_v} two integers such 
-      that {m n_v \wedge d_v = 1}, then the 
+  (** [pgcd_numerators p] carries on the {e positive gcd} of the numerators of
+      the coefficients of [p]. If {m p = c + \sum_{v \in V} a_v \cdot v }
+      and {m a_v = \frac{n_v}{d_v}} with {m n_v} and {m d_v} two integers such
+      that {m n_v \wedge d_v = 1}, then the
       result is {m \lor_{v \in V} d_v}. *)
-  
+
   val modulo : t -> t -> t
-  (** [modulo p q] computes {e residue} of the constant term of [p] 
-      modulo the constant term of [q]. 
+  (** [modulo p q] computes {e residue} of the constant term of [p]
+      modulo the constant term of [q].
 
       @returns the residue as a constant polynomial. *)
 
   (** {1 Misc} *)
-  
+
   val div : t -> t -> t * bool
-  (** [div p q] divides the constant term of [p] 
-      by the constant term of [q]. 
+  (** [div p q] divides the constant term of [p]
+      by the constant term of [q].
 
       @returns the division as a constant polynomial. *)
 
   val is_empty : t -> bool
-  (** [is_empty p] is true if and only if the polynomial 
+  (** [is_empty p] is true if and only if the polynomial
       [p] has no nonzero coefficient. *)
-  
+
   val subst : r -> t -> t -> t
   (** [subst v p q] substitutes the coefficient of the semantic value [v]
       in [q] by its coefficient in [p]. *)
 
   val remove : r -> t -> t
-  (** [remove v p] set the coefficient of the semantiv value [v] in 
+  (** [remove v p] set the coefficient of the semantiv value [v] in
       the polynomial [p] to zero. *)
 
   val leaves : t -> r list
   (** [leaves p] returns a list of the leaves of semantic values appearing
-      in the polynomial [p]. The produced list is without duplicate 
+      in the polynomial [p]. The produced list is without duplicate
       elements and is not ordered. *)
 
   val print : Format.formatter -> t -> unit
@@ -236,8 +242,8 @@ module type T = sig
 
   (* comme normal_form mais le signe est aussi normalise *)
   val normal_form_pos : t -> t * Util.Numbers.Q.t * Util.Numbers.Q.t
- 
-  
+
+
   val abstract_selectors : t -> (r * r) list -> t * (r * r) list
   val separate_constant : t -> t * Util.Numbers.Q.t
 end

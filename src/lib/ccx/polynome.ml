@@ -48,6 +48,8 @@ module type T = sig
   type r
   type t
 
+  val zero : Ast.Ty.t -> t
+  val one : Ast.Ty.t -> t
   val create : (Q.t * r) list -> Q.t -> Ast.Ty.t -> t
   val to_list : t -> (Q.t * r) list * Q.t
   val is_monomial : t -> (Q.t * r * Q.t) option
@@ -67,7 +69,7 @@ module type T = sig
   val ppmc_denominators : t -> Q.t
   val pgcd_numerators : t -> Q.t
   val modulo : t -> t -> t
-  
+
   val div : t -> t -> t * bool
   val is_empty : t -> bool
   val subst : r -> t -> t -> t
@@ -96,10 +98,24 @@ module Make (X : S) = struct
       type t = r
 
       (*sorted in decreasing order to comply with AC(X) order requirements*)
-      let compare x y = X.str_cmp y x
+      let compare v w = X.str_cmp w v
     end)
 
-  type t = { m : Q.t M.t; c : Q.t; ty : Ast.Ty.t }
+  type t = {
+    m : Q.t M.t; (* Map of the semantic values to their coefficient
+                    in the polynomial. *)
+    c : Q.t; (* Constant term of the polynomial. *)
+    ty : Ast.Ty.t (* Alt-Ergo type of the polynomial. *)
+  }
+
+  let[@inline] zero ty = { m = M.empty; c = Q.zero; ty }
+  let[@inline] one ty = { m = M.empty; c = Q.one; ty }
+
+  let[@inline] type_info p = p.ty
+
+  (* TODO: rename this function. *)
+  let find v m = try M.find v m with Not_found -> Q.zero
+  let coef v p = M.find v p.m
 
   let map_to_list m =
     List.rev (M.fold (fun x a aliens -> (a, x) :: aliens) m [])
@@ -186,9 +202,6 @@ module Make (X : S) = struct
   let is_const p = if M.is_empty p.m then Some p.c else None
 
   (* TODO: rename this function. *)
-  let find x m = try M.find x m with Not_found -> Q.zero
-
-  (* TODO: rename this function. *)
   (* BUG: not checking of the AE type of the elements in the list. *)
   let create l c ty =
     let m =
@@ -225,11 +238,10 @@ module Make (X : S) = struct
   let add_const n p = { p with c = Q.add p.c n }
 
   let mult_const n p =
-    if Q.sign n = 0 then { m = M.empty; c = Q.zero; ty = p.ty }
+    if Q.sign n = 0 then zero (type_info p)
     else { p with m = M.map (Q.mult n) p.m; c = Q.mult n p.c }
 
   (* Multiply the polynome p by the monome ax. *)
-  (* TODO: rename the function. Monome is not an english word. *)
   let mult_monomial a x p =
     let ax = { m = M.add x a M.empty; c = Q.zero; ty = p.ty } in
     let acx = mult_const p.c ax in
@@ -271,8 +283,6 @@ module Make (X : S) = struct
     if not (M.is_empty p1.m) then raise Not_a_num;
     { p1 with c = euc_mod_num p1.c p2.c }
 
-  let coef x p = M.find x p.m
-
   (* TODO: rename this function. *)
   let is_empty p = M.is_empty p.m
 
@@ -313,8 +323,6 @@ module Make (X : S) = struct
   let leaves p =
     let s = M.fold (fun a _ s -> xs_of_list s (X.leaves a)) p.m SX.empty in
     SX.elements s
-
-  let type_info p = p.ty
 
   let is_monomial p =
     try
