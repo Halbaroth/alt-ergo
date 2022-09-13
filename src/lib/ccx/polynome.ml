@@ -55,7 +55,7 @@ module type T = sig
   val is_monomial : t -> (Q.t * r * Q.t) option
   val is_const : t -> Q.t option
   val coef : r -> t -> Q.t
-  val choose : t -> Q.t * r
+  val choose : t -> r * Q.t 
 
   val compare : t -> t -> int
   val equal : t -> t -> bool
@@ -98,24 +98,30 @@ module Make (X : S) = struct
       type t = r
 
       (*sorted in decreasing order to comply with AC(X) order requirements*)
-      let compare v w = X.str_cmp w v
+      let compare v w = X.str_cmp w v 
     end)
 
-  type t = {
-    m : Q.t M.t; (* Map of the semantic values to their coefficient
+  type t = { 
+    m : Q.t M.t; (* Map of the semantic values to their coefficient 
                     in the polynomial. *)
-    c : Q.t; (* Constant term of the polynomial. *)
-    ty : Ast.Ty.t (* Alt-Ergo type of the polynomial. *)
+    c : Q.t; (* Constant term of the polynomial. *) 
+    ty : Ast.Ty.t (* Alt-Ergo type of the polynomial. *) 
   }
 
   let[@inline] zero ty = { m = M.empty; c = Q.zero; ty }
   let[@inline] one ty = { m = M.empty; c = Q.one; ty }
 
   let[@inline] type_info p = p.ty
-
+  
   (* TODO: rename this function. *)
   let find v m = try M.find v m with Not_found -> Q.zero
-  let coef v p = M.find v p.m
+  let[@inline] coef v p = M.find v p.m
+
+  (* TODO: rename this function. *)
+  let[@inline] is_empty p = M.is_empty p.m
+
+  (* TODO: rename this function. *)
+  let[@inline] choose p = M.min_binding p.m
 
   let map_to_list m =
     List.rev (M.fold (fun x a aliens -> (a, x) :: aliens) m [])
@@ -238,7 +244,7 @@ module Make (X : S) = struct
   let add_const n p = { p with c = Q.add p.c n }
 
   let mult_const n p =
-    if Q.sign n = 0 then zero (type_info p)
+    if Q.sign n = 0 then zero (type_info p) 
     else { p with m = M.map (Q.mult n) p.m; c = Q.mult n p.c }
 
   (* Multiply the polynome p by the monome ax. *)
@@ -282,24 +288,6 @@ module Make (X : S) = struct
     if Q.sign p2.c = 0 then raise Division_by_zero;
     if not (M.is_empty p1.m) then raise Not_a_num;
     { p1 with c = euc_mod_num p1.c p2.c }
-
-  (* TODO: rename this function. *)
-  let is_empty p = M.is_empty p.m
-
-  (* TODO: rename this function. *)
-  let choose p =
-    let tn = ref None in
-    (*version I : prend le premier element de la table*)
-    (try
-       M.iter
-         (fun x a ->
-            tn := Some (a, x);
-            raise Exit)
-         p.m
-     with Exit -> ());
-    (*version II : prend le dernier element de la table i.e. le plus grand
-      M.iter (fun x a -> tn := Some (a, x)) p.m;*)
-    match !tn with Some p -> p | _ -> raise Not_found
 
   let subst x p1 p2 =
     try
@@ -352,7 +340,7 @@ module Make (X : S) = struct
   let normal_form_pos p =
     let p, c, d = normal_form p in
     try
-      let a, _ = choose p in
+      let _, a = choose p in
       if Q.sign a > 0 then (p, c, d)
       else (mult_const Q.m_one p, Q.minus c, Q.minus d)
     with Not_found -> (p, c, d)

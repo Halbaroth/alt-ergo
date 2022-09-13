@@ -581,7 +581,7 @@ struct
   let solve_real p =
     Util.Steps.incr Util.Steps.Omega;
     try
-      let a, x = P.choose p in
+      let x, a = P.choose p in
       let p = P.mult_const (Q.div Q.m_one a) (P.remove x p) in
       [ (x, is_mine p) ]
     with Not_found -> is_null p

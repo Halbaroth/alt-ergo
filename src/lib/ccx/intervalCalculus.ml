@@ -995,7 +995,7 @@ let update_ple0 are_eq env p0 is_le expl =
   if P.is_empty p0 then env
   else
     let ty = P.type_info p0 in
-    let a, _ = P.choose p0 in
+    let _, a = P.choose p0 in
     let p, change =
       if Q.sign a < 0 then
         P.mult_const Q.m_one p0, true
