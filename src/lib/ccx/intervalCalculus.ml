@@ -1111,7 +1111,7 @@ let add_inequations are_eq acc x_opt lin =
          | None -> acc
          | Some x ->
            let ple0 = ineq.Oracle.ple0 in
-           let c = try P.find x ple0 with Not_found -> assert false in
+           let c = try P.coef x ple0 with Not_found -> assert false in
            let ple0 = P.remove x ple0 in
            env, eqs, register_relationship c x ple0 ineq.Oracle.expl rels
     ) acc lin

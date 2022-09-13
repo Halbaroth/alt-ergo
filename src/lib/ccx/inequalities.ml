@@ -143,7 +143,8 @@ module Container : Container_SIG = struct
         in
         { ple0 = p; is_le; dep; expl; age = !age_cpt }
 
-    let find_coefficient x ineq = P.find x ineq.ple0
+    (* TODO: rename the function *)    
+    let find_coefficient x ineq = P.coef x ineq.ple0
 
     let split_pos_neg _ ({ ple0 = p; age; _ }, _) (mx, nb_max) =
       let mx =
@@ -252,13 +253,13 @@ module Container : Container_SIG = struct
         match l with
         | [] -> acc
         | { ple0 = p1; is_le = k1; dep = d1; expl = ex1; age = a1 } :: l ->
-          let n1 = Q.abs (P.find x p1) in
+          let n1 = Q.abs (P.coef x p1) in
           let acc =
             List.fold_left
               (fun acc
                 { ple0 = p2; is_le = k2; dep = d2; expl = ex2; age = a2 } ->
                 Util.Options.exec_thread_yield ();
-                let n2 = Q.abs (P.find x p2) in
+                let n2 = Q.abs (P.coef x p2) in
                 let n1, n2 =
                   (* light normalization of n1 and n2 *)
                   if Q.equal n1 n2 then (Q.one, Q.one) else (n1, n2)

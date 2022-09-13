@@ -49,31 +49,33 @@ module type T = sig
   type t
 
   val create : (Q.t * r) list -> Q.t -> Ast.Ty.t -> t
-  
+  val to_list : t -> (Q.t * r) list * Q.t
+  val is_monomial : t -> (Q.t * r * Q.t) option
+  val is_const : t -> Q.t option
+  val coef : r -> t -> Q.t
+  val choose : t -> Q.t * r
+
   val compare : t -> t -> int
   val equal : t -> t -> bool
   val hash : t -> int
-  
+
   val add : t -> t -> t
   val sub : t -> t -> t
   val mult : t -> t -> t
-  val mult_const : Q.t -> t -> t
   val add_const : Q.t -> t -> t
-  val div : t -> t -> t * bool
+  val mult_const : Q.t -> t -> t
+  val ppmc_denominators : t -> Q.t
+  val pgcd_numerators : t -> Q.t
   val modulo : t -> t -> t
-  val is_const : t -> Q.t option
+  
+  val div : t -> t -> t * bool
   val is_empty : t -> bool
-  val find : r -> t -> Q.t
-  val choose : t -> Q.t * r
   val subst : r -> t -> t -> t
   val remove : r -> t -> t
-  val to_list : t -> (Q.t * r) list * Q.t
   val leaves : t -> r list
   val print : Format.formatter -> t -> unit
   val type_info : t -> Ast.Ty.t
-  val is_monomial : t -> (Q.t * r * Q.t) option
-  val ppmc_denominators : t -> Q.t
-  val pgcd_numerators : t -> Q.t
+
   val normal_form : t -> t * Q.t * Q.t
   val normal_form_pos : t -> t * Q.t * Q.t
   val abstract_selectors : t -> (r * r) list -> t * (r * r) list
@@ -132,7 +134,7 @@ module Make (X : S) = struct
         let c = compare_maps (map_to_list p1.m) (map_to_list p2.m) in
         if c = 0 then Q.compare p1.c p2.c else c
 
-  (** BUG: The function does not test the type of the polynomials. *)
+  (* BUG: The function does not test the type of the polynomials. *)
   let equal { m = m1; c = c1; _ } { m = m2; c = c2; _ } =
     Q.equal c1 c2 && M.equal Q.equal m1 m2
 
@@ -183,11 +185,11 @@ module Make (X : S) = struct
   let print = Debug.print
   let is_const p = if M.is_empty p.m then Some p.c else None
 
-  (** TODO: rename this function. *)
+  (* TODO: rename this function. *)
   let find x m = try M.find x m with Not_found -> Q.zero
 
-  (** TODO: rename this function. *)
-  (** BUG: not checking of the AE type of the elements in the list. *)
+  (* TODO: rename this function. *)
+  (* BUG: not checking of the AE type of the elements in the list. *)
   let create l c ty =
     let m =
       List.fold_left
@@ -208,9 +210,9 @@ module Make (X : S) = struct
         p2.m p1.m
     in
     { m; c = Q.add p1.c p2.c; ty = p1.ty }
-  
+
   let sub p1 p2 =
-    Util.Options.tool_req 4 "TR-Arith-Poly moins"; (** TODO: remove french. *)
+    Util.Options.tool_req 4 "TR-Arith-Poly moins"; (*TODO: remove french. *)
     let m =
       M.fold
         (fun x a m ->
@@ -225,10 +227,10 @@ module Make (X : S) = struct
   let mult_const n p =
     if Q.sign n = 0 then { m = M.empty; c = Q.zero; ty = p.ty }
     else { p with m = M.map (Q.mult n) p.m; c = Q.mult n p.c }
-  
+
   (* Multiply the polynome p by the monome ax. *)
-  (** TODO: rename the function. Monome is not an english word. *)
-  let mult_monome a x p =
+  (* TODO: rename the function. Monome is not an english word. *)
+  let mult_monomial a x p =
     let ax = { m = M.add x a M.empty; c = Q.zero; ty = p.ty } in
     let acx = mult_const p.c ax in
     let m =
@@ -239,8 +241,8 @@ module Make (X : S) = struct
   let mult p1 p2 =
     Util.Options.tool_req 4 "TR-Arith-Poly mult";
     let p = mult_const p1.c p2 in
-    M.fold (fun x a p -> add (mult_monome a x p2) p) p1.m p
-  
+    M.fold (fun x a p -> add (mult_monomial a x p2) p) p1.m p
+
   (* TODO: move this function. *)
   let euc_mod_num c1 c2 =
     let c = Q.modulo c1 c2 in
@@ -261,7 +263,7 @@ module Make (X : S) = struct
     | false, Ast.Ty.Tint -> (p, true (* XXX *))
     | _ -> assert false
 
-  (** TODO: remove this function. *)
+  (* TODO: remove this function. *)
   let modulo p1 p2 =
     Util.Options.tool_req 4 "TR-Arith-Poly mod";
     if not (M.is_empty p2.m) then raise Maybe_zero;
@@ -269,13 +271,12 @@ module Make (X : S) = struct
     if not (M.is_empty p1.m) then raise Not_a_num;
     { p1 with c = euc_mod_num p1.c p2.c }
 
-  (** TODO: rename this function. *)
-  let find x p = M.find x p.m
-  
-  (** TODO: rename this function. *)
+  let coef x p = M.find x p.m
+
+  (* TODO: rename this function. *)
   let is_empty p = M.is_empty p.m
 
-  (** TODO: rename this function. *)
+  (* TODO: rename this function. *)
   let choose p =
     let tn = ref None in
     (*version I : prend le premier element de la table*)
@@ -292,7 +293,7 @@ module Make (X : S) = struct
 
   let subst x p1 p2 =
     try
-      let a = M.find x p2.m in
+      let a = coef x p2 in
       add (mult_const a p1) { p2 with m = M.remove x p2.m }
     with Not_found -> p2
 
@@ -322,12 +323,12 @@ module Make (X : S) = struct
         p.m None
     with Exit -> None
 
-  (** TODO: rename this function. *)
+  (* TODO: rename this function. *)
   let ppmc_denominators { m; _ } =
     let res = M.fold (fun _ c acc -> Z.my_lcm (Q.den c) acc) m Z.one in
     Q.abs (Q.from_z res)
 
-  (** TODO: rename this function. *)
+  (* TODO: rename this function. *)
   let pgcd_numerators { m; _ } =
     let res = M.fold (fun _ c acc -> Z.my_gcd (Q.num c) acc) m Z.zero in
     Q.abs (Q.from_z res)
