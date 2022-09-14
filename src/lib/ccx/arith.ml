@@ -38,6 +38,7 @@ module Q = Util.Numbers.Q
 let is_mult h = Ast.Sy.equal (Ast.Sy.Op Ast.Sy.Mult) h
 let mod_symb = Ast.Sy.name "@mod"
 
+(** TODO: move this function. *)
 let calc_power (c : Q.t) (d : Q.t) (ty : Ast.Ty.t) =
   (* d must be integral and if we work on integer exponentation,
      d must be positive*)
@@ -53,6 +54,7 @@ let calc_power (c : Q.t) (d : Q.t) (ty : Ast.Ty.t) =
   assert (ty != Ast.Ty.Tint || Q.is_int c);
   res
 
+(** TODO: move this function. *)
 let calc_power_opt (c : Q.t) (d : Q.t) (ty : Ast.Ty.t) =
   try Some (calc_power c d ty) with Exit -> None
 
@@ -120,7 +122,8 @@ struct
       true
     | _ -> false
 
-  let empty_polynome ty = P.create [] Q.zero ty
+  (* TODO: replace this function by P.zero. *)
+  let empty_polynome ty = P.make ~coeffs:[] ~ctt:Q.zero ~ty
 
   let is_mine p =
     match P.to_monomial p with
@@ -130,7 +133,7 @@ struct
   let embed r =
     match P.extract r with
     | Some p -> p
-    | _ -> P.create [ (Q.one, r) ] Q.zero (X.type_info r)
+    | _ -> P.make ~coeffs:[ (r, Q.one) ] ~ctt:Q.zero ~ty:(X.type_info r)
 
   (* t1 % t2 = md  <->
      c1. 0 <= md ;
@@ -219,16 +222,19 @@ struct
       | _ -> raise Exit
     with Exit ->
       let a = X.term_embed t in
-      P.add (P.create [ (coef, a) ] Q.zero ty) p_acc
+      P.add (P.make ~coeffs:[ (a, coef) ] ~ctt:Q.zero ~ty) p_acc
 
   let mk_partial_interpretation_2 aux_func coef p_acc ty t x y =
     let px = embed (fst (X.make x)) in
     let py = embed (fst (X.make y)) in
     try
       match (P.to_rational px, P.to_rational py) with
-      | Some c_x, Some c_y -> P.add_const (Q.mult coef (aux_func c_x c_y)) p_acc
-      | _ -> P.add (P.create [ (coef, X.term_embed t) ] Q.zero ty) p_acc
-    with Exit -> P.add (P.create [ (coef, X.term_embed t) ] Q.zero ty) p_acc
+      | Some c_x, Some c_y -> 
+          P.add_const (Q.mult coef (aux_func c_x c_y)) p_acc
+      | _ -> 
+          P.add (P.make ~coeffs:[ (X.term_embed t, coef) ] ~ctt:Q.zero ~ty) p_acc
+    with Exit -> 
+      P.add (P.make ~coeffs:[ (X.term_embed t, coef) ] ~ctt:Q.zero ~ty) p_acc
 
   let rec mke coef p t ctx =
     let { Ast.Expr.f = sb; xs; ty; _ } =
@@ -251,7 +257,7 @@ struct
             [ t1; t2 ] ty
         in
         let xtau, ctx' = X.make tau in
-        ( P.add p (P.create [ (coef, xtau) ] Q.zero ty),
+        ( P.add p (P.make ~coeffs:[ (xtau, coef) ] ~ctt:Q.zero ~ty),
           List.rev_append ctx' ctx )
       else (P.add p (P.mult p1 p2), ctx)
     | Ast.Sy.Op Ast.Sy.Div, [ t1; t2 ] ->
@@ -259,13 +265,13 @@ struct
       let p2, ctx = mke Q.one (empty_polynome ty) t2 ctx in
       if
         get_no_nla ()
-        && (not (P.is_const p2) 
+        && (not (P.is_const p2)
             || (ty == Ast.Ty.Tint && not (P.is_const p1)))
       then
         (* becomes uninterpreted *)
         let tau = Ast.Expr.mk_term (Ast.Sy.name "@/") [ t1; t2 ] ty in
         let xtau, ctx' = X.make tau in
-        ( P.add p (P.create [ (coef, xtau) ] Q.zero ty),
+        ( P.add p (P.make ~coeffs:[ (xtau, coef) ] ~ctt:Q.zero ~ty),
           List.rev_append ctx' ctx )
       else
         let p3, ctx =
@@ -273,7 +279,7 @@ struct
             let p, approx = P.div p1 p2 in
             if approx then mk_euc_division p p2 t1 t2 ctx else (p, ctx)
           with Division_by_zero | Polynome.Maybe_zero ->
-            (P.create [ (Q.one, X.term_embed t) ] Q.zero ty, ctx)
+            (P.make ~coeffs:[ (X.term_embed t, Q.one) ] ~ctt:Q.zero ~ty, ctx)
         in
         (P.add p (P.mult_const coef p3), ctx)
     | Ast.Sy.Op Ast.Sy.Plus, l ->
@@ -289,7 +295,7 @@ struct
         (* becomes uninterpreted *)
         let tau = Ast.Expr.mk_term (Ast.Sy.name "@%") [ t1; t2 ] ty in
         let xtau, ctx' = X.make tau in
-        ( P.add p (P.create [ (coef, xtau) ] Q.zero ty),
+        ( P.add p (P.make ~coeffs:[ (xtau, coef) ] ~ctt:Q.zero ~ty),
           List.rev_append ctx' ctx )
       else
         let p3, ctx =
@@ -304,7 +310,7 @@ struct
               | Polynome.Not_a_num -> mk_modulo t t1 t2 p2 ctx
               | _ -> assert false
             in
-            (P.create [ (Q.one, X.term_embed t) ] Q.zero ty, ctx)
+            (P.make ~coeffs:[ (X.term_embed t, Q.one) ] ~ctt:Q.zero ~ty, ctx)
         in
         (P.add p (P.mult_const coef p3), ctx)
     (*** <begin>: partial handling of some arith/FPA operators **)
@@ -359,7 +365,7 @@ struct
         let ctx = ctx' @ ctx in
         match P.extract a with
         | Some p' -> (P.add p (P.mult_const coef p'), ctx)
-        | _ -> (P.add p (P.create [ (coef, a) ] Q.zero ty), ctx))
+        | _ -> (P.add p (P.make ~coeffs:[ (a, coef) ] ~ctt:Q.zero ~ty), ctx))
 
   let make t =
     tool_req 4 "TR-Arith-Make";
@@ -373,7 +379,7 @@ struct
 
   let unsafe_ac_to_arith { Intf.Solvable_theory.l = rl; Intf.Solvable_theory.t = ty; _ } =
     let mlt = List.fold_left (fun l (r, n) -> expand (embed r) n l) [] rl in
-    List.fold_left P.mult (P.create [] Q.one ty) mlt
+    List.fold_left P.mult (P.one ty) mlt
 
   let rec number_of_vars l =
     List.fold_left (fun acc (r, n) -> acc + (n * nb_vars_in_alien r)) 0 l
@@ -438,7 +444,7 @@ struct
   let subst x t p =
     let p = P.subst x (embed t) p in
     let ty = P.type_info p in
-    let l, c = P.to_list p in
+    let l, ctt = P.to_list p in
     let p =
       List.fold_left
         (fun p (ai, xi) ->
@@ -446,10 +452,10 @@ struct
            let p' =
              match P.extract xi' with
              | Some p' -> P.mult_const ai p'
-             | _ -> P.create [ (ai, xi') ] Q.zero ty
+             | _ -> P.make ~coeffs:[ (xi', ai) ] ~ctt:Q.zero ~ty
            in
            P.add p p')
-        (P.create [] c ty) l
+        (P.make ~coeffs:[] ~ctt ~ty) l
     in
     is_mine p
 
@@ -469,24 +475,26 @@ struct
 
     if Q.compare m (Q.div b (Q.from_int 2)) < 0 then m else Q.sub m b
 
+  (** TODO: move this function in the polynomial module. *)
   let map_monomes f l ax =
     List.fold_left
-      (fun acc (a, x) ->
+      (fun acc (v, a) ->
          let a = f a in
-         if Q.sign a = 0 then acc else (a, x) :: acc)
+         if Q.sign a = 0 then acc else (v, a) :: acc)
       [ ax ] l
 
   let apply_subst sb v =
     is_mine (List.fold_left (fun v (x, p) -> embed (subst x p v)) v sb)
 
+  (* TODO: translate comments. *)
   (* substituer toutes variables plus grandes que x *)
   let subst_bigger x l =
     List.fold_left
       (fun (l, sb) (b, y) ->
          if X.ac_extract y != None && X.str_cmp y x > 0 then
            let k = X.term_embed (Ast.Expr.fresh_name Ast.Ty.Tint) in
-           ((b, k) :: l, (y, embed k) :: sb)
-         else ((b, y) :: l, sb))
+           ((k, b) :: l, (y, embed k) :: sb)
+         else ((y, b) :: l, sb))
       ([], []) l
 
   let is_mine_p = List.map (fun (x, p) -> (x, is_mine p))
@@ -510,7 +518,7 @@ struct
     (* 2. substituer les aliens plus grand que x pour
        assurer l'invariant sur l'ordre AC *)
     let l, sbs = subst_bigger x l in
-    let p = P.create l b Ast.Ty.Tint in
+    let p = P.make ~coeffs:l ~ctt:b ~ty:Ast.Ty.Tint in
     assert (Q.sign a <> 0);
     if Q.equal a Q.one then
       (* 3.1. si a = 1 alors on a une substitution entiere pour x *)
@@ -524,7 +532,7 @@ struct
       (* 4.1. on rend le coef a positif s'il ne l'est pas deja *)
       let a, l, b =
         if Q.sign a < 0 then
-          (Q.minus a, List.map (fun (a, x) -> (Q.minus a, x)) l, Q.minus b)
+          (Q.minus a, List.map (fun (v, a) -> (v, Q.minus a)) l, Q.minus b)
         else (a, l, b)
       in
       (* 4.2. on reduit le systeme *)
@@ -538,19 +546,21 @@ struct
     let sigma = X.term_embed (Ast.Expr.fresh_name Ast.Ty.Tint) in
 
     (* 3. l'application de la formule (5.63) nous donne la valeur du pivot x*)
-    let mm_sigma = (Q.minus m, sigma) in
+    let mm_sigma = (sigma, Q.minus m) in
     let l_mod = map_monomes (fun a -> mod_sym a m) l mm_sigma in
 
     (* 3.1. Attention au signe de b :
        on le passe a droite avant de faire mod_sym, d'ou Q.minus *)
     let b_mod = Q.minus (mod_sym (Q.minus b) m) in
-    let p = P.create l_mod b_mod Ast.Ty.Tint in
+    let p = P.make ~coeffs:l_mod ~ctt:b_mod ~ty:Ast.Ty.Tint in
 
     let sbs = (x, p) :: sbs in
 
     (* 4. on substitue x par sa valeur dans l'equation de depart.
        Voir la formule (5.64) *)
-    let p' = P.add (P.mult_const a p) (P.create l b Ast.Ty.Tint) in
+    let p' = P.add (P.mult_const a p) 
+      (P.make ~coeffs:l ~ctt:b ~ty:Ast.Ty.Tint) 
+    in
 
     (* 5. on resoud sur l'equation simplifiee *)
     let sbs2 = solve_int p' in
@@ -587,8 +597,9 @@ struct
     with Not_found -> is_null p
 
   let unsafe_ac_to_arith { Intf.Solvable_theory.l = rl; Intf.Solvable_theory.t = ty; _ } =
+    (* TODO: create a constructor for product of polynomials. *)
     let mlt = List.fold_left (fun l (r, n) -> expand (embed r) n l) [] rl in
-    List.fold_left P.mult (P.create [] Q.one ty) mlt
+    List.fold_left P.mult (P.one ty) mlt
 
   let polynome_distribution p unsafe_mode =
     let l, c = P.to_list p in
@@ -599,8 +610,8 @@ struct
            match X.ac_extract x with
            | Some ac when is_mult ac.h ->
              P.add p (P.mult_const coef (unsafe_ac_to_arith ac))
-           | _ -> P.add p (P.create [ (coef, x) ] Q.zero ty))
-        (P.create [] c ty) l
+           | _ -> P.add p (P.make ~coeffs:[ (x, coef) ] ~ctt:Q.zero ~ty))
+        (P.make ~coeffs:[] ~ctt:c ~ty) l
     in
     if (not unsafe_mode) && has_ac pp (fun ac -> is_mult ac.h) then p else pp
 

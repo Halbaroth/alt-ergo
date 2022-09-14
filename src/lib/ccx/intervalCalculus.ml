@@ -218,7 +218,7 @@ module Sim_Wrap = struct
           orig X.print x Q.print n  Q.print s;
       let ty = X.type_info x in
       let r1 = x in
-      let r2 = alien_of (P.create [] n  ty) in
+      let r2 = alien_of (P.make ~coeffs:[] ~ctt:n  ~ty) in
       [LR.mkv_eq r1 r2, true, Ast.Th_util.CS (Ast.Th_util.Th_arith, s)]
     in
     let aux_1 uf x (info,_) acc =
@@ -701,7 +701,7 @@ let intervals_from_monomes ?(monomes_inited=true) env p =
    the normalized form of p ... *)
 let cannot_be_equal_to_zero env p ip =
   try
-    let z = alien_of (P.create [] Q.zero (P.type_info p)) in
+    let z = alien_of (P.make ~coeffs:[] ~ctt:Q.zero ~ty:(P.type_info p)) in
     match X.solve (alien_of p) z with
     | [] -> None (* p is equal to zero *)
     | _ -> I.doesnt_contain_0 ip
@@ -909,7 +909,7 @@ let find_one_eq x u =
   match I.is_point u with
   | Some (v, ex) when X.type_info x != Ast.Ty.Tint || Q.is_int v ->
     let eq =
-      LR.mkv_eq x (alien_of (P.create [] v (X.type_info x))) in
+      LR.mkv_eq x (alien_of (P.make ~coeffs:[] ~ctt:v ~ty:(X.type_info x))) in
     Some (eq, None, ex, Ast.Th_util.Other)
   | _ -> None
 
@@ -962,7 +962,7 @@ let ineq_status { Oracle.ple0 = p ; is_le; _ } =
 
 let mk_equality p =
   let r1 = alien_of p in
-  let r2 = alien_of (P.create [] Q.zero (P.type_info p)) in
+  let r2 = alien_of (P.zero (P.type_info p)) in
   LR.mkv_eq r1 r2
 
 let fm_equalities eqs { Oracle.dep; expl = ex; _ } =
@@ -1092,7 +1092,7 @@ let add_inequations are_eq acc x_opt lin =
                   match pp with
                     Some x -> P.compare x p = 0 | _ -> is_le && n=0
                 in
-                let p' = P.sub (P.create [] (Q.div c coef) ty) p in
+                let p' = P.sub (P.make ~coeffs:[] ~ctt:(Q.div c coef) ~ty) p in
                 update_ple0 are_eq env p' is_le expl
              ) ineq.Oracle.dep env
          in
@@ -1409,12 +1409,12 @@ let add_equality are_eq env eqs p expl =
 let normal_form a = match a with
   | L.Builtin (false, L.LE, [r1; r2])
     when X.type_info r1 == Ast.Ty.Tint ->
-    let pred_r1 = P.sub (poly_of r1) (P.create [] Q.one Ast.Ty.Tint) in
+    let pred_r1 = P.sub (poly_of r1) (P.one Ast.Ty.Tint) in
     LR.mkv_builtin true L.LE [r2; alien_of pred_r1]
 
   | L.Builtin (true, L.LT, [r1; r2]) when
       X.type_info r1 == Ast.Ty.Tint ->
-    let pred_r2 = P.sub (poly_of r2) (P.create [] Q.one Ast.Ty.Tint) in
+    let pred_r2 = P.sub (poly_of r2) (P.one Ast.Ty.Tint) in
     LR.mkv_builtin true L.LE [r1; alien_of pred_r2]
 
   | L.Builtin (false, L.LE, [r1; r2]) ->
@@ -1446,7 +1446,7 @@ let equalities_from_polynomes env eqs =
          else
            match I.is_point i with
            | Some (num, ex) ->
-             let r2 = alien_of (P.create [] num (P.type_info p)) in
+               let r2 = alien_of (P.make ~coeffs:[] ~ctt:num ~ty:(P.type_info p)) in
              SX.add xp knw, (LR.mkv_eq xp r2, None, ex, Ast.Th_util.Other) :: eqs
            | None -> knw, eqs
       ) env.polynomes  (env.known_eqs, eqs)
@@ -1462,7 +1462,7 @@ let equalities_from_monomes env eqs =
          else
            match I.is_point i with
            | Some (num, ex) ->
-             let r2 = alien_of (P.create [] num (X.type_info x)) in
+             let r2 = alien_of (P.make ~coeffs:[] ~ctt:num ~ty:(X.type_info x)) in
              SX.add x knw, (LR.mkv_eq x r2, None, ex, Ast.Th_util.Other) :: eqs
            | None -> knw, eqs
       ) env.monomes  (env.known_eqs, eqs)
@@ -1536,13 +1536,13 @@ let calc_pow a b ty uf =
           ra
           (* x ** 0 -> 1 *)
         else if Q.equal c_y Q.zero then
-          alien_of (P.create [] Q.one ty)
+          alien_of (P.one ty)
         else
           match P.to_rational pa with
           | Some c_x ->
             (* x ** y *)
             let res = Arith.calc_power c_x c_y ty  in
-            alien_of (P.create [] res ty)
+            alien_of (P.make ~coeffs:[] ~ctt:res ~ty)
           | None -> raise Exit
       in
       Some (res,Ast.Ex.union expl_a expl_b)
@@ -1746,7 +1746,7 @@ let case_split_polynomes env =
   match o with
   | Some (s, p, n) ->
     let r1 = alien_of p in
-    let r2 = alien_of (P.create [] n  (P.type_info p)) in
+    let r2 = alien_of (P.make ~coeffs:[] ~ctt:n ~ty:(P.type_info p)) in
     Debug.case_split r1 r2;
     [LR.mkv_eq r1 r2, true, Ast.Th_util.CS (Ast.Th_util.Th_arith, s)], s
   | None ->
@@ -1772,7 +1772,7 @@ let case_split_monomes env =
   | Some (s,x,n) ->
     let ty = X.type_info x in
     let r1 = x in
-    let r2 = alien_of (P.create [] n  ty) in
+    let r2 = alien_of (P.make ~coeffs:[] ~ctt:n ~ty) in
     Debug.case_split r1 r2;
     [LR.mkv_eq r1 r2, true, Ast.Th_util.CS (Ast.Th_util.Th_arith, s)], s
   | None ->
@@ -1912,7 +1912,7 @@ let case_split_union_of_intervals =
     | Some(_,None, _) -> assert false
     | Some(r1,Some (n, eps), _) ->
       let ty = X.type_info r1 in
-      let r2 = alien_of (P.create [] n ty) in
+      let r2 = alien_of (P.make ~coeffs:[] ~ctt:n ~ty) in
       let pred =
         if Q.is_zero eps then L.LE else (assert (Q.is_m_one eps); L.LT)
       in

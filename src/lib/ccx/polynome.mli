@@ -77,11 +77,12 @@ module type T = sig
   val one  : Ast.Ty.t -> t
   (** [one ty] is the one polynomial of type [ty]. *)
 
-  val create :
-    (Util.Numbers.Q.t * r) list -> Util.Numbers.Q.t -> Ast.Ty.t -> t
-  (** [create lst c ty] creates a new polynomial whose the coefficients are
-      given by the list [lst], the constant term is [c] and the Alt-Ergo type
-      is [ty]. *)
+  val make :
+    coeffs:(r * Util.Numbers.Q.t) list -> ctt:Util.Numbers.Q.t -> ty:Ast.Ty.t 
+    -> t
+  (** [create coeffs ctt ty] creates a new polynomial whose the coefficients are
+      given by the list [coeffs], the constant term is [ctt] and the Alt-Ergo 
+      type is [ty]. *)
 
   val to_list : t -> (Util.Numbers.Q.t * r) list * Util.Numbers.Q.t
   (** [to_list p] converts the polynomial [p] to a list.
@@ -123,7 +124,7 @@ module type T = sig
   val hash : t -> int
   (** [hash p] computes the hash of the polynomial [p]. If
       {m p = c + \sum_{i=1}^d a_i \cdot v_i} with {m (v_i)} a
-      nonincreasing sequence of semantic values 
+      nonincreasing sequence of semantic values
       for the order {!val:S.str_cmp}, the hash of [p] is
       given by the formula
       {math  23^d(19 h_c + 17 h_{ty}) + \sum_{i=1}^d 23^{d-i} h_{a_i} h_{v_i}}
