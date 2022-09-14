@@ -53,6 +53,7 @@ module type T = sig
   val make : coeffs:(r * Q.t) list -> ctt:Q.t -> ty:Ast.Ty.t -> t
   val to_list : t -> (Q.t * r) list * Q.t
   val to_monomial : t -> (Q.t * r * Q.t) option
+  val of_rational : Q.t -> Ast.Ty.t -> t
   val to_rational : t -> Q.t option
   val coef : r -> t -> Q.t
   val choose : t -> r * Q.t
@@ -117,6 +118,18 @@ module Make (X : S) = struct
   let find v m = try M.find v m with Not_found -> Q.zero
   let[@inline] coef v p = M.find v p.coeffs
 
+  (* TODO: rename this function. *)
+  (* BUG: not checking of the AE type of the elements in the list. *)
+  let make ~coeffs ~ctt ~ty =
+    let coeffs =
+      List.fold_left
+        (fun m (v, a) ->
+           let b = Q.add a (find v m) in
+           if Q.sign b = 0 then M.remove v m else M.add v b m)
+        M.empty coeffs
+    in
+    { coeffs; ctt; ty }
+
   let[@inline] is_const p = M.is_empty p.coeffs
 
   (* TODO: rename this function. *)
@@ -129,7 +142,8 @@ module Make (X : S) = struct
         p.coeffs None
     with Exit -> None
 
-  let to_rational p = if M.is_empty p.coeffs then Some p.ctt else None
+  let of_rational ctt ty = make ~coeffs:[] ~ctt ~ty
+  let to_rational p = if is_const p then Some p.ctt else None
 
   let map_to_list m =
     List.rev (M.fold (fun x a aliens -> (a, x) :: aliens) m [])
@@ -194,7 +208,7 @@ module Make (X : S) = struct
            fprintf fmt "%s%s%s%a" s n op X.print x)
         p.coeffs;
       let s, n =
-        if Q.sign p.ctt > 0 then 
+        if Q.sign p.ctt > 0 then
           ((if !zero then "" else "+"), Q.to_string p.ctt)
         else if Q.sign p.ctt < 0 then ("-", Q.to_string (Q.minus p.ctt))
         else if !zero then ("", "0")
@@ -205,7 +219,7 @@ module Make (X : S) = struct
     let print fmt p =
       if Util.Options.get_term_like_pp () then pprint fmt p
       else (
-        M.iter (fun t n -> fprintf fmt "%s*%a " 
+        M.iter (fun t n -> fprintf fmt "%s*%a "
           (Q.to_string n) X.print t) p.coeffs;
         fprintf fmt "%s%s"
           (if Q.compare_to_0 p.ctt >= 0 then "+ " else "")
@@ -215,18 +229,6 @@ module Make (X : S) = struct
   (*BISECT-IGNORE-END*)
 
   let print = Debug.print
-
-  (* TODO: rename this function. *)
-  (* BUG: not checking of the AE type of the elements in the list. *)
-  let make ~coeffs ~ctt ~ty =
-    let coeffs =
-      List.fold_left
-        (fun m (v, a) ->
-           let b = Q.add a (find v m) in
-           if Q.sign b = 0 then M.remove v m else M.add v b m)
-        M.empty coeffs
-    in
-    { coeffs; ctt; ty }
 
   let add p1 p2 =
     Util.Options.tool_req 4 "TR-Arith-Poly plus";
@@ -261,7 +263,7 @@ module Make (X : S) = struct
     let av = { coeffs = M.add v a M.empty; ctt = Q.zero; ty = p.ty } in
     let acv = mult_const p.ctt av in
     let coeffs =
-      M.fold (fun vi ai m -> M.add (X.mult v vi) (Q.mult a ai) m) 
+      M.fold (fun vi ai m -> M.add (X.mult v vi) (Q.mult a ai) m)
       p.coeffs acv.coeffs
     in
     { acv with coeffs }
@@ -319,8 +321,8 @@ module Make (X : S) = struct
   let xs_of_list sx l = List.fold_left (fun s x -> SX.add x s) sx l
 
   let leaves p =
-    let s = 
-      M.fold (fun a _ s -> xs_of_list s (X.leaves a)) p.coeffs SX.empty 
+    let s =
+      M.fold (fun a _ s -> xs_of_list s (X.leaves a)) p.coeffs SX.empty
     in
     SX.elements s
 

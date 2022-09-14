@@ -122,9 +122,6 @@ struct
       true
     | _ -> false
 
-  (* TODO: replace this function by P.zero. *)
-  let empty_polynome ty = P.make ~coeffs:[] ~ctt:Q.zero ~ty
-
   let is_mine p =
     match P.to_monomial p with
     | Some (a, x, b) when Q.equal a Q.one && Q.sign b = 0 -> x
@@ -229,11 +226,11 @@ struct
     let py = embed (fst (X.make y)) in
     try
       match (P.to_rational px, P.to_rational py) with
-      | Some c_x, Some c_y -> 
+      | Some c_x, Some c_y ->
           P.add_const (Q.mult coef (aux_func c_x c_y)) p_acc
-      | _ -> 
+      | _ ->
           P.add (P.make ~coeffs:[ (X.term_embed t, coef) ] ~ctt:Q.zero ~ty) p_acc
-    with Exit -> 
+    with Exit ->
       P.add (P.make ~coeffs:[ (X.term_embed t, coef) ] ~ctt:Q.zero ~ty) p_acc
 
   let rec mke coef p t ctx =
@@ -247,8 +244,8 @@ struct
       let c = Q.mult coef (Q.from_string (Util.Hstring.view n)) in
       (P.add_const c p, ctx)
     | Ast.Sy.Op Ast.Sy.Mult, [ t1; t2 ] ->
-      let p1, ctx = mke coef (empty_polynome ty) t1 ctx in
-      let p2, ctx = mke Q.one (empty_polynome ty) t2 ctx in
+      let p1, ctx = mke coef (P.zero ty) t1 ctx in
+      let p2, ctx = mke Q.one (P.zero ty) t2 ctx in
       if get_no_nla () && not (P.is_const p1) && not (P.is_const p2) then
         (* becomes uninterpreted *)
         let tau =
@@ -261,8 +258,8 @@ struct
           List.rev_append ctx' ctx )
       else (P.add p (P.mult p1 p2), ctx)
     | Ast.Sy.Op Ast.Sy.Div, [ t1; t2 ] ->
-      let p1, ctx = mke Q.one (empty_polynome ty) t1 ctx in
-      let p2, ctx = mke Q.one (empty_polynome ty) t2 ctx in
+      let p1, ctx = mke Q.one (P.zero ty) t1 ctx in
+      let p2, ctx = mke Q.one (P.zero ty) t2 ctx in
       if
         get_no_nla ()
         && (not (P.is_const p2)
@@ -288,8 +285,8 @@ struct
       let p2, ctx = mke (Q.minus coef) p t2 ctx in
       mke coef p2 t1 ctx
     | Ast.Sy.Op Ast.Sy.Modulo, [ t1; t2 ] ->
-      let p1, ctx = mke Q.one (empty_polynome ty) t1 ctx in
-      let p2, ctx = mke Q.one (empty_polynome ty) t2 ctx in
+      let p1, ctx = mke Q.one (P.zero ty) t1 ctx in
+      let p2, ctx = mke Q.one (P.zero ty) t2 ctx in
       if get_no_nla () && (not (P.is_const p1) || not (P.is_const p2))
       then
         (* becomes uninterpreted *)
@@ -370,7 +367,7 @@ struct
   let make t =
     tool_req 4 "TR-Arith-Make";
     let ty = Ast.Expr.type_info t in
-    let p, ctx = mke Q.one (empty_polynome ty) t [] in
+    let p, ctx = mke Q.one (P.zero ty) t [] in
     (is_mine p, ctx)
 
   let rec expand p n acc =
@@ -455,7 +452,7 @@ struct
              | _ -> P.make ~coeffs:[ (xi', ai) ] ~ctt:Q.zero ~ty
            in
            P.add p p')
-        (P.make ~coeffs:[] ~ctt ~ty) l
+        (P.of_rational ctt ty) l
     in
     is_mine p
 
@@ -558,8 +555,8 @@ struct
 
     (* 4. on substitue x par sa valeur dans l'equation de depart.
        Voir la formule (5.64) *)
-    let p' = P.add (P.mult_const a p) 
-      (P.make ~coeffs:l ~ctt:b ~ty:Ast.Ty.Tint) 
+    let p' = P.add (P.mult_const a p)
+      (P.make ~coeffs:l ~ctt:b ~ty:Ast.Ty.Tint)
     in
 
     (* 5. on resoud sur l'equation simplifiee *)
@@ -602,7 +599,7 @@ struct
     List.fold_left P.mult (P.one ty) mlt
 
   let polynome_distribution p unsafe_mode =
-    let l, c = P.to_list p in
+    let l, ctt = P.to_list p in
     let ty = P.type_info p in
     let pp =
       List.fold_left
@@ -611,7 +608,7 @@ struct
            | Some ac when is_mult ac.h ->
              P.add p (P.mult_const coef (unsafe_ac_to_arith ac))
            | _ -> P.add p (P.make ~coeffs:[ (x, coef) ] ~ctt:Q.zero ~ty))
-        (P.make ~coeffs:[] ~ctt:c ~ty) l
+        (P.of_rational ctt ty) l
     in
     if (not unsafe_mode) && has_ac pp (fun ac -> is_mult ac.h) then p else pp
 

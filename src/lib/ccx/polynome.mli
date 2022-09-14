@@ -78,10 +78,10 @@ module type T = sig
   (** [one ty] is the one polynomial of type [ty]. *)
 
   val make :
-    coeffs:(r * Util.Numbers.Q.t) list -> ctt:Util.Numbers.Q.t -> ty:Ast.Ty.t 
+    coeffs:(r * Util.Numbers.Q.t) list -> ctt:Util.Numbers.Q.t -> ty:Ast.Ty.t
     -> t
   (** [create coeffs ctt ty] creates a new polynomial whose the coefficients are
-      given by the list [coeffs], the constant term is [ctt] and the Alt-Ergo 
+      given by the list [coeffs], the constant term is [ctt] and the Alt-Ergo
       type is [ty]. *)
 
   val to_list : t -> (Util.Numbers.Q.t * r) list * Util.Numbers.Q.t
@@ -95,6 +95,10 @@ module type T = sig
 
       @returns [Some (a, v, c)] if [p] is the monomial {m av + c}.
       Otherwise the function returns [None]. *)
+
+  val of_rational : Util.Numbers.Q.t -> Ast.Ty.t -> t
+  (** [of_rational ctt ty] creates a constant polynomial whose the constant 
+      term is [ctt] and the Alt-Ergo type is [ty]. *)
 
   val to_rational : t -> Util.Numbers.Q.t option
   (** [to_rational p] converts [p] to a rational representation.
