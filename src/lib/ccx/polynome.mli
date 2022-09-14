@@ -122,8 +122,9 @@ module type T = sig
 
   val hash : t -> int
   (** [hash p] computes the hash of the polynomial [p]. If
-      {m p = c + \sum_{i=1}^d a_i \cdot v_i} with {m (v_i)} is a
-      decreasing sequence for the order {!val:S.str_cmp}, the hash is
+      {m p = c + \sum_{i=1}^d a_i \cdot v_i} with {m (v_i)} a
+      nonincreasing sequence of semantic values 
+      for the order {!val:S.str_cmp}, the hash of [p] is
       given by the formula
       {math  23^d(19 h_c + 17 h_{ty}) + \sum_{i=1}^d 23^{d-i} h_{a_i} h_{v_i}}
       where
@@ -181,14 +182,14 @@ module type T = sig
   (** {2 Arithmetical operations} *)
 
   val ppmc_denominators : t -> Util.Numbers.Q.t
-  (** [ppmc_denominators p] carries on the {e positive lcm} of the denominators
+  (** [ppmc_denominators p] computes the {e positive lcm} of the denominators
       of the coefficients of [p]. If {m p = c + \sum_{v \in V} a_v \cdot v }
       and {m a_v = \frac{n_v}{d_v}} with {m n_v} and {m d_v} two integers such
       that {m n_v \wedge d_v = 1}, then the
       result is {m \wedge_{v \in V} d_v}. *)
 
   val pgcd_numerators : t -> Util.Numbers.Q.t
-  (** [pgcd_numerators p] carries on the {e positive gcd} of the numerators of
+  (** [pgcd_numerators p] computes the {e positive gcd} of the numerators of
       the coefficients of [p]. If {m p = c + \sum_{v \in V} a_v \cdot v }
       and {m a_v = \frac{n_v}{d_v}} with {m n_v} and {m d_v} two integers such
       that {m n_v \wedge d_v = 1}, then the
