@@ -208,8 +208,8 @@ module type T = sig
 
       @returns the division as a constant polynomial. *)
 
-  val is_empty : t -> bool
-  (** [is_empty p] is true if and only if the polynomial
+  val is_const : t -> bool
+  (** [is_const p] is true if and only if the polynomial
       [p] has no nonzero coefficient. *)
 
   val subst : r -> t -> t -> t

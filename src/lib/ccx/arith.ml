@@ -243,7 +243,7 @@ struct
     | Ast.Sy.Op Ast.Sy.Mult, [ t1; t2 ] ->
       let p1, ctx = mke coef (empty_polynome ty) t1 ctx in
       let p2, ctx = mke Q.one (empty_polynome ty) t2 ctx in
-      if get_no_nla () && P.to_rational p1 == None && P.to_rational p2 == None then
+      if get_no_nla () && not (P.is_const p1) && not (P.is_const p2) then
         (* becomes uninterpreted *)
         let tau =
           Ast.Expr.mk_term
@@ -259,8 +259,8 @@ struct
       let p2, ctx = mke Q.one (empty_polynome ty) t2 ctx in
       if
         get_no_nla ()
-        && (P.to_rational p2 == None
-            || (ty == Ast.Ty.Tint && P.to_rational p1 == None))
+        && (not (P.is_const p2) 
+            || (ty == Ast.Ty.Tint && not (P.is_const p1)))
       then
         (* becomes uninterpreted *)
         let tau = Ast.Expr.mk_term (Ast.Sy.name "@/") [ t1; t2 ] ty in
@@ -284,7 +284,7 @@ struct
     | Ast.Sy.Op Ast.Sy.Modulo, [ t1; t2 ] ->
       let p1, ctx = mke Q.one (empty_polynome ty) t1 ctx in
       let p2, ctx = mke Q.one (empty_polynome ty) t2 ctx in
-      if get_no_nla () && (P.to_rational p1 == None || P.to_rational p2 == None)
+      if get_no_nla () && (not (P.is_const p1) || not (P.is_const p2))
       then
         (* becomes uninterpreted *)
         let tau = Ast.Expr.mk_term (Ast.Sy.name "@%") [ t1; t2 ] ty in
@@ -564,7 +564,7 @@ struct
 
   and solve_int p =
     Util.Steps.incr Util.Steps.Omega;
-    if P.is_empty p then raise Not_found;
+    if P.is_const p then raise Not_found;
     let pgcd = P.pgcd_numerators p in
     let ppmc = P.ppmc_denominators p in
     let p = P.mult_const (Q.div ppmc pgcd) p in
@@ -728,7 +728,7 @@ struct
         acc distincts
     in
     fun r distincts eq ->
-      if P.to_rational (embed r) != None then None
+      if P.is_const (embed r) then None
       else if
         List.exists
           (fun (t, x) ->
@@ -771,13 +771,13 @@ struct
       Util.Printer.print_dbg ~module_name:"Arith"
         ~function_name:"choose_adequate_model" "choose_adequate_model for %a"
         Ast.Expr.print t;
-    let l = List.filter (fun (_, r) -> P.to_rational (embed r) != None) l in
+    let l = List.filter (fun (_, r) -> P.is_const (embed r)) l in
     let r =
       match l with
       | [] ->
         (* We do this, because terms of some semantic values created
            by CS are not created and added to UF *)
-        assert (P.to_rational (embed r) != None);
+        assert (P.is_const (embed r));
         r
       | (_, r) :: l ->
         List.iter (fun (_, x) -> assert (X.hash_equal x r)) l;

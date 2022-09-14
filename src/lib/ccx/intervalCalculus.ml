@@ -942,7 +942,7 @@ let ineq_status { Oracle.ple0 = p ; is_le; _ } =
   match P.to_monomial p with
     Some (a, x, v) -> Monome (a, x, v)
   | None ->
-    if P.is_empty p then
+    if P.is_const p then
       let _, v = P.separate_constant p in
       let c = Q.sign v (* equiv. to compare v Q.zero *) in
       if c > 0 || (c >=0 && not is_le) then Bottom
@@ -992,7 +992,7 @@ let update_intervals are_eq env eqs expl (a, x, v) is_le =
   env, (find_eq eqs x u env)
 
 let update_ple0 are_eq env p0 is_le expl =
-  if P.is_empty p0 then env
+  if P.is_const p0 then env
   else
     let ty = P.type_info p0 in
     let _, a = P.choose p0 in
@@ -1184,7 +1184,7 @@ let better_upper_bound_from_intervals env p =
 
 let better_bound_from_intervals env ({ Oracle.ple0; is_le; dep; _ } as v) =
   let p, c = P.separate_constant ple0 in
-  assert (not (P.is_empty p));
+  assert (not @@ P.is_const p);
   let cur_up_bnd = Q.minus c in
   let i_up_bnd, expl, is_large = better_upper_bound_from_intervals env p in
   let new_p = P.add_const (Q.minus i_up_bnd) p in

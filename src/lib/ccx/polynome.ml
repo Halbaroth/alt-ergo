@@ -71,7 +71,7 @@ module type T = sig
   val modulo : t -> t -> t
 
   val div : t -> t -> t * bool
-  val is_empty : t -> bool
+  val is_const : t -> bool
   val subst : r -> t -> t -> t
   val remove : r -> t -> t
   val leaves : t -> r list
@@ -117,8 +117,7 @@ module Make (X : S) = struct
   let find v m = try M.find v m with Not_found -> Q.zero
   let[@inline] coef v p = M.find v p.m
 
-  (* TODO: rename this function. *)
-  let[@inline] is_empty p = M.is_empty p.m
+  let[@inline] is_const p = M.is_empty p.m
 
   (* TODO: rename this function. *)
   let[@inline] choose p = M.min_binding p.m
@@ -280,10 +279,10 @@ module Make (X : S) = struct
   (* TODO: remove this function. *)
   let div p1 p2 =
     Util.Options.tool_req 4 "TR-Arith-Poly div";
-    if not (M.is_empty p2.m) then raise Maybe_zero;
+    if not @@ is_const p2 then raise Maybe_zero;
     if Q.sign p2.c = 0 then raise Division_by_zero;
     let p = mult_const (Q.div Q.one p2.c) p1 in
-    match (M.is_empty p.m, p.ty) with
+    match (is_const p, p.ty) with
     | _, Ast.Ty.Treal -> (p, false)
     | true, Ast.Ty.Tint -> ({ p with c = euc_div_num p1.c p2.c }, false)
     | false, Ast.Ty.Tint -> (p, true (* XXX *))
@@ -292,9 +291,9 @@ module Make (X : S) = struct
   (* TODO: remove this function. *)
   let modulo p1 p2 =
     Util.Options.tool_req 4 "TR-Arith-Poly mod";
-    if not (M.is_empty p2.m) then raise Maybe_zero;
+    if not @@ is_const p2 then raise Maybe_zero;
     if Q.sign p2.c = 0 then raise Division_by_zero;
-    if not (M.is_empty p1.m) then raise Not_a_num;
+    if not @@ is_const p1 then raise Not_a_num;
     { p1 with c = euc_mod_num p1.c p2.c }
 
   let subst x p1 p2 =
