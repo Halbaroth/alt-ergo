@@ -82,7 +82,7 @@ let poly_of r = Shostak.Arith.embed r
 
 (* should be provided by the shostak part or CX directly *)
 let is_alien x =
-  match P.is_monomial @@ poly_of x with
+  match P.to_monomial @@ poly_of x with
   | Some(a, _, c) -> Q.equal a Q.one && Q.equal c Q.zero
   | _ -> false
 
@@ -741,7 +741,7 @@ and update_monome are_eq expl use_x env x =
         List.fold_left
           (fun env (r,_) ->
              let rp, _, _ = poly_of r |> P.normal_form_pos in
-             match P.is_monomial rp with
+             match P.to_monomial rp with
              | Some (a,y,b) when Q.equal a Q.one && Q.sign b = 0 ->
                update_monome are_eq expl use_x env y
              | _ -> env (* should update polys ? *)
@@ -939,7 +939,7 @@ type ineq_status =
   | Other
 
 let ineq_status { Oracle.ple0 = p ; is_le; _ } =
-  match P.is_monomial p with
+  match P.to_monomial p with
     Some (a, x, v) -> Monome (a, x, v)
   | None ->
     if P.is_empty p then
@@ -1492,7 +1492,7 @@ let add_ineq a v ineqs =
 
 (*** functions to improve intervals modulo equality ***)
 let tighten_eq_bounds env r1 r2 p1 p2 origin_eq expl =
-  if P.is_const p1 != None || P.is_const p2 != None then env
+  if P.to_rational p1 != None || P.to_rational p2 != None then env
   else
     match origin_eq with
     | Ast.Th_util.CS _ | Ast.Th_util.NCS _ -> env
@@ -1528,7 +1528,7 @@ let calc_pow a b ty uf =
   let pa = poly_of ra in
   let pb = poly_of rb in
   try
-    match P.is_const pb with
+    match P.to_rational pb with
     | Some c_y ->
       let res =
         (* x ** 1 -> x *)
@@ -1538,7 +1538,7 @@ let calc_pow a b ty uf =
         else if Q.equal c_y Q.zero then
           alien_of (P.create [] Q.one ty)
         else
-          match P.is_const pa with
+          match P.to_rational pa with
           | Some c_x ->
             (* x ** y *)
             let res = Arith.calc_power c_x c_y ty  in
@@ -1553,7 +1553,7 @@ let calc_pow a b ty uf =
 let update_used_by_pow env r1 p2 orig  eqs =
   try
     if orig != Ast.Th_util.Subst then raise Exit;
-    if P.is_const p2 == None then raise Exit;
+    if P.to_rational p2 == None then raise Exit;
     let s = (MX0.find r1 env.used_by).pow in
     Ast.Expr.Set.fold (fun t eqs ->
         match Ast.Expr.term_view t with
@@ -1623,7 +1623,7 @@ let assume ~query env uf la =
              incr nb_num;
              let p = P.sub (poly_of r1) (poly_of r2) in
              begin
-               match P.is_const p with
+               match P.to_rational p with
                | Some c ->
                  if Q.is_zero c then (* bottom *)
                    raise (Ast.Ex.Inconsistent (expl, env.classes))
@@ -2068,7 +2068,7 @@ let case_split env uf ~for_model =
 
 let best_interval_of optimized env p =
   (* p is supposed to be in normal_form_pos *)
-  match P.is_const p with
+  match P.to_rational p with
   | Some c -> env, I.point c (P.type_info p) Ast.Ex.empty
   | None ->
     let i =
@@ -2109,7 +2109,7 @@ let integrate_mapsTo_bindings sbs maps_to =
            assert (not (Ast.Sy.Map.mem x sbt));
            let t = Ast.Expr.apply_subst sbs tx in
            let mk, _ = X.make t in
-           match P.is_const (poly_of mk) with
+           match P.to_rational (poly_of mk) with
            | None ->
              if get_debug_fpa () >= 2 then
                Util.Printer.print_dbg

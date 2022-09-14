@@ -123,7 +123,7 @@ struct
   let empty_polynome ty = P.create [] Q.zero ty
 
   let is_mine p =
-    match P.is_monomial p with
+    match P.to_monomial p with
     | Some (a, x, b) when Q.equal a Q.one && Q.sign b = 0 -> x
     | _ -> P.embed p
 
@@ -141,7 +141,7 @@ struct
     let zero = Ast.Expr.int "0" in
     let c1 = Ast.Expr.mk_builtin ~is_pos:true Ast.Sy.LE [ zero; md ] in
     let c2 =
-      match P.is_const p2 with
+      match P.to_rational p2 with
       | Some n2 ->
         let an2 = Q.abs n2 in
         assert (Q.is_int an2);
@@ -225,7 +225,7 @@ struct
     let px = embed (fst (X.make x)) in
     let py = embed (fst (X.make y)) in
     try
-      match (P.is_const px, P.is_const py) with
+      match (P.to_rational px, P.to_rational py) with
       | Some c_x, Some c_y -> P.add_const (Q.mult coef (aux_func c_x c_y)) p_acc
       | _ -> P.add (P.create [ (coef, X.term_embed t) ] Q.zero ty) p_acc
     with Exit -> P.add (P.create [ (coef, X.term_embed t) ] Q.zero ty) p_acc
@@ -243,7 +243,7 @@ struct
     | Ast.Sy.Op Ast.Sy.Mult, [ t1; t2 ] ->
       let p1, ctx = mke coef (empty_polynome ty) t1 ctx in
       let p2, ctx = mke Q.one (empty_polynome ty) t2 ctx in
-      if get_no_nla () && P.is_const p1 == None && P.is_const p2 == None then
+      if get_no_nla () && P.to_rational p1 == None && P.to_rational p2 == None then
         (* becomes uninterpreted *)
         let tau =
           Ast.Expr.mk_term
@@ -259,8 +259,8 @@ struct
       let p2, ctx = mke Q.one (empty_polynome ty) t2 ctx in
       if
         get_no_nla ()
-        && (P.is_const p2 == None
-            || (ty == Ast.Ty.Tint && P.is_const p1 == None))
+        && (P.to_rational p2 == None
+            || (ty == Ast.Ty.Tint && P.to_rational p1 == None))
       then
         (* becomes uninterpreted *)
         let tau = Ast.Expr.mk_term (Ast.Sy.name "@/") [ t1; t2 ] ty in
@@ -284,7 +284,7 @@ struct
     | Ast.Sy.Op Ast.Sy.Modulo, [ t1; t2 ] ->
       let p1, ctx = mke Q.one (empty_polynome ty) t1 ctx in
       let p2, ctx = mke Q.one (empty_polynome ty) t2 ctx in
-      if get_no_nla () && (P.is_const p1 == None || P.is_const p2 == None)
+      if get_no_nla () && (P.to_rational p1 == None || P.to_rational p2 == None)
       then
         (* becomes uninterpreted *)
         let tau = Ast.Expr.mk_term (Ast.Sy.name "@%") [ t1; t2 ] ty in
@@ -724,11 +724,11 @@ struct
     let max_constant distincts acc =
       List.fold_left
         (fun acc x ->
-           match P.is_const (embed x) with None -> acc | Some c -> Q.max c acc)
+           match P.to_rational (embed x) with None -> acc | Some c -> Q.max c acc)
         acc distincts
     in
     fun r distincts eq ->
-      if P.is_const (embed r) != None then None
+      if P.to_rational (embed r) != None then None
       else if
         List.exists
           (fun (t, x) ->
@@ -758,7 +758,7 @@ struct
       else Format.sprintf "(/ %s %s)" (Z.to_string num) (Z.to_string den)
     in
     fun r ->
-      match P.is_const (embed r) with
+      match P.to_rational (embed r) with
       | None -> assert false
       | Some c ->
         let sg = Q.sign c in
@@ -771,13 +771,13 @@ struct
       Util.Printer.print_dbg ~module_name:"Arith"
         ~function_name:"choose_adequate_model" "choose_adequate_model for %a"
         Ast.Expr.print t;
-    let l = List.filter (fun (_, r) -> P.is_const (embed r) != None) l in
+    let l = List.filter (fun (_, r) -> P.to_rational (embed r) != None) l in
     let r =
       match l with
       | [] ->
         (* We do this, because terms of some semantic values created
            by CS are not created and added to UF *)
-        assert (P.is_const (embed r) != None);
+        assert (P.to_rational (embed r) != None);
         r
       | (_, r) :: l ->
         List.iter (fun (_, x) -> assert (X.hash_equal x r)) l;

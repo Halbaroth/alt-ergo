@@ -52,8 +52,8 @@ module type T = sig
   val one : Ast.Ty.t -> t
   val create : (Q.t * r) list -> Q.t -> Ast.Ty.t -> t
   val to_list : t -> (Q.t * r) list * Q.t
-  val is_monomial : t -> (Q.t * r * Q.t) option
-  val is_const : t -> Q.t option
+  val to_monomial : t -> (Q.t * r * Q.t) option
+  val to_rational : t -> Q.t option
   val coef : r -> t -> Q.t
   val choose : t -> r * Q.t 
 
@@ -122,6 +122,15 @@ module Make (X : S) = struct
 
   (* TODO: rename this function. *)
   let[@inline] choose p = M.min_binding p.m
+  
+  let to_monomial p =
+    try
+      M.fold
+        (fun v a r -> match r with None -> Some (a, v, p.c) | _ -> raise Exit)
+        p.m None
+    with Exit -> None
+
+  let to_rational p = if M.is_empty p.m then Some p.c else None
 
   let map_to_list m =
     List.rev (M.fold (fun x a aliens -> (a, x) :: aliens) m [])
@@ -205,7 +214,6 @@ module Make (X : S) = struct
   (*BISECT-IGNORE-END*)
 
   let print = Debug.print
-  let is_const p = if M.is_empty p.m then Some p.c else None
 
   (* TODO: rename this function. *)
   (* BUG: not checking of the AE type of the elements in the list. *)
@@ -311,13 +319,6 @@ module Make (X : S) = struct
   let leaves p =
     let s = M.fold (fun a _ s -> xs_of_list s (X.leaves a)) p.m SX.empty in
     SX.elements s
-
-  let is_monomial p =
-    try
-      M.fold
-        (fun x a r -> match r with None -> Some (a, x, p.c) | _ -> raise Exit)
-        p.m None
-    with Exit -> None
 
   (* TODO: rename this function. *)
   let ppmc_denominators { m; _ } =

@@ -313,7 +313,7 @@ module Container : Container_SIG = struct
       in
       match xopt with Some (x, _) -> (x, pos_neg) | None -> raise Not_found
 
-    let monome_ineq ineq = P.is_monomial ineq.ple0 != None
+    let monome_ineq ineq = P.to_monomial ineq.ple0 != None
 
     let fourierMotzkin add_ineqs are_eq acc mp =
       Util.Steps.incr Util.Steps.Fourier;
