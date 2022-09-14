@@ -572,9 +572,9 @@ struct
   and solve_int p =
     Util.Steps.incr Util.Steps.Omega;
     if P.is_const p then raise Not_found;
-    let pgcd = P.pgcd_numerators p in
-    let ppmc = P.ppmc_denominators p in
-    let p = P.mult_const (Q.div ppmc pgcd) p in
+    let gcd = P.gcd_numerators p in
+    let lcm = P.lcm_denominators p in
+    let p = P.mult_const (Q.div lcm gcd) p in
     let l, b = P.to_list p in
     if not (Q.is_int b) then raise Util.Util.Unsolvable;
     omega l b

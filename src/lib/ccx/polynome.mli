@@ -97,7 +97,7 @@ module type T = sig
       Otherwise the function returns [None]. *)
 
   val of_rational : Util.Numbers.Q.t -> Ast.Ty.t -> t
-  (** [of_rational ctt ty] creates a constant polynomial whose the constant 
+  (** [of_rational ctt ty] creates a constant polynomial whose the constant
       term is [ctt] and the Alt-Ergo type is [ty]. *)
 
   val to_rational : t -> Util.Numbers.Q.t option
@@ -186,15 +186,15 @@ module type T = sig
 
   (** {2 Arithmetical operations} *)
 
-  val ppmc_denominators : t -> Util.Numbers.Q.t
-  (** [ppmc_denominators p] computes the {e positive lcm} of the denominators
+  val lcm_denominators : t -> Util.Numbers.Q.t
+  (** [lcm_denominators p] computes the {e positive lcm} of the denominators
       of the coefficients of [p]. If {m p = c + \sum_{v \in V} a_v \cdot v }
       and {m a_v = \frac{n_v}{d_v}} with {m n_v} and {m d_v} two integers such
       that {m n_v \wedge d_v = 1}, then the
       result is {m \wedge_{v \in V} d_v}. *)
 
-  val pgcd_numerators : t -> Util.Numbers.Q.t
-  (** [pgcd_numerators p] computes the {e positive gcd} of the numerators of
+  val gcd_numerators : t -> Util.Numbers.Q.t
+  (** [gcd_numerators p] computes the {e positive gcd} of the numerators of
       the coefficients of [p]. If {m p = c + \sum_{v \in V} a_v \cdot v }
       and {m a_v = \frac{n_v}{d_v}} with {m n_v} and {m d_v} two integers such
       that {m n_v \wedge d_v = 1}, then the

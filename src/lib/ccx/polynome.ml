@@ -67,8 +67,8 @@ module type T = sig
   val mult : t -> t -> t
   val add_const : Q.t -> t -> t
   val mult_const : Q.t -> t -> t
-  val ppmc_denominators : t -> Q.t
-  val pgcd_numerators : t -> Q.t
+  val lcm_denominators : t -> Q.t
+  val gcd_numerators : t -> Q.t
   val modulo : t -> t -> t
 
   val div : t -> t -> t * bool
@@ -95,12 +95,12 @@ end
 module Make (X : S) = struct
   type r = X.r
 
-  module M : Map.S with type key = r = Map.Make (struct
-      type t = r
+  module M = Map.Make (struct
+    type t = r
 
-      (*sorted in decreasing order to comply with AC(X) order requirements*)
-      let compare v w = X.str_cmp w v
-    end)
+    (* Sorted in decreasing order to comply with AC(X) order requirements. *)
+    let compare v w = X.str_cmp w v
+  end)
 
   type t = {
     coeffs : Q.t M.t; (* Map of the semantic values to their coefficient
@@ -109,13 +109,14 @@ module Make (X : S) = struct
     ty : Ast.Ty.t (* Alt-Ergo type of the polynomial. *)
   }
 
+  let find v m = try M.find v m with Not_found -> Q.zero
+  
   let[@inline] zero ty = { coeffs = M.empty; ctt = Q.zero; ty }
   let[@inline] one ty = { coeffs = M.empty; ctt = Q.one; ty }
 
   let[@inline] type_info p = p.ty
 
   (* TODO: rename this function. *)
-  let find v m = try M.find v m with Not_found -> Q.zero
   let[@inline] coef v p = M.find v p.coeffs
 
   (* TODO: rename this function. *)
@@ -234,9 +235,9 @@ module Make (X : S) = struct
     Util.Options.tool_req 4 "TR-Arith-Poly plus";
     let coeffs =
       M.fold
-        (fun x a m ->
-           let a' = Q.add (find x m) a in
-           if Q.sign a' = 0 then M.remove x m else M.add x a' m)
+        (fun v a m ->
+           let b = Q.add (M.find v m) a in
+           if Q.sign b = 0 then M.remove v m else M.add v b m)
         p2.coeffs p1.coeffs
     in
     { coeffs; ctt = Q.add p1.ctt p2.ctt; ty = p1.ty }
@@ -326,23 +327,21 @@ module Make (X : S) = struct
     in
     SX.elements s
 
-  (* TODO: rename this function. *)
-  let ppmc_denominators { coeffs; _ } =
+  let lcm_denominators { coeffs; _ } =
     let res = M.fold (fun _ c acc -> Z.my_lcm (Q.den c) acc) coeffs Z.one in
     Q.abs (Q.from_z res)
 
-  (* TODO: rename this function. *)
-  let pgcd_numerators { coeffs; _ } =
+  let gcd_numerators { coeffs; _ } =
     let res = M.fold (fun _ c acc -> Z.my_gcd (Q.num c) acc) coeffs Z.zero in
     Q.abs (Q.from_z res)
 
   let normal_form p =
     if is_const p then ({ p with ctt = Q.zero }, p.ctt, Q.one)
     else
-      let ppcm = ppmc_denominators p in
-      let pgcd = pgcd_numerators p in
-      let p = mult_const (Q.div ppcm pgcd) p in
-      ({ p with ctt = Q.zero }, p.ctt, Q.div pgcd ppcm)
+      let lcm = lcm_denominators p in
+      let gcd = gcd_numerators p in
+      let p = mult_const (Q.div lcm gcd) p in
+      ({ p with ctt = Q.zero }, p.ctt, Q.div gcd lcm)
 
   let normal_form_pos p =
     let p, c, d = normal_form p in
