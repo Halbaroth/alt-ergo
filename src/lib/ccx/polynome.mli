@@ -106,6 +106,9 @@ module type T = sig
       @returns [Some c] if [p] is constant and [c]
       is its constant term. Otherwise, the function returns [None]. *)
 
+  val const_term : t -> Util.Numbers.Q.t 
+  (** [const_term p] returns the constant term of [p]. *)
+
   val coef : r -> t -> Util.Numbers.Q.t
   (** [coef v p] gives the coefficient of the semantic value [v]
       in the polynomial [p]. *)

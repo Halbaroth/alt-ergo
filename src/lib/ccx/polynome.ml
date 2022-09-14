@@ -55,6 +55,7 @@ module type T = sig
   val to_monomial : t -> (Q.t * r * Q.t) option
   val of_rational : Q.t -> Ast.Ty.t -> t
   val to_rational : t -> Q.t option
+  val const_term : t -> Util.Numbers.Q.t 
   val coef : r -> t -> Q.t
   val choose : t -> r * Q.t
 
@@ -110,16 +111,13 @@ module Make (X : S) = struct
   }
 
   let find v m = try M.find v m with Not_found -> Q.zero
-  
+
   let[@inline] zero ty = { coeffs = M.empty; ctt = Q.zero; ty }
   let[@inline] one ty = { coeffs = M.empty; ctt = Q.one; ty }
-
   let[@inline] type_info p = p.ty
-
-  (* TODO: rename this function. *)
   let[@inline] coef v p = M.find v p.coeffs
+  let[@inline] const_term p = p.ctt
 
-  (* TODO: rename this function. *)
   (* BUG: not checking of the AE type of the elements in the list. *)
   let make ~coeffs ~ctt ~ty =
     let coeffs =
@@ -273,14 +271,6 @@ module Make (X : S) = struct
     Util.Options.tool_req 4 "TR-Arith-Poly mult";
     let r = mult_const p.ctt q in
     M.fold (fun v a r -> add (mult_monomial v a q) r) p.coeffs r
-
-  (* TODO: move this function. *)
-  let euc_mod_num c1 c2 =
-    let c = Q.modulo c1 c2 in
-    if Q.sign c < 0 then Q.add c (Q.abs c2) else c
-
-  (* TODO: move this function. *)
-  let euc_div_num c1 c2 = Q.div (Q.sub c1 (euc_mod_num c1 c2)) c2
 
   (* TODO: remove this function. *)
   let div p q =
