@@ -272,11 +272,17 @@ struct
           List.rev_append ctx' ctx )
       else
         let p3, ctx =
-          try
-            let p, approx = P.div p1 p2 in
-            if approx then mk_euc_division p p2 t1 t2 ctx else (p, ctx)
-          with Division_by_zero | Polynome.Maybe_zero ->
-            (P.make ~coeffs:[ (X.term_embed t, Q.one) ] ~ctt:Q.zero ~ty, ctx)
+          let t = P.make ~coeffs:[ (X.term_embed t, Q.one) ] ~ctt:Q.zero ~ty in
+          match P.to_rational p2 with
+          | Some q -> begin
+              try
+                let p = P.div_const q p1 in
+                if Ast.Ty.equal (P.type_info p) Ast.Ty.Tint then
+                  mk_euc_division p p2 t1 t2 ctx
+                else (p, ctx)
+              with Division_by_zero -> (t, ctx)
+          end
+          | None -> (t, ctx)
         in
         (P.add p (P.mult_const coef p3), ctx)
     | Ast.Sy.Op Ast.Sy.Plus, l ->

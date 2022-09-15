@@ -68,10 +68,10 @@ module type T = sig
   val mult : t -> t -> t
   val add_const : Q.t -> t -> t
   val mult_const : Q.t -> t -> t
+  val div_const : Q.t -> t -> t
   val lcm_denominators : t -> Q.t
   val gcd_numerators : t -> Q.t
 
-  val div : t -> t -> t * bool
   val is_const : t -> bool
   val subst : r -> t -> t -> t
   val remove : r -> t -> t
@@ -256,6 +256,11 @@ module Make (X : S) = struct
     if Q.sign n = 0 then zero (type_info p)
     else { p with coeffs = M.map (Q.mult n) p.coeffs; ctt = Q.mult n p.ctt }
 
+  let div_const q p =
+    Util.Options.tool_req 4 "TR-Arith-Poly div";
+    if Q.sign q = 0 then raise Division_by_zero;
+    mult_const (Q.div Q.one q) p
+
   (* Multiply the polynome p by the monome av. *)
   let mult_monomial v a p =
     let av = { coeffs = M.add v a M.empty; ctt = Q.zero; ty = p.ty } in
@@ -270,18 +275,6 @@ module Make (X : S) = struct
     Util.Options.tool_req 4 "TR-Arith-Poly mult";
     let r = mult_const p.ctt q in
     M.fold (fun v a r -> add (mult_monomial v a q) r) p.coeffs r
-
-  (* TODO: remove this function. *)
-  let div p q =
-    Util.Options.tool_req 4 "TR-Arith-Poly div";
-    if not @@ is_const q then raise Maybe_zero;
-    if Q.sign q.ctt = 0 then raise Division_by_zero;
-    let r = mult_const (Q.div Q.one q.ctt) p in
-    match (is_const r, r.ty) with
-    | _, Ast.Ty.Treal -> (r, false)
-    | true, Ast.Ty.Tint -> ({ r with ctt = Q.euc_div_num p.ctt q.ctt }, false)
-    | false, Ast.Ty.Tint -> (r, true (* XXX *))
-    | _ -> assert false
 
   let subst v p q =
     try

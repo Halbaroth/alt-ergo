@@ -187,6 +187,13 @@ module type T = sig
       then the result is of the form
       {math p = qc + \sum_{v \in V} q a_v \cdot v} *)
 
+  (* TODO: update the doc *)
+  val div_const : Util.Numbers.Q.t -> t -> t
+  (** [div q p] divides the polynomial [p]
+      by the rational number [q].
+
+      @raise Division_by_zero if [q] is equal to zero. *)
+
   (** {2 Arithmetical operations} *)
 
   val lcm_denominators : t -> Util.Numbers.Q.t
@@ -204,12 +211,6 @@ module type T = sig
       result is {m \lor_{v \in V} d_v}. *)
 
   (** {1 Misc} *)
-
-  val div : t -> t -> t * bool
-  (** [div p q] divides the constant term of [p]
-      by the constant term of [q].
-
-      @returns the division as a constant polynomial. *)
 
   val is_const : t -> bool
   (** [is_const p] is true if and only if the polynomial
