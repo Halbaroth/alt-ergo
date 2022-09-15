@@ -43,4 +43,7 @@ module Q : sig
   val root_excess : t -> int -> t option
   val sqrt_default : t -> t option
   val sqrt_excess : t -> t option
+
+  val euc_mod_num : t -> t -> t
+  val euc_div_num : t -> t -> t
 end

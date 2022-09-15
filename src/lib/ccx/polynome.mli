@@ -103,10 +103,10 @@ module type T = sig
   val to_rational : t -> Util.Numbers.Q.t option
   (** [to_rational p] converts [p] to a rational representation.
 
-      @returns [Some c] if [p] is constant and [c]
-      is its constant term. Otherwise, the function returns [None]. *)
+      @returns [Some c] if [p] is constant with [c]
+      its constant term. Otherwise, the function returns [None]. *)
 
-  val const_term : t -> Util.Numbers.Q.t 
+  val const_term : t -> Util.Numbers.Q.t
   (** [const_term p] returns the constant term of [p]. *)
 
   val coef : r -> t -> Util.Numbers.Q.t

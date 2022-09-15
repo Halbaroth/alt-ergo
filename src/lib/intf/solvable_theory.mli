@@ -77,7 +77,7 @@ module type Sig = sig
 
   val solve : r -> r -> r solve_pb -> r solve_pb
   (** [solve v1 v2] solves the equality [v1=v2] and return the substitution. *)
-  
+
   val print : Format.formatter -> t -> unit
   val fully_interpreted : Ast.Sy.t -> bool
   val abstract_selectors : t -> (r * r) list -> r * (r * r) list

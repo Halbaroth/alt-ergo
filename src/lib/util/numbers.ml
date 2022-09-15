@@ -106,4 +106,10 @@ module Q = struct
 
   let root_default = accurate_root_default
   let root_excess = accurate_root_excess
+
+  let euc_mod_num c1 c2 =
+    let c = modulo c1 c2 in
+    if sign c < 0 then add c (abs c2) else c
+
+  let euc_div_num c1 c2 = div (sub c1 (euc_mod_num c1 c2)) c2
 end

@@ -294,22 +294,23 @@ struct
         let xtau, ctx' = X.make tau in
         ( P.add p (P.make ~coeffs:[ (xtau, coef) ] ~ctt:Q.zero ~ty),
           List.rev_append ctx' ctx )
-      else
+      else begin
+        Util.Options.tool_req 4 "TR-Arith-Poly mod";
         let p3, ctx =
-          try (P.modulo p1 p2, ctx)
-          with e ->
-            let t =
-              Ast.Expr.mk_term mod_symb [ t1; t2 ] Ast.Ty.Tint
-            in
+          let ctt1 = P.const_term p1 and ctt2 = P.const_term p2 in
+          if P.is_const p1 && P.is_const p2 && Q.sign ctt2 <> 0 then
+            (P.of_rational (Q.euc_mod_num ctt1 ctt2) (P.type_info p1), ctx)
+          else
+            let t = Ast.Expr.mk_term mod_symb [t1; t2] Ast.Ty.Tint in
             let ctx =
-              match e with
-              | Division_by_zero | Polynome.Maybe_zero -> ctx
-              | Polynome.Not_a_num -> mk_modulo t t1 t2 p2 ctx
-              | _ -> assert false
+              if not (P.is_const p2) || Q.sign ctt2 = 0 then
+                ctx
+              else
+                mk_modulo t t1 t2 p2 ctx
             in
-            (P.make ~coeffs:[ (X.term_embed t, Q.one) ] ~ctt:Q.zero ~ty, ctx)
+            (P.make ~coeffs:[(X.term_embed t, Q.one)] ~ctt:Q.zero ~ty, ctx)
         in
-        (P.add p (P.mult_const coef p3), ctx)
+        (P.add p (P.mult_const coef p3), ctx) end
     (*** <begin>: partial handling of some arith/FPA operators **)
     | Ast.Sy.Op Ast.Sy.Float, [ prec; exp; mode; x ] ->
       let aux_func e =

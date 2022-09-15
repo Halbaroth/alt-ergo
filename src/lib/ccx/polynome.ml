@@ -55,7 +55,7 @@ module type T = sig
   val to_monomial : t -> (Q.t * r * Q.t) option
   val of_rational : Q.t -> Ast.Ty.t -> t
   val to_rational : t -> Q.t option
-  val const_term : t -> Util.Numbers.Q.t 
+  val const_term : t -> Util.Numbers.Q.t
   val coef : r -> t -> Q.t
   val choose : t -> r * Q.t
 
@@ -234,7 +234,7 @@ module Make (X : S) = struct
     let coeffs =
       M.fold
         (fun v a m ->
-           let b = Q.add (M.find v m) a in
+           let b = Q.add (find v m) a in
            if Q.sign b = 0 then M.remove v m else M.add v b m)
         p2.coeffs p1.coeffs
     in
@@ -280,7 +280,7 @@ module Make (X : S) = struct
     let r = mult_const (Q.div Q.one q.ctt) p in
     match (is_const r, r.ty) with
     | _, Ast.Ty.Treal -> (r, false)
-    | true, Ast.Ty.Tint -> ({ r with ctt = euc_div_num p.ctt q.ctt }, false)
+    | true, Ast.Ty.Tint -> ({ r with ctt = Q.euc_div_num p.ctt q.ctt }, false)
     | false, Ast.Ty.Tint -> (r, true (* XXX *))
     | _ -> assert false
 
@@ -290,7 +290,7 @@ module Make (X : S) = struct
     if not @@ is_const q then raise Maybe_zero;
     if Q.sign q.ctt = 0 then raise Division_by_zero;
     if not @@ is_const p then raise Not_a_num;
-    { p with ctt = euc_mod_num p.ctt q.ctt }
+    { p with ctt = Q.euc_mod_num p.ctt q.ctt }
 
   let subst v p q =
     try
@@ -300,7 +300,7 @@ module Make (X : S) = struct
 
   let remove v p = { p with coeffs = M.remove v p.coeffs }
 
-  (** TODO: rename this function. *)
+  (** TODO: checking if this function is necessary. *)
   let to_list p = (map_to_list p.coeffs, p.ctt)
 
   module SX = Set.Make (struct
