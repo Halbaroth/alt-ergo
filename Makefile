@@ -19,7 +19,9 @@ BJS_DIR := $(BIN_DIR)/js
 UTIL_DIR := $(LIB_DIR)/util
 FTND_DIR := $(LIB_DIR)/frontend
 RSNRS_DIR := $(LIB_DIR)/reasoners
-STRCT_DIR := $(LIB_DIR)/structures
+AST_DIR := $(LIB_DIR)/ast
+CCX_DIR := $(LIB_DIR)/ccx
+INTF_DIR := $(LIB_DIR)/intf
 
 RSC_DIR := rsc
 EXTRA_DIR := $(RSC_DIR)/extra
@@ -347,17 +349,35 @@ $(EXTRA_DIR)/ocamldot/ocamldot:
 # so we just put the ocamldot executable as dep
 archi: $(EXTRA_DIR)/ocamldot/ocamldot
 	ocamldep \
-		-I $(BIN_DIR)/ -I $(LIB_DIR)/ -I $(COMMON_DIR)/ -I $(PARSERS_DIR)/ \
-		-I $(PLUGINS_DIR)/ -I $(BTEXT_DIR)/ -I $(BGUI_DIR)/ \
-		-I $(FTND_DIR)/ -I $(RSNRS_DIR)/ -I $(STRCT_DIR)/ -I $(UTIL_DIR)/ \
+		-I $(BIN_DIR)/ \
+	  -I $(LIB_DIR)/ \
+		-I $(COMMON_DIR)/ \
+		-I $(PARSERS_DIR)/ \
+		-I $(PLUGINS_DIR)/ \
+		-I $(BTEXT_DIR)/ \
+		-I $(BGUI_DIR)/ \
+		-I $(FTND_DIR)/ \
+		-I $(RSNRS_DIR)/ \
+		-I $(AST_DIR)/ \
+		-I $(CCX_DIR)/ \
+		-I $(UTIL_DIR)/ \
 		-I $(DEFAULT_DIR)/$(COMMON_DIR)/ \
-		-I $(DEFAULT_DIR)/$(PARSERS_DIR)/ -I $(DEFAULT_DIR)/$(PLUGINS_DIR)/ \
-		$(FTND_DIR)/*.ml $(RSNRS_DIR)/*.ml $(STRCT_DIR)/*.ml $(UTIL_DIR)/*.ml \
-		$(COMMON_DIR)/*.ml $(DEFAULT_DIR)/$(COMMON_DIR)/*.ml \
-		$(PARSERS_DIR)/*.ml $(DEFAULT_DIR)/$(PARSERS_DIR)/*.ml \
-		$(PLUGINS_DIR)/*/*.ml $(DEFAULT_DIR)/$(PLUGINS_DIR)/*/*.ml \
+		-I $(DEFAULT_DIR)/$(PARSERS_DIR)/ \
+		-I $(DEFAULT_DIR)/$(PLUGINS_DIR)/ \
+		$(FTND_DIR)/*.ml \
+		$(RSNRS_DIR)/*.ml \
+		$(AST_DIR)/*.ml \
+		$(CCX_DIR)/*.ml \
+		$(UTIL_DIR)/*.ml \
+		$(COMMON_DIR)/*.ml \
+		$(DEFAULT_DIR)/$(COMMON_DIR)/*.ml \
+		$(PARSERS_DIR)/*.ml \
+		$(DEFAULT_DIR)/$(PARSERS_DIR)/*.ml \
+		$(PLUGINS_DIR)/*/*.ml \
+		$(DEFAULT_DIR)/$(PLUGINS_DIR)/*/*.ml \
 		$(BTEXT_DIR)/*.ml $(BGUI_DIR)/*.ml | \
-		$(EXTRA_DIR)/ocamldot/ocamldot | grep -v "}" > archi.dot
+		$(EXTRA_DIR)/ocamldot/ocamldot \
+		| grep -v "}" > archi.dot
 	cat $(EXTRA_DIR)/subgraphs.dot >> archi.dot
 	echo "}" >> archi.dot
 	dot -Tpdf archi.dot > archi.pdf
