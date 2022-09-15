@@ -16,7 +16,8 @@
 (*                                                                            *)
 (******************************************************************************)
 
-open AltErgoLib
+open Alt_ergo_lib_util
+open Alt_ergo_lib_ast
 
 (*s Parse trees. *)
 

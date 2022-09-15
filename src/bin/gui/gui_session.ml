@@ -26,7 +26,7 @@
 (*                                                                            *)
 (******************************************************************************)
 
-open AltErgoLib
+open Alt_ergo_lib_util
 open Options
 
 type action =

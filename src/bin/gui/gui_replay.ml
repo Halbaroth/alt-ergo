@@ -26,7 +26,7 @@
 (*                                                                            *)
 (******************************************************************************)
 
-open AltErgoLib
+open Alt_ergo_lib_util
 open Gui_session
 open Annoted_ast
 open Connected_ast

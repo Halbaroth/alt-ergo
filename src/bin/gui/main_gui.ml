@@ -26,7 +26,11 @@
 (*                                                                            *)
 (******************************************************************************)
 
-open AltErgoLib
+open Alt_ergo_lib_ast
+open Alt_ergo_lib_frontend
+open Alt_ergo_lib_util
+open Alt_ergo_lib_reasoners
+open Alt_ergo_lib_ccx
 open Alt_ergo_common
 open AltErgoParsers
 open Typed
@@ -507,7 +511,7 @@ let update_status image label buttonclean env s steps =
     else Printer.print_std "@{<C.F_Green>Valid@} (%2.4f) (%d)" time steps;
     if get_unsat_core () then (
       Printer.print_fmt (Options.get_fmt_usc ()) "unsat-core:@ %a"
-        (Explanation.print_unsat_core ~tab:true)
+        (Ex.print_unsat_core ~tab:true)
         dep;
       show_used_lemmas env dep);
     image#set_stock `YES;
@@ -549,7 +553,7 @@ let update_aborted image label buttonstop buttonrun timers_model = function
     label#set_text "  Process aborted";
     buttonstop#misc#hide ();
     buttonrun#misc#show ()
-  | Util.Timeout ->
+  | Alt_ergo_lib_util.Util.Timeout ->
     Options.Time.unset_timeout ~is_gui:true;
     Timers.update timers_model.timers;
     if get_debug () then
@@ -629,7 +633,7 @@ let run_replay env used_context =
        ignore
          (List.fold_left
             (FE.process_decl FE.print_status used_context consistent_dep)
-            (empty_sat_inst env.insts, true, Explanation.empty)
+            (empty_sat_inst env.insts, true, Ex.empty)
             cnf))
     ast_pruned;
   Options.Time.unset_timeout ~is_gui:true
@@ -689,7 +693,7 @@ let run buttonrun buttonstop buttonclean inst_model timers_model image label
                          (FE.process_decl
                             (wrapper_update_status image label buttonclean env)
                             used_context consistent_dep)
-                         (empty_sat_inst inst_model, true, Explanation.empty)
+                         (empty_sat_inst inst_model, true, Ex.empty)
                          cnf))
                  ast_pruned;
 
@@ -963,7 +967,7 @@ let start_gui all_used_context =
   (* TODO: crash : change this*)
   set_timeout (fun () ->
       Printer.print_std "Timeout";
-      raise Util.Timeout);
+      raise Alt_ergo_lib_util.Util.Timeout);
 
   let w =
     GWindow.window ~title:"AltGr-Ergo" ~position:`CENTER ~width:window_width
@@ -1523,7 +1527,7 @@ let () =
     else start_gui all_used_context
   with
   | Sys_error _ -> start_gui all_used_context
-  | Util.Timeout ->
+  | Alt_ergo_lib_util.Util.Timeout ->
     Printer.print_err "Timeout";
     exit 142
   | Errors.Error e ->

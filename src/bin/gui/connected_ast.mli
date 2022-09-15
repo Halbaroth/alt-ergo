@@ -26,7 +26,8 @@
 (*                                                                            *)
 (******************************************************************************)
 
-open AltErgoLib
+open Alt_ergo_lib_ast
+open Alt_ergo_lib_util
 open Annoted_ast
 
 val prune : ?register:bool -> env -> 'a annoted -> unit
@@ -35,7 +36,7 @@ val unprune : ?register:bool -> env -> 'a annoted -> unit
 val toggle_prune : env -> 'a annoted -> unit
 val connect : env -> unit
 val clear_used_lemmas_tags : env -> unit
-val show_used_lemmas : env -> Explanation.t -> unit
+val show_used_lemmas : env -> Ex.t -> unit
 val prune_unused : env -> unit
 
 val add_instance :

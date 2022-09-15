@@ -18,7 +18,9 @@
 
 %{
 
-open AltErgoLib
+open Alt_ergo_lib_ast
+open Alt_ergo_lib_frontend
+open Alt_ergo_lib_util
 open Lexing
 open Why3_ptree
 open Parsed_interface
@@ -68,7 +70,7 @@ open Parsed
       List.map (fun (_, _, pty) -> pty ) params in
     let logic_type =
       mk_logic_type ppure_type_list pptyop in
-    mk_logic loc Symbols.Other ssl logic_type
+    mk_logic loc Sy.Other ssl logic_type
 
   let mk_tuple pl loc =
     let length =  string_of_int (List.length pl) in
@@ -220,13 +222,13 @@ open Parsed
 
 (* Entry points *)
 
-%type <AltErgoLib.Parsed.lexpr list * bool> trigger_parser
+%type <Alt_ergo_lib_ast.Parsed.lexpr list * bool> trigger_parser
 %start trigger_parser
 
-%type <AltErgoLib.Parsed.lexpr> lexpr_parser
+%type <Alt_ergo_lib_ast.Parsed.lexpr> lexpr_parser
 %start lexpr_parser
 
-%type <AltErgoLib.Parsed.file> file_parser
+%type <Alt_ergo_lib_ast.Parsed.file> file_parser
 %start file_parser
 %%
 

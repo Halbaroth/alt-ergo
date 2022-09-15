@@ -9,7 +9,7 @@
 (*                                                                            *)
 (******************************************************************************)
 
-open AltErgoLib
+open Alt_ergo_lib_util
 open Format
 open Numbers
 open Options

@@ -26,7 +26,9 @@
 (*                                                                            *)
 (******************************************************************************)
 
-open AltErgoLib
+open Alt_ergo_lib_util
+open Alt_ergo_lib_ast
+open Alt_ergo_lib_frontend
 open AltErgoParsers
 open Gui_config
 open Annoted_ast
@@ -245,7 +247,7 @@ let rec filter_used_vars_term vars at =
   match at.at_desc with
   | ATconst _ -> []
   | ATvar s -> (
-      try [ List.find (fun (s', _) -> Symbols.equal s s') vars ]
+      try [ List.find (fun (s', _) -> Sy.equal s s') vars ]
       with Not_found -> [])
   | ATapp (_, atl) ->
     List.fold_left (fun l at -> filter_used_vars_term vars at @ l) [] atl
@@ -262,7 +264,7 @@ let rec filter_used_vars_term vars at =
     let nvars =
       List.fold_left
         (fun vars (s', _) ->
-           List.filter (fun (s'', _) -> not (Symbols.equal s' s'')) vars)
+           List.filter (fun (s'', _) -> not (Sy.equal s' s'')) vars)
         vars l
     in
     List.fold_left
@@ -292,7 +294,7 @@ and filter_used_vars_aform vars = function
     let vars =
       List.fold_left
         (fun vars (s', _) ->
-           List.filter (fun (s'', _) -> not (Symbols.equal s' s'')) vars)
+           List.filter (fun (s'', _) -> not (Sy.equal s' s'')) vars)
         vars qf.c.aqf_bvars
     in
     filter_used_vars_aform vars qf.c.aqf_form.c
@@ -300,7 +302,7 @@ and filter_used_vars_aform vars = function
     let nvars =
       List.fold_left
         (fun vars (s', _) ->
-           List.filter (fun (s'', _) -> not (Symbols.equal s' s'')) vars)
+           List.filter (fun (s'', _) -> not (Sy.equal s' s'')) vars)
         vars l
     in
     List.fold_left
@@ -478,7 +480,7 @@ let make_instance (buffer : sbuffer) vars entries afc goal_form tyenv =
     List.iter
       (fun (v, e) ->
          Printer.print_dbg ~flushed:false ~header:false "%a -> %s@ "
-           Symbols.print_clean (fst v) e)
+           Sy.print_clean (fst v) e)
       (List.combine vars (List.rev entries));
     Printer.print_dbg "");
   let aform, _, goal_used =
@@ -488,7 +490,7 @@ let make_instance (buffer : sbuffer) vars entries afc goal_form tyenv =
   in
   (aform, goal_used)
 
-exception UncoveredVar of (Symbols.t * Ty.t)
+exception UncoveredVar of (Sy.t * Ty.t)
 
 type nestedq = Forall of aform annoted | Exists of aform annoted
 
@@ -619,7 +621,7 @@ and popup_axiom t env _offset () =
             List.fold_left
               (fun (entries, i) (s, ty) ->
                  let text =
-                   asprintf "%a : %a = " Symbols.print_clean s Ty.print ty
+                   asprintf "%a : %a = " Sy.print_clean s Ty.print ty
                  in
                  ignore
                    (GMisc.label ~text ~xalign:1.0

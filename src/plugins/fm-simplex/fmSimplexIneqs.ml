@@ -9,7 +9,9 @@
 (*                                                                            *)
 (******************************************************************************)
 
-open AltErgoLib
+open Alt_ergo_lib_util
+open Alt_ergo_lib_ccx
+open Alt_ergo_lib_ast
 open Format
 open Options
 module Q = Numbers.Q
@@ -35,7 +37,6 @@ module Container : Inequalities.Container_SIG = struct
       end)
 
     module MX = Shostak.MXH
-    module Ex = Explanation
 
     let print_couple fmt (re, eps) =
       fprintf fmt "(%s , %s)" (Q.to_string re) (Q.to_string eps)
@@ -106,8 +107,8 @@ module Container : Inequalities.Container_SIG = struct
            (* XXX eps ? re ? *)
            else
              let { expl = ex; _ } = List.assoc ld constrs in
-             Explanation.union expl ex)
-        Explanation.empty vals
+             Ex.union expl ex)
+        Ex.empty vals
 
     let cpt = ref 0
 
@@ -166,9 +167,10 @@ module Container : Inequalities.Container_SIG = struct
                  | _ -> assert false)
             Util.MI.empty vals
         in
+        (* TODO: ugly! We should use a constructor for Inequalities. *)
         let ineq =
           {
-            ple0 = P.create [] eps Ty.Tint;
+            ple0 = P.of_rational eps Ty.Tint;
             is_le = true;
             (* add an assert *)
             age = current_age ();
@@ -238,10 +240,11 @@ module Container : Inequalities.Container_SIG = struct
                  | _ -> assert false)
             Util.MI.empty vals
         in
+        (* TODO: remove french *)
         let mon_coef = if is_pos then Q.one else Q.m_one in
         let ineq =
           {
-            ple0 = P.create [ (mon_coef, x) ] vof Ty.Tint;
+            ple0 = P.make ~coeffs:[ (x, mon_coef) ] ~ctt:vof ~ty:Ty.Tint;
             is_le = true;
             (* add an assert *)
             age = current_age ();

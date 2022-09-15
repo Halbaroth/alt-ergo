@@ -17,7 +17,8 @@
 (******************************************************************************)
 
 {
-  open AltErgoLib
+  open Alt_ergo_lib_ast
+  open Alt_ergo_lib_util
   open AltErgoParsers
   open Why3_parser
   open Lexing

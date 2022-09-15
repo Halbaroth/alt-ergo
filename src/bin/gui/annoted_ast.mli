@@ -26,7 +26,9 @@
 (*                                                                            *)
 (******************************************************************************)
 
-open AltErgoLib
+open Alt_ergo_lib_util
+open Alt_ergo_lib_ast
+open Alt_ergo_lib_frontend
 open Parsed
 open Typed
 open Gui_session
@@ -101,20 +103,20 @@ type aterm = { at_ty : Ty.t; at_desc : at_desc }
 
 and at_desc =
   | ATconst of tconstant
-  | ATvar of Symbols.t
-  | ATapp of Symbols.t * aterm list
-  | ATinfix of aterm * Symbols.t * aterm
-  | ATprefix of Symbols.t * aterm
+  | ATvar of Sy.t
+  | ATapp of Sy.t * aterm list
+  | ATinfix of aterm * Sy.t * aterm
+  | ATprefix of Sy.t * aterm
   | ATget of aterm * aterm
   | ATset of aterm * aterm * aterm
   | ATextract of aterm * aterm * aterm
   | ATconcat of aterm * aterm
-  | ATlet of (Symbols.t * aterm) list * aterm
+  | ATlet of (Sy.t * aterm) list * aterm
   | ATdot of aterm * Hstring.t
   | ATrecord of (Hstring.t * aterm) list
   | ATnamed of Hstring.t * aterm
   | ATmapsTo of Var.t * aterm
-  | ATinInterval of aterm * Symbols.bound * Symbols.bound
+  | ATinInterval of aterm * Sy.bound * Sy.bound
   (* bool = true <-> interval is_open *)
   | ATite of aform annoted * aterm * aterm
 
@@ -129,8 +131,8 @@ and aatom =
   | AApred of aterm * bool (* true <-> negated *)
 
 and aquant_form = {
-  aqf_bvars : (Symbols.t * Ty.t) list;
-  aqf_upvars : (Symbols.t * Ty.t) list;
+  aqf_bvars : (Sy.t * Ty.t) list;
+  aqf_upvars : (Sy.t * Ty.t) list;
   mutable aqf_triggers : (aterm annoted list * bool) list;
   aqf_hyp : aform annoted list;
   aqf_form : aform annoted;
@@ -142,15 +144,15 @@ and aform =
   | AFforall of aquant_form annoted
   | AFexists of aquant_form annoted
   | AFlet of
-      (Symbols.t * Ty.t) list * (Symbols.t * atlet_kind) list * aform annoted
+      (Sy.t * Ty.t) list * (Sy.t * atlet_kind) list * aform annoted
   | AFnamed of Hstring.t * aform annoted
 
 and atlet_kind = ATletTerm of aterm annoted | ATletForm of aform annoted
 
 type atyped_decl =
   | ATheory of
-      Loc.t * string * Util.theories_extensions * atyped_decl annoted list
-  | AAxiom of Loc.t * string * Util.axiom_kind * aform
+      Loc.t * string * Alt_ergo_lib_util.Util.theories_extensions * atyped_decl annoted list
+  | AAxiom of Loc.t * string * Alt_ergo_lib_util.Util.axiom_kind * aform
   | ARewriting of Loc.t * string * aterm rwt_rule annoted list
   | AGoal of Loc.t * goal_sort * string * aform annoted
   | ALogic of Loc.t * string list * plogic_type * tlogic_type
@@ -298,7 +300,7 @@ val findtags_dep_adecl :
   atyped_decl -> (atyped_decl annoted * Typechecker.env) list -> GText.tag list
 
 val findtags_proof :
-  Explanation.t ->
+  Ex.t ->
   (atyped_decl annoted * Typechecker.env) list ->
   GText.tag list * int MTag.t
 

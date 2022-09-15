@@ -26,7 +26,9 @@
 (*                                                                            *)
 (******************************************************************************)
 
-open AltErgoLib
+open Alt_ergo_lib_util
+open Alt_ergo_lib_ast
+open Alt_ergo_lib_frontend
 open Parsed
 open Typed
 open Format
@@ -109,20 +111,20 @@ type aterm = { at_ty : Ty.t; at_desc : at_desc }
 
 and at_desc =
   | ATconst of tconstant
-  | ATvar of Symbols.t
-  | ATapp of Symbols.t * aterm list
-  | ATinfix of aterm * Symbols.t * aterm
-  | ATprefix of Symbols.t * aterm
+  | ATvar of Sy.t
+  | ATapp of Sy.t * aterm list
+  | ATinfix of aterm * Sy.t * aterm
+  | ATprefix of Sy.t * aterm
   | ATget of aterm * aterm
   | ATset of aterm * aterm * aterm
   | ATextract of aterm * aterm * aterm
   | ATconcat of aterm * aterm
-  | ATlet of (Symbols.t * aterm) list * aterm
+  | ATlet of (Sy.t * aterm) list * aterm
   | ATdot of aterm * Hstring.t
   | ATrecord of (Hstring.t * aterm) list
   | ATnamed of Hstring.t * aterm
   | ATmapsTo of Var.t * aterm
-  | ATinInterval of aterm * Symbols.bound * Symbols.bound
+  | ATinInterval of aterm * Sy.bound * Sy.bound
   (* bool = true <-> interval is_open *)
   | ATite of aform annoted * aterm * aterm
 
@@ -137,8 +139,8 @@ and aatom =
   | AApred of aterm * bool (* true <-> negated *)
 
 and aquant_form = {
-  aqf_bvars : (Symbols.t * Ty.t) list;
-  aqf_upvars : (Symbols.t * Ty.t) list;
+  aqf_bvars : (Sy.t * Ty.t) list;
+  aqf_upvars : (Sy.t * Ty.t) list;
   mutable aqf_triggers : (aterm annoted list * bool) list;
   aqf_hyp : aform annoted list;
   aqf_form : aform annoted;
@@ -150,15 +152,15 @@ and aform =
   | AFforall of aquant_form annoted
   | AFexists of aquant_form annoted
   | AFlet of
-      (Symbols.t * Ty.t) list * (Symbols.t * atlet_kind) list * aform annoted
+      (Sy.t * Ty.t) list * (Sy.t * atlet_kind) list * aform annoted
   | AFnamed of Hstring.t * aform annoted
 
 and atlet_kind = ATletTerm of aterm annoted | ATletForm of aform annoted
 
 type atyped_decl =
   | ATheory of
-      Loc.t * string * Util.theories_extensions * atyped_decl annoted list
-  | AAxiom of Loc.t * string * Util.axiom_kind * aform
+      Loc.t * string * Alt_ergo_lib_util.Util.theories_extensions * atyped_decl annoted list
+  | AAxiom of Loc.t * string * Alt_ergo_lib_util.Util.axiom_kind * aform
   | ARewriting of Loc.t * string * aterm rwt_rule annoted list
   | AGoal of Loc.t * goal_sort * string * aform annoted
   | ALogic of Loc.t * string list * plogic_type * tlogic_type
@@ -598,9 +600,9 @@ let tconstant_to_string = function
 
 let rec print_var_list fmt = function
   | [] -> ()
-  | [ (s, ty) ] -> fprintf fmt "%a:%a" Symbols.print_clean s Ty.print ty
+  | [ (s, ty) ] -> fprintf fmt "%a:%a" Sy.print_clean s Ty.print ty
   | (s, ty) :: l ->
-    fprintf fmt "%a:%a, %a" Symbols.print_clean s Ty.print ty print_var_list l
+    fprintf fmt "%a:%a, %a" Sy.print_clean s Ty.print ty print_var_list l
 
 let rec print_string_sep sep fmt = function
   | [] -> ()
@@ -668,12 +670,12 @@ and print_record se fmt = function
 
 and print_tt_desc fmt = function
   | TTconst c -> print_tconstant fmt c
-  | TTvar s -> Symbols.print_clean fmt s
+  | TTvar s -> Sy.print_clean fmt s
   | TTapp (f, ts) ->
-    fprintf fmt "%a(%a)" Symbols.print_clean f (print_tterm_list ", ") ts
+    fprintf fmt "%a(%a)" Sy.print_clean f (print_tterm_list ", ") ts
   | TTinfix (t1, s, t2) ->
-    fprintf fmt "%a %a %a" print_tterm t1 Symbols.print_clean s print_tterm t2
-  | TTprefix (s, t) -> fprintf fmt "%a %a" Symbols.print_clean s print_tterm t
+    fprintf fmt "%a %a %a" print_tterm t1 Sy.print_clean s print_tterm t2
+  | TTprefix (s, t) -> fprintf fmt "%a %a" Sy.print_clean s print_tterm t
   | TTlet (binders, t2) ->
     fprintf fmt "let %a in %a" print_term_binders binders print_tterm t2
   | TTconcat (t1, t2) -> fprintf fmt "%a@%a" print_tterm t1 print_tterm t2
@@ -686,8 +688,8 @@ and print_tt_desc fmt = function
   | TTrecord r -> fprintf fmt "{ %a }" (print_record ";") r
   | TTnamed (lbl, t) -> fprintf fmt "%s:%a" (Hstring.view lbl) print_tterm t
   | TTinInterval (e, lb, ub) ->
-    fprintf fmt "%a in %a, %a" print_term e Symbols.print_bound lb
-      Symbols.print_bound ub
+    fprintf fmt "%a in %a, %a" print_term e Sy.print_bound lb
+      Sy.print_bound ub
   | TTmapsTo (x, e) -> fprintf fmt "%a |-> %a" Var.print x print_term e
   | TTite (f, t1, t2) ->
     fprintf fmt "(if %a then %a else %a)" print_tform f print_term t1
@@ -700,10 +702,10 @@ and print_term_binders fmt l =
   match l with
   | [] -> assert false
   | (sy, t) :: l ->
-    fprintf fmt "%a = %a" Symbols.print_clean sy print_term t;
+    fprintf fmt "%a = %a" Sy.print_clean sy print_term t;
     List.iter
       (fun (sy, t) ->
-         fprintf fmt ",\n%a = %a" Symbols.print_clean sy print_term t)
+         fprintf fmt ",\n%a = %a" Sy.print_clean sy print_term t)
       l
 
 and print_tatom fmt a =
@@ -763,9 +765,9 @@ and print_mixed_binders =
     match binders with
     | [] -> assert false
     | (sy, e) :: l ->
-      fprintf fmt "%a = %a" Symbols.print_clean sy aux e;
+      fprintf fmt "%a = %a" Sy.print_clean sy aux e;
       List.iter
-        (fun (sy, e) -> fprintf fmt ",\n%a = %a" Symbols.print_clean sy aux e)
+        (fun (sy, e) -> fprintf fmt ",\n%a = %a" Sy.print_clean sy aux e)
         l
 
 and print_tform fmt f = fprintf fmt " (id:%d)%a" f.Typed.annot print_tform2 f
@@ -785,9 +787,9 @@ let rec print_record_type fmt = function
 
 let rec print_typed_decl fmt td =
   match td.Typed.c with
-  | TAxiom (_, s, Util.Default, tf) ->
+  | TAxiom (_, s, Alt_ergo_lib_util.Util.Default, tf) ->
     fprintf fmt "axiom %s : %a" s print_tform tf
-  | TAxiom (_, s, Util.Propagator, tf) ->
+  | TAxiom (_, s, Alt_ergo_lib_util.Util.Propagator, tf) ->
     fprintf fmt "axiom %s : %a" s print_tform tf
   | TRewriting (_, s, rwtl) ->
     fprintf fmt "rewriting %s : %a" s print_rwt_list rwtl
@@ -805,7 +807,7 @@ let rec print_typed_decl fmt td =
   | TTypeDecl (_, ty) -> fprintf fmt "type %a" Ty.print_full ty
   | TTheory (_loc, name, th_ext, decls) ->
     fprintf fmt "theory %s extends %s =\n%a\nend@."
-      (Util.string_of_th_ext th_ext)
+      (Alt_ergo_lib_util.Util.string_of_th_ext th_ext)
       name
       (fun fmt -> List.iter (print_typed_decl fmt))
       decls
@@ -867,16 +869,16 @@ and make_dep_aaterm d ex dep aat = make_dep_aterm d ex dep aat.c
 
 and make_dep_at_desc d ex dep = function
   | ATconst _ -> dep
-  | ATvar s -> make_dep_string d ex dep (Symbols.to_string_clean s)
+  | ATvar s -> make_dep_string d ex dep (Sy.to_string_clean s)
   | ATapp (s, atl) ->
-    let dep = make_dep_string d ex dep (Symbols.to_string_clean s) in
+    let dep = make_dep_string d ex dep (Sy.to_string_clean s) in
     List.fold_left (make_dep_aterm d ex) dep atl
   | ATinfix (t1, s, t2) ->
     let dep = make_dep_aterm d ex dep t1 in
-    let dep = make_dep_string d ex dep (Symbols.to_string_clean s) in
+    let dep = make_dep_string d ex dep (Sy.to_string_clean s) in
     make_dep_aterm d ex dep t2
   | ATprefix (s, t) ->
-    let dep = make_dep_string d ex dep (Symbols.to_string_clean s) in
+    let dep = make_dep_string d ex dep (Sy.to_string_clean s) in
     make_dep_aterm d ex dep t
   | ATget (t1, t2) | ATconcat (t1, t2) ->
     let dep = make_dep_aterm d ex dep t1 in
@@ -889,7 +891,7 @@ and make_dep_at_desc d ex dep = function
     let dep =
       List.fold_left
         (fun dep (s, t1) ->
-           let dep = make_dep_string d ex dep (Symbols.to_string_clean s) in
+           let dep = make_dep_string d ex dep (Sy.to_string_clean s) in
            make_dep_aterm d ex dep t1)
         dep l
     in
@@ -918,7 +920,7 @@ and make_dep_aatom d ex dep = function
   | AApred (at, _) -> make_dep_aterm d ex dep at
 
 and make_dep_quant_form d ex dep { aqf_bvars = bv; aqf_form = aaf; _ } =
-  let vars = List.map (fun (s, _) -> Symbols.to_string_clean s) bv in
+  let vars = List.map (fun (s, _) -> Sy.to_string_clean s) bv in
   make_dep_aform d (vars @ ex) dep aaf.c
 
 and make_dep_aform d ex dep = function
@@ -949,7 +951,7 @@ let rec make_dep_atyped_decl dep d =
     List.fold_left
       (fun dep r ->
          let vars =
-           List.map (fun (s, _) -> Symbols.to_string_clean s) r.c.rwt_vars
+           List.map (fun (s, _) -> Sy.to_string_clean s) r.c.rwt_vars
          in
          let dep = make_dep_aterm d vars dep r.c.rwt_left in
          make_dep_aterm d vars dep r.c.rwt_right)
@@ -1427,17 +1429,17 @@ and add_at_desc_at errors indent (buffer : sbuffer) tags iter at =
   | ATconst c ->
     append_buf buffer ~iter ~tags (sprintf "%s" (tconstant_to_string c))
   | ATvar s ->
-    append_buf buffer ~iter ~tags (sprintf "%s" (Symbols.to_string_clean s))
+    append_buf buffer ~iter ~tags (sprintf "%s" (Sy.to_string_clean s))
   | ATapp (s, atl) ->
-    append_buf buffer ~iter ~tags (sprintf "%s(" (Symbols.to_string_clean s));
+    append_buf buffer ~iter ~tags (sprintf "%s(" (Sy.to_string_clean s));
     add_aterm_list_at errors indent buffer tags iter ", " atl;
     append_buf buffer ~iter ~tags ")"
   | ATinfix (t1, s, t2) ->
     add_aterm_at errors indent buffer tags iter t1;
-    append_buf buffer ~iter ~tags (sprintf " %s " (Symbols.to_string_clean s));
+    append_buf buffer ~iter ~tags (sprintf " %s " (Sy.to_string_clean s));
     add_aterm_at errors indent buffer tags iter t2
   | ATprefix (s, t) ->
-    append_buf buffer ~iter ~tags (sprintf "%s " (Symbols.to_string_clean s));
+    append_buf buffer ~iter ~tags (sprintf "%s " (Sy.to_string_clean s));
     add_aterm_at errors indent buffer tags iter t
   | ATget (t1, t2) ->
     add_aterm_at errors indent buffer tags iter t1;
@@ -1483,8 +1485,8 @@ and add_at_desc_at errors indent (buffer : sbuffer) tags iter at =
   | ATinInterval (t1, lb, ub) ->
     add_aterm_at errors indent buffer tags iter t1;
     append_buf buffer ~iter ~tags " in ";
-    let lb = Symbols.string_of_bound lb in
-    let ub = Symbols.string_of_bound ub in
+    let lb = Sy.string_of_bound lb in
+    let ub = Sy.string_of_bound ub in
     append_buf buffer ~iter ~tags lb;
     append_buf buffer ~iter ~tags " , ";
     append_buf buffer ~iter ~tags ub
@@ -1500,13 +1502,13 @@ and add_term_binders_to_buf errors indent buffer tags iter l =
   match l with
   | [] -> assert false
   | (sy, t) :: l ->
-    append_buf buffer ~tags (sprintf "%s = " (Symbols.to_string_clean sy));
+    append_buf buffer ~tags (sprintf "%s = " (Sy.to_string_clean sy));
 
     add_aterm_at errors indent buffer tags iter t;
     List.iter
       (fun (sy, t) ->
          append_buf buffer ~tags
-           (sprintf ", %s = " (Symbols.to_string_clean sy));
+           (sprintf ", %s = " (Sy.to_string_clean sy));
          add_aterm_at errors indent buffer tags iter t)
       l
 
@@ -1665,12 +1667,12 @@ and add_mixed_binders_to_buf buffer errors indent tags l =
   match l with
   | [] -> assert false
   | (sy, t) :: l ->
-    append_buf buffer ~tags (sprintf "%s = " (Symbols.to_string_clean sy));
+    append_buf buffer ~tags (sprintf "%s = " (Sy.to_string_clean sy));
     aux t;
     List.iter
       (fun (sy, t) ->
          append_buf buffer ~tags
-           (sprintf ", %s = " (Symbols.to_string_clean sy));
+           (sprintf ", %s = " (Sy.to_string_clean sy));
          aux t)
       l
 
@@ -1730,7 +1732,7 @@ let rec add_atyped_decl errors (buffer : sbuffer) ?(indent = 0) ?(tags = []) d =
   | ATheory (_loc, name, ext, l) ->
     let ntags = d.tag :: d.ptag :: tags in
     append_buf buffer ~tags:ntags
-      (sprintf "theory %s extends %s =" name (Util.string_of_th_ext ext));
+      (sprintf "theory %s extends %s =" name (Alt_ergo_lib_util.Util.string_of_th_ext ext));
     append_buf buffer "\n\n";
     List.iter
       (add_atyped_decl errors buffer ~indent:(indent + 1) ~tags:ntags)
@@ -1744,8 +1746,8 @@ let rec add_atyped_decl errors (buffer : sbuffer) ?(indent = 0) ?(tags = []) d =
         "hypothesis"
       else
         match ax_kd with
-        | Util.Default -> "axiom"
-        | Util.Propagator ->
+        | Alt_ergo_lib_util.Util.Default -> "axiom"
+        | Alt_ergo_lib_util.Util.Propagator ->
           Printer.print_wrn "may become 'propagator' in the future";
           "axiom"
     in
@@ -1846,9 +1848,9 @@ let add_to_buffer errors (buffer : sbuffer) annoted_ast =
 let rec isin_aterm sl { at_desc; _ } =
   match at_desc with
   | ATconst _ -> false
-  | ATvar sy -> List.mem (Symbols.to_string_clean sy) sl
+  | ATvar sy -> List.mem (Sy.to_string_clean sy) sl
   | ATapp (sy, atl) ->
-    List.mem (Symbols.to_string_clean sy) sl || isin_aterm_list sl atl
+    List.mem (Sy.to_string_clean sy) sl || isin_aterm_list sl atl
   | ATinfix (t1, _, t2) | ATget (t1, t2) | ATconcat (t1, t2) ->
     isin_aterm sl t1 || isin_aterm sl t2
   | ATlet (l, t2) ->
@@ -1872,9 +1874,9 @@ and findtags_aaterm sl aat acc =
   match aat.c.at_desc with
   | ATconst _ -> acc
   | ATvar sy ->
-    if List.mem (Symbols.to_string_clean sy) sl then aat.tag :: acc else acc
+    if List.mem (Sy.to_string_clean sy) sl then aat.tag :: acc else acc
   | ATapp (sy, atl) ->
-    if List.mem (Symbols.to_string_clean sy) sl || isin_aterm_list sl atl then
+    if List.mem (Sy.to_string_clean sy) sl || isin_aterm_list sl atl then
       aat.tag :: acc
     else acc
   | ATinfix (t1, _, t2) | ATget (t1, t2) | ATconcat (t1, t2) ->
@@ -1928,7 +1930,7 @@ and findtags_aform sl aform acc =
     let sl =
       List.fold_left
         (fun sl (sy, _) ->
-           let s = Symbols.to_string_clean sy in
+           let s = Sy.to_string_clean sy in
            List.fold_left
              (fun l s' -> if Stdlib.( = ) s' s then l else s' :: l)
              [] sl)
@@ -1986,11 +1988,11 @@ let findtags_using r l =
 let rec listsymbols at acc =
   match at.at_desc with
   | ATconst _ -> acc
-  | ATvar sy -> Symbols.to_string_clean sy :: acc
+  | ATvar sy -> Sy.to_string_clean sy :: acc
   | ATapp (sy, atl) ->
     List.fold_left
       (fun acc at -> listsymbols at acc)
-      (Symbols.to_string_clean sy :: acc)
+      (Sy.to_string_clean sy :: acc)
       atl
   | ATinfix (t1, _, t2) | ATget (t1, t2) | ATconcat (t1, t2) ->
     listsymbols t1 (listsymbols t2 acc)
@@ -2088,7 +2090,7 @@ let rec findproof_aform ids af acc depth found =
   | AFforall aaqf | AFexists aaqf ->
     let acc, found =
       try
-        let m = Explanation.MI.find aaqf.id ids in
+        let m = Alt_ergo_lib_util.Util.MI.find aaqf.id ids in
         (MTag.add aaqf.ptag m acc, true)
       with Not_found -> (acc, found)
     in
@@ -2104,7 +2106,7 @@ let rec findproof_aform ids af acc depth found =
 and findproof_aaform ids aaf acc depth found =
   let acc, found =
     try
-      let m = Explanation.MI.find aaf.id ids in
+      let m = Alt_ergo_lib_util.Util.MI.find aaf.id ids in
       (MTag.add aaf.ptag m acc, true)
     with Not_found -> (acc, found)
   in
@@ -2113,7 +2115,7 @@ and findproof_aaform ids aaf acc depth found =
 let rec findproof_atyped_decl ids td (ax, acc) =
   let acc =
     try
-      let m = Explanation.MI.find td.id ids in
+      let m = Alt_ergo_lib_util.Util.MI.find td.id ids in
       MTag.add td.ptag m acc
     with Not_found -> acc
   in
@@ -2134,7 +2136,7 @@ let rec findproof_atyped_decl ids td (ax, acc) =
     if found then (td.ptag :: ax, acc) else (ax, acc)
 
 let findtags_proof expl l =
-  let ids = Explanation.literals_ids_of expl in
+  let ids = Ex.literals_ids_of expl in
   List.fold_left
     (fun acc (td, _) -> findproof_atyped_decl ids td acc)
     ([], MTag.empty) l
