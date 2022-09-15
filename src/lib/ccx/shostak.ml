@@ -636,7 +636,7 @@ end = struct
     (r, pprint)
 end
 
-and TX1 : (Polynome.T with type r = CX.r) = Arith.Type (CX)
+and TX1 : (Polynomial.T with type r = CX.r) = Arith.Type (CX)
 
 and X1 : (Intf.Solvable_theory.Sig with type t = TX1.t and type r = CX.r) =
   Arith.Shostak
@@ -720,7 +720,7 @@ module Arrays = X4
 module Enum = X5
 module Adt = X6
 module Ite_ = X7
-module Polynome = TX1
+module Polynomial = TX1
 module Ac = AC
 
 (** map of semantic values using Combine.hash_cmp *)

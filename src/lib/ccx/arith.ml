@@ -58,8 +58,8 @@ let calc_power (c : Q.t) (d : Q.t) (ty : Ast.Ty.t) =
 let calc_power_opt (c : Q.t) (d : Q.t) (ty : Ast.Ty.t) =
   try Some (calc_power c d ty) with Exit -> None
 
-module Type (X : Intf.X.Sig) : Polynome.T with type r = X.r = struct
-  include Polynome.Make (struct
+module Type (X : Intf.X.Sig) : Polynomial.T with type r = X.r = struct
+  include Polynomial.Make (struct
       include X
       module Ac = Ac.Make (X)
 
@@ -82,7 +82,7 @@ module Type (X : Intf.X.Sig) : Polynome.T with type r = X.r = struct
     end)
 end
 
-module Shostak (X : Intf.X.Sig) (P : Polynome.EXTENDED_Polynome with type r = X.r) =
+module Shostak (X : Intf.X.Sig) (P : Polynomial.EXTENDED_Polynomial with type r = X.r) =
 struct
   type t = P.t
   type r = P.r

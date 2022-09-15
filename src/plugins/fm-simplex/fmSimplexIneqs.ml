@@ -17,7 +17,7 @@ open Options
 module Q = Numbers.Q
 
 module Container : Inequalities.Container_SIG = struct
-  module Make (P : Polynome.T with type r = Shostak.Combine.r) :
+  module Make (P : Polynomial.T with type r = Shostak.Combine.r) :
     Inequalities.S with module P = P = struct
     module X = Shostak.Combine
     module FM = Inequalities.FM (P)

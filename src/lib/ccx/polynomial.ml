@@ -85,7 +85,7 @@ module type T = sig
   val separate_constant : t -> t * Q.t
 end
 
-module type EXTENDED_Polynome = sig
+module type EXTENDED_Polynomial = sig
   include T
 
   val extract : r -> t option

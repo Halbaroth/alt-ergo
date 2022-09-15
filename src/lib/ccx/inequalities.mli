@@ -30,7 +30,7 @@ module Util = Alt_ergo_lib_util
 module Ast = Alt_ergo_lib_ast
 
 module type S = sig
-  module P : Polynome.T with type r = Shostak.Combine.r
+  module P : Polynomial.T with type r = Shostak.Combine.r
   module MP : Map.S with type key = P.t
 
   type t = {
@@ -84,10 +84,10 @@ module type S = sig
     'acc
 end
 
-module FM (P : Polynome.T with type r = Shostak.Combine.r) : S with module P = P
+module FM (P : Polynomial.T with type r = Shostak.Combine.r) : S with module P = P
 
 module type Container_SIG = sig
-  module Make (P : Polynome.T with type r = Shostak.Combine.r) :
+  module Make (P : Polynomial.T with type r = Shostak.Combine.r) :
     S with module P = P
 end
 

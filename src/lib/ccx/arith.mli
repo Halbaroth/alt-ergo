@@ -43,16 +43,16 @@ val calc_power_opt :
 (** Same as calc_power but return an option.
     Return None if the exception Exit is raised by calc_power *)
 
-module Type (X : Intf.X.Sig) : Polynome.T with type r = X.r
+module Type (X : Intf.X.Sig) : Polynomial.T with type r = X.r
 
-module Shostak (X : Intf.X.Sig) (P : Polynome.EXTENDED_Polynome with type r = X.r) :
+module Shostak (X : Intf.X.Sig) (P : Polynomial.EXTENDED_Polynomial with type r = X.r) :
   Intf.Solvable_theory.Sig with type r = X.r and type t = P.t
 
 (*
 module Relation
     (X : Sig.X)
     (Uf : Uf.S with type r = X.r)
-    (P : Polynome.EXTENDED_Polynome with type r = X.r)
+    (P : Polynomial.EXTENDED_Polynomial with type r = X.r)
   : Sig.RELATION
     with type r = X.r and type uf = Uf.t
 *)

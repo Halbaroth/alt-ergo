@@ -1,7 +1,7 @@
 (library
  (name alt_ergo_lib_ccx)
  (public_name alt-ergo-lib.ccx)
- (modules Ac Adt Adt_rel Arith Arrays Arrays_rel Bitv Bitv_rel Ccx Enum Enum_rel Inequalities IntervalCalculus Intervals Polynome Records Records_rel Relation Shostak Uf Use Theory Instances Matching)
+ (modules Ac Adt Adt_rel Arith Arrays Arrays_rel Bitv Bitv_rel Ccx Enum Enum_rel Inequalities IntervalCalculus Intervals Polynomial Records Records_rel Relation Shostak Uf Use Theory Instances Matching)
  (libraries
  alt_ergo_lib_util
  alt_ergo_lib_ast

@@ -47,7 +47,7 @@ module OracleContainer =
 
 module X = Shostak.Combine
 
-module P = Shostak.Polynome
+module P = Shostak.Polynomial
 
 module MP0 = Map.Make(P)
 module SP = Set.Make(P)

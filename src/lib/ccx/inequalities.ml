@@ -34,7 +34,7 @@ module Z = Util.Numbers.Z
 module Q = Util.Numbers.Q
 
 module type S = sig
-  module P : Polynome.T with type r = Shostak.Combine.r
+  module P : Polynomial.T with type r = Shostak.Combine.r
   module MP : Map.S with type key = P.t
 
   type t = {
@@ -91,12 +91,12 @@ module type S = sig
 end
 
 module type Container_SIG = sig
-  module Make (P : Polynome.T with type r = Shostak.Combine.r) :
+  module Make (P : Polynomial.T with type r = Shostak.Combine.r) :
     S with module P = P
 end
 
 module Container : Container_SIG = struct
-  module Make (P : Polynome.T with type r = Shostak.Combine.r) :
+  module Make (P : Polynomial.T with type r = Shostak.Combine.r) :
     S with module P = P = struct
     module X = Shostak.Combine
     module P = P

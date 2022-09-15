@@ -33,8 +33,8 @@ module Combine : Intf.X.Sig
 
 module Ite = Alt_ergo_lib_ite
 
-module Polynome : Polynome.T with type r = Combine.r
-module Arith : Intf.Solvable_theory.Sig with type r = Combine.r and type t = Polynome.t
+module Polynomial : Polynomial.T with type r = Combine.r
+module Arith : Intf.Solvable_theory.Sig with type r = Combine.r and type t = Polynomial.t
 
 module Records :
   Intf.Solvable_theory.Sig with type r = Combine.r and type t = Combine.r Records.abstract

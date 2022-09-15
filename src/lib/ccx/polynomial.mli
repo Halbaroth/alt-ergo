@@ -91,7 +91,7 @@ module type T = sig
       of [p] and [c] is its constant term. *)
 
   val to_monomial : t -> (Util.Numbers.Q.t * r * Util.Numbers.Q.t) option
-  (** [to_monomial p] converts [p] to a monomial description.contents
+  (** [to_monomial p] converts [p] to a monomial description.
 
       @returns [Some (a, v, c)] if [p] is the monomial {m av + c}.
       Otherwise the function returns [None]. *)
@@ -252,7 +252,7 @@ module type T = sig
   val separate_constant : t -> t * Util.Numbers.Q.t
 end
 
-module type EXTENDED_Polynome = sig
+module type EXTENDED_Polynomial = sig
   include T
 
   val extract : r -> t option
