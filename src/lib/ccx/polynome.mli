@@ -203,12 +203,6 @@ module type T = sig
       that {m n_v \wedge d_v = 1}, then the
       result is {m \lor_{v \in V} d_v}. *)
 
-  val modulo : t -> t -> t
-  (** [modulo p q] computes {e residue} of the constant term of [p]
-      modulo the constant term of [q].
-
-      @returns the residue as a constant polynomial. *)
-
   (** {1 Misc} *)
 
   val div : t -> t -> t * bool

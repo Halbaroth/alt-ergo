@@ -70,7 +70,6 @@ module type T = sig
   val mult_const : Q.t -> t -> t
   val lcm_denominators : t -> Q.t
   val gcd_numerators : t -> Q.t
-  val modulo : t -> t -> t
 
   val div : t -> t -> t * bool
   val is_const : t -> bool
@@ -283,14 +282,6 @@ module Make (X : S) = struct
     | true, Ast.Ty.Tint -> ({ r with ctt = Q.euc_div_num p.ctt q.ctt }, false)
     | false, Ast.Ty.Tint -> (r, true (* XXX *))
     | _ -> assert false
-
-  (* TODO: remove this function. *)
-  let modulo p q =
-    Util.Options.tool_req 4 "TR-Arith-Poly mod";
-    if not @@ is_const q then raise Maybe_zero;
-    if Q.sign q.ctt = 0 then raise Division_by_zero;
-    if not @@ is_const p then raise Not_a_num;
-    { p with ctt = Q.euc_mod_num p.ctt q.ctt }
 
   let subst v p q =
     try
