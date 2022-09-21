@@ -969,8 +969,10 @@ let connect env =
   List.iter (fun (t, _) -> connect_atyped_decl env t) env.ast
 
 let clear_used_lemmas_tags env =
-  MTag.iter (fun t _ -> t#set_property (`BACKGROUND_SET false)) env.proof_tags;
-  List.iter (fun t -> t#set_property (`BACKGROUND_SET false)) env.proof_toptags;
+  MTag.iter (fun t _ -> t#set_property (`BACKGROUND_SET false))
+    env.proof_tags;
+  List.iter (fun t -> t#set_property (`BACKGROUND_SET false))
+    env.proof_toptags;
   env.proof_tags <- MTag.empty;
   env.proof_toptags <- []
 
@@ -979,18 +981,30 @@ let show_used_lemmas env expl =
   clear_used_lemmas_tags env;
   let max_mul = MTag.fold (fun _ m acc -> max acc m) ftags 0 in
   let green_0 =
-    Gdk.Color.color_parse (
+    <<<<<<< HEAD
+      Gdk.Color.color_parse (
       Gui_util.dec_to_hex_color (65535*3/4) 65535 (65535*3/4)
     )
+    =======
+    Gdk.Color.color_parse
+      (Gui_util.dec_to_hex_color (65535*3/4) 65535 (65535*3/4))
+    >>>>>>> a8b45171c8a7204f12cb168b928fc6f5256e2ddf
   in
   List.iter (fun t -> t#set_property (`BACKGROUND_GDK green_0)) atags;
   MTag.iter (fun t m ->
       let perc = ((max_mul - m) * 65535) / max_mul in
+      let red = perc * 1/2 and green = (perc + 2 * 65535) / 3
+      and blue = perc * 1/2
+      in
       let green_n = Gdk.Color.color_parse
-          (Gui_util.dec_to_hex_color
-             (perc*1/2)
-             ((perc + 2*65535) /3) (perc*1/2)
-          )
+                    <<<<<<< HEAD
+                      (Gui_util.dec_to_hex_color
+                         (perc*1/2)
+                         ((perc + 2*65535) /3) (perc*1/2)
+                      )
+                    =======
+                    (Gui_util.dec_to_hex_color red blue green)
+        >>>>>>> a8b45171c8a7204f12cb168b928fc6f5256e2ddf
       in
       t#set_property (`BACKGROUND_GDK green_n)) ftags;
   env.proof_tags <- ftags;

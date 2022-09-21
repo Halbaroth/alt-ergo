@@ -1154,7 +1154,8 @@ let start_gui all_used_context =
          in
          let tv2 =
            GSourceView3.source_view ~source_buffer:buf2 ~packing:(sw2#add)
-             ~show_line_numbers:false ~wrap_mode:(if wrap then `CHAR else `NONE)
+             ~show_line_numbers:false
+             ~wrap_mode:(if wrap then `CHAR else `NONE)
              ~highlight_current_line:true ()
          in
          let _ = tv2#misc#modify_font font in
@@ -1165,134 +1166,147 @@ let start_gui all_used_context =
              st_ctx annoted_ast dep actions resulting_ids in
          connect env;
 
-         let remove_ctx_button =
-           GButton.toggle_tool_button ~label:" Remove context"
-             ~stock:`CUT ~packing:toolbar#insert ()
-         in
-         ignore (
-           remove_ctx_button#connect#clicked ~callback:(remove_context env)
-         );
+         <<<<<<< HEAD
+       let remove_ctx_button =
+         GButton.toggle_tool_button ~label:" Remove context"
+           ~stock:`CUT ~packing:toolbar#insert ()
+       in
+       ignore (
+         remove_ctx_button#connect#clicked ~callback:(remove_context env)
+       );
+       =======
+       let remove_ctx_button = GButton.toggle_tool_button
+           ~label:" Remove context" ~stock:`CUT ~packing:toolbar#insert ()
+       in
+       ignore(remove_ctx_button#connect#clicked
+                ~callback:(remove_context env));
+       >>>>>>> a8b45171c8a7204f12cb168b928fc6f5256e2ddf
 
-         let run_button = GButton.tool_button ~label:" Run Alt-Ergo"
-             ~stock:`EXECUTE () in
-         toolbar#insert run_button;
+       let run_button = GButton.tool_button ~label:" Run Alt-Ergo"
+           ~stock:`EXECUTE () in
+       toolbar#insert run_button;
 
-         let stop_button =
-           GButton.tool_button ~label:" Abort" ~stock:`STOP ()
-         in
-         stop_button#misc#hide ();
+       let stop_button =
+         GButton.tool_button ~label:" Abort" ~stock:`STOP ()
+       in
+       stop_button#misc#hide ();
 
-         (* TODO: Use toolbar#insert instead of insert_space *)
-         (*toolbar#insert_space ();*)
+       (* TODO: Use toolbar#insert instead of insert_space *)
+       (*toolbar#insert_space ();*)
 
-         let tool_item = GButton.tool_item () in
-         let result_box = GPack.hbox ~packing:tool_item#add () in
-         let result_image = GMisc.image ~icon_size:`LARGE_TOOLBAR
-             ~stock:`DIALOG_QUESTION ~packing:result_box#add () in
-         let result_label = GMisc.label
-             ~text:" " ~packing:result_box#add () in
+       let tool_item = GButton.tool_item () in
+       let result_box = GPack.hbox ~packing:tool_item#add () in
+       let result_image = GMisc.image ~icon_size:`LARGE_TOOLBAR
+           ~stock:`DIALOG_QUESTION ~packing:result_box#add () in
+       let result_label = GMisc.label
+           ~text:" " ~packing:result_box#add () in
 
-         ignore(toolbar#insert tool_item);
+       ignore(toolbar#insert tool_item);
 
-         let clean_button =
-           GButton.tool_button ~label:" Clean unused" ~stock:`CLEAR ()
-         in
-         toolbar#insert clean_button;
-         clean_button#misc#hide ();
+       let clean_button =
+         GButton.tool_button ~label:" Clean unused" ~stock:`CLEAR ()
+       in
+       toolbar#insert clean_button;
+       clean_button#misc#hide ();
 
-         let toolsearch =
+       let toolsearch =
+         <<<<<<< HEAD
            GButton.toolbar
-             (*~tooltips:true*)
-             ~packing:(toolbox#pack ~fill:true)
-             ()
-         in
-         toolsearch#set_icon_size `DIALOG;
+           (*~tooltips:true*)
+           ~packing:(toolbox#pack ~fill:true)
+           ()
+         =======
+         GButton.toolbar (*~tooltips:true*)
+           ~packing:(toolbox#pack ~fill:true) ()
+         >>>>>>> a8b45171c8a7204f12cb168b928fc6f5256e2ddf
+       in
+       toolsearch#set_icon_size `DIALOG;
 
-         let tool_item = GButton.tool_item ~packing:toolsearch#insert () in
-         let search_box =
-           GPack.hbox ~spacing:5 ~border_width:5 ~packing:tool_item#add ()
-         in
-         ignore(GMisc.image ~icon_size:`LARGE_TOOLBAR
-                  ~stock:`FIND ~packing:search_box#add ());
-         let search_entry = GEdit.entry ~packing:search_box#add () in
+       let tool_item = GButton.tool_item ~packing:toolsearch#insert () in
+       let search_box =
+         GPack.hbox ~spacing:5 ~border_width:5 ~packing:tool_item#add ()
+       in
+       ignore(GMisc.image ~icon_size:`LARGE_TOOLBAR
+                ~stock:`FIND ~packing:search_box#add ());
+       let search_entry = GEdit.entry ~packing:search_box#add () in
 
-         let search_forw_button =
-           GButton.tool_button ~stock:`GO_DOWN ~packing:toolsearch#insert ()
-         in
-         let search_back_button =
-           GButton.tool_button ~stock:`GO_UP ~packing:toolsearch#insert ()
-         in
+       let search_forw_button =
+         GButton.tool_button ~stock:`GO_DOWN ~packing:toolsearch#insert ()
+       in
+       let search_back_button =
+         GButton.tool_button ~stock:`GO_UP ~packing:toolsearch#insert ()
+       in
 
-         let found_all_tag = buf1#create_tag [`BACKGROUND "yellow"] in
-         let found_tag = buf1#create_tag [`BACKGROUND "orange"] in
+       let found_all_tag = buf1#create_tag [`BACKGROUND "yellow"] in
+       let found_tag = buf1#create_tag [`BACKGROUND "orange"] in
 
-         ignore(search_entry#connect#changed
-                  ~callback:(search_all search_entry
-                               tv1 buf1 found_tag found_all_tag));
+       ignore(search_entry#connect#changed
+                ~callback:(search_all search_entry
+                             tv1 buf1 found_tag found_all_tag));
 
-         ignore(search_entry#event#connect#key_press
-                  ~callback:(fun k ->
-                      if GdkEvent.Key.keyval k = GdkKeysyms._Return then begin
-                        search_next tv1 buf1 found_tag found_all_tag ();
-                        true
-                      end
-                      else false
-                    ));
+       ignore(search_entry#event#connect#key_press
+                ~callback:(fun k ->
+                    if GdkEvent.Key.keyval k = GdkKeysyms._Return then begin
+                      search_next tv1 buf1 found_tag found_all_tag ();
+                      true
+                    end
+                    else false
+                  ));
 
-         ignore(search_forw_button#connect#clicked
-                  ~callback:(search_next tv1 buf1 found_tag found_all_tag));
-         ignore(search_back_button#connect#clicked
-                  ~callback:(search_next ~backward:true
-                               tv1 buf1 found_tag found_all_tag));
+       ignore(search_forw_button#connect#clicked
+                ~callback:(search_next tv1 buf1 found_tag found_all_tag));
+       ignore(search_back_button#connect#clicked
+                ~callback:(search_next ~backward:true
+                             tv1 buf1 found_tag found_all_tag));
 
-         let sw3 = GBin.scrolled_window
-             ~vpolicy:`AUTOMATIC
-             ~hpolicy:`AUTOMATIC
-             ~packing:fr3#add ()
-         in
-         ignore(create_error_view error_model env.buffer tv1
-                  ~packing:sw3#add ());
+       let sw3 = GBin.scrolled_window
+           ~vpolicy:`AUTOMATIC
+           ~hpolicy:`AUTOMATIC
+           ~packing:fr3#add ()
+       in
+       ignore(create_error_view error_model env.buffer tv1
+                ~packing:sw3#add ());
 
-         add_to_buffer error_model env.buffer env.ast;
-         env.buffer#place_cursor ~where:buf1#start_iter;
+       add_to_buffer error_model env.buffer env.ast;
+       env.buffer#place_cursor ~where:buf1#start_iter;
 
-         if error_model.some then fr3#misc#show ();
+       if error_model.some then fr3#misc#show ();
 
-         let sw4 = GBin.scrolled_window
-             ~vpolicy:`AUTOMATIC
-             ~hpolicy:`AUTOMATIC
-             ~packing:fr4#add ()
-         in
+       let sw4 = GBin.scrolled_window
+           ~vpolicy:`AUTOMATIC
+           ~hpolicy:`AUTOMATIC
+           ~packing:fr4#add ()
+       in
 
-         ignore(create_inst_view inst_model env env.buffer tv1
-                  ~packing:sw4#add ());
+       ignore(create_inst_view inst_model env env.buffer tv1
+                ~packing:sw4#add ());
 
 
-         Gui_replay.replay_session env;
-         ignore (refresh_instances env.insts ());
+       Gui_replay.replay_session env;
+       ignore (refresh_instances env.insts ());
 
-         let thread = ref None in
-         let callback = run run_button stop_button clean_button inst_model
-             timers_model result_image result_label thread env used_context
-         in
-         ignore(run_button#connect#clicked
-                  ~callback);
+       let thread = ref None in
+       let callback = run run_button stop_button clean_button inst_model
+           timers_model result_image result_label thread env used_context
+       in
+       ignore(run_button#connect#clicked
+                ~callback);
 
-         ignore(stop_button#connect#clicked
-                  ~callback:(kill_thread thread));
+       ignore(stop_button#connect#clicked
+                ~callback:(kill_thread thread));
 
-         ignore(eventBox#event#connect#key_press
-                  ~callback:(set_ctrl env true));
+       ignore(eventBox#event#connect#key_press
+                ~callback:(set_ctrl env true));
 
-         ignore(eventBox#event#connect#key_release
-                  ~callback:(set_ctrl env false));
+       ignore(eventBox#event#connect#key_release
+                ~callback:(set_ctrl env false));
 
-         Hashtbl.add note_search !nb_page
-           (search_entry,
-            run run_button stop_button clean_button inst_model
-              timers_model result_image result_label thread env used_context);
+       Hashtbl.add note_search !nb_page
+         (search_entry,
+          run run_button stop_button clean_button inst_model
+            timers_model result_image result_label thread env used_context);
 
-         env::acc
+       env::acc
 
       ) [] typed_ast in
 
