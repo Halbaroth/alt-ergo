@@ -1272,13 +1272,11 @@ let start_gui all_used_context =
          ignore (refresh_instances env.insts ());
 
          let thread = ref None in
-
+         let callback = run run_button stop_button clean_button inst_model
+             timers_model result_image result_label thread env used_context
+         in
          ignore(run_button#connect#clicked
-                  ~callback:(
-                    run
-                      run_button stop_button clean_button inst_model
-                      timers_model result_image result_label thread env
-                      used_context));
+                  ~callback);
 
          ignore(stop_button#connect#clicked
                   ~callback:(kill_thread thread));
