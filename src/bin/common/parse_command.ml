@@ -930,7 +930,7 @@ let parse_output_opt =
          It must be noticed that not specifying an output \
          format will let Alt-Ergo set it according to the input file's \
          extension."
-        (Arg.doc_alts [ "native"; "smtlib" ])
+        (Arg.doc_alts [ "native"; "smtlib2" ])
     in
     let docv = "FMT" in
     Arg.(value & opt (some format_conv) None & info ["o"; "output"] ~docv ~doc)
