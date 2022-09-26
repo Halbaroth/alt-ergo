@@ -148,10 +148,12 @@ let compare t1 t2 =
     if c <> 0 then c
     else t1.tag - t2.tag
 
-let equal t1 t2 =  t1 == t2
+let equal t1 t2 = t1 == t2
 
-let hash t = t.tag
+let[@inline] hash t = t.tag
 
+(** TODO: Remove this function since it is a duplicate of the hash function
+    above. *)
 let uid t = t.tag
 
 let compare_subst (s_t1, s_ty1) (s_t2, s_ty2) =
@@ -174,7 +176,7 @@ let compare_binders b1 b2 =
       let c = i - j in if c <> 0 then c else Ty.compare ty1 ty2)
     b1 b2
 
-let [@inline always] compare_sko_xxx sk1 sk2 cmp_xxx =
+let[@inline always] compare_sko_xxx sk1 sk2 cmp_xxx =
   try
     List.iter2
       (fun s t ->
@@ -310,8 +312,7 @@ module Hsko = Hashtbl.Make(H)
 
 module F_Htbl : Hashtbl.S with type key = t =
   Hashtbl.Make(struct
-    type t'=t
-    type t = t'
+    type nonrec t = t
     let hash = hash
     let equal = equal
   end)
@@ -861,10 +862,12 @@ let mk_if cond f2 f3 id =
   mk_or
     (mk_and cond f2 true id) (mk_and (neg cond) f3 true id) false id
 
-let mk_ite cond th el id =
-  let ty = type_info th in
-  if ty == Ty.Tbool then mk_if cond th el id
-  else mk_term (Sy.Op Sy.Tite) [cond; th; el] ty
+(** BUG: we should check that cond is of type bool and exp1 and exp2
+    have the same type also. *)
+let mk_ite cond exp1 exp2 id =
+  let ty = type_info exp1 in
+  if ty == Ty.Tbool then mk_if cond exp1 exp2 id
+  else mk_term (Sy.Op Sy.Tite) [cond; exp1; exp2] ty
 
 let [@inline always] const_term e =
   (* we use this function because depth is currently not correct to
@@ -1138,7 +1141,8 @@ let rec apply_subst_aux (s_t, s_ty) t =
         assert (not (SMap.mem let_v s_t));
         let in_e2 = apply_subst_aux (SMap.remove let_v s_t, s_ty) in_e in
         assert (let_e != let_e2 || in_e != in_e2);
-        mk_let_aux {let_v; let_e=let_e2; in_e=in_e2; let_sko=let_sko2; is_bool}
+        mk_let_aux {let_v; let_e=let_e2; in_e=in_e2;
+                    let_sko=let_sko2; is_bool}
 
       | Sy.Lit Sy.L_eq, _ ->
         begin match xs' with
@@ -1204,8 +1208,9 @@ and apply_subst_trigger subst ({ content; guard; _ } as tr) =
 and mk_let_aux ({ let_v; let_e; in_e; _ } as x) =
   try
     let _, nb_occ = SMap.find let_v in_e.vars in
+    (* Inline in these situations. *)
     if nb_occ = 1 && (let_e.pure (*1*) || Sy.equal let_v in_e.f) ||
-       const_term let_e then (* inline in these situations *)
+       const_term let_e then
       apply_subst_aux (SMap.singleton let_v let_e, Ty.esubst) in_e
     else
       let ty = type_info in_e in
@@ -1346,11 +1351,14 @@ let max_pure_subterms =
   in
   fun e -> aux TSet.empty e
 
-let rec sub_terms acc e =
-  match e.f with
+let rec sub_terms acc exp =
+  match exp.f with
   | Sy.Form _ | Sy.Lit _ -> acc
-  | _ -> List.fold_left sub_terms (TSet.add e acc) e.xs
+  | _ -> List.fold_left sub_terms (TSet.add exp acc) exp.xs
 
+(* TODO: We should replace the assertion failure with
+   a better error. *)
+(* Produce the list of maximal subterms of a literal. *)
 let args_of_lit e = match e.f with
   | Sy.Form _ -> assert false
   | Sy.Lit _ -> e.xs
@@ -1552,7 +1560,11 @@ let skolemize { main = f; binders; sko_v; sko_vty; _ } =
   assert (is_ground res);
   res
 
-
+(* Helper function to replace an ite term:
+    if cond then th else el
+   by the formula
+    (cond => (x = th)) /\ (neg cond => (x = el))
+   where x is a symbol given as argument. *)
 let rec mk_ite_eq x c th el =
   if equal th el then mk_eq_aux x th
   else if equal c vrai then mk_eq_aux x th
@@ -1574,6 +1586,7 @@ let mk_let_equiv let_sko let_e id  =
     if type_info let_e == Ty.Tbool then mk_iff let_sko let_e id
     else mk_eq ~iff:true let_sko let_e
 
+(* TODO: Rename this function because its shadowing below is misleading. *)
 let rec elim_let =
   let ground_sko sko =
     if is_ground sko then sko
@@ -1633,6 +1646,7 @@ let elim_iff f1 f2 id ~with_conj =
       (mk_and f1 f2 false id)
       (mk_and (neg f1) (neg f2) false id) false id
 
+(* TODO: Move this module in a new file. *)
 module Triggers = struct
 
   module Svty = Ty.Svty
@@ -2322,6 +2336,7 @@ let mk_match e cases =
 
 let is_pure e = e.pure
 
+(* TODO: Move the module in a separated file. *)
 module Purification = struct
 
   (* lets_counter is used to order 'let' constructs before they are added to the
@@ -2329,7 +2344,7 @@ module Purification = struct
      reconstruct them correctly in mk_lifted. *)
   let lets_counter = ref 0
 
-  let add_let sy e lets =
+  let add_let sy e (lets: (t * int) SMap.t) =
     incr lets_counter;
     SMap.add sy (e, !lets_counter) lets
 

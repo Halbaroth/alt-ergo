@@ -26,6 +26,8 @@
 (*                                                                            *)
 (******************************************************************************)
 
+(** {1 Types} *)
+
 type builtin =
     LE | LT (* arithmetic *)
   | IsConstr of Hstring.t (* ADT tester *)
@@ -42,20 +44,20 @@ type operator =
   | Destruct of Hstring.t * bool
   | Tite
 
+(** Type of literal's symbol. *)
 type lit =
-  (* literals *)
-  | L_eq
+  | L_eq                    (** Equality symbol *)
   | L_built of builtin
-  | L_neg_eq
+  | L_neg_eq                (** Negation of equality symbol *)
   | L_neg_built of builtin
   | L_neg_pred
 
+(** Type of formula's symbol. *)
 type form =
-  (* formulas *)
   | F_Unit of bool
   | F_Clause of bool
-  | F_Iff
-  | F_Xor
+  | F_Iff             (** Equivalence symbol *)
+  | F_Xor             (** Exclusive disjunction symbol *)
   | F_Lemma
   | F_Skolem
 
@@ -66,6 +68,7 @@ type bound_kind = VarBnd of Var.t | ValBnd of Numbers.Q.t
 type bound = private
   { kind : bound_kind; sort : Ty.t; is_open : bool; is_lower : bool }
 
+(** Type of symbol. *)
 type t =
   | True
   | False
@@ -82,8 +85,11 @@ type t =
   | MapsTo of Var.t
   | Let
 
+(** {1 Constructors} *)
 val name : ?kind:name_kind -> string -> t
 val var : Var.t -> t
+
+(* TODO: Rename this function to wildcase *)
 val underscore : t
 val int : string -> t
 val real : string -> t
@@ -109,6 +115,8 @@ val print_clean : Format.formatter -> t -> unit
 (*val dummy : t*)
 
 val fresh : ?is_var:bool -> string -> t
+(** [fresh is_var name] produces a fresh name symbol from the string
+    [str]. If [is_var] is true, the function produces a var symbol instead. *)
 
 val is_get : t -> bool
 val is_set : t -> bool
