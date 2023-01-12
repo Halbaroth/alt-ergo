@@ -19,6 +19,7 @@ module type ATOM = sig
     {  vid : int;
        pa : atom;
        na : atom;
+       mutable idx : int;
        mutable weight : float;
        mutable sweight : int;
        mutable seen : bool;
@@ -84,11 +85,13 @@ module type ATOM = sig
 
   val fresh_dname : unit -> string
 
-  val make_clause : string -> atom list -> E.t -> int -> bool ->
+  val make_clause : string -> atom list -> E.t -> bool ->
     premise-> clause
 
   (*val made_vars_info : unit -> int * var list*)
 
+  val cmp_var : var -> var -> int
+  val eq_var : var -> var -> bool
   val cmp_atom : atom -> atom -> int
   val eq_atom   : atom -> atom -> bool
   val hash_atom  : atom -> int
@@ -156,6 +159,7 @@ module Atom : ATOM = struct
     {  vid : int;
        pa : atom;
        na : atom;
+       mutable idx : int;
        mutable weight : float;
        mutable sweight : int;
        mutable seen : bool;
@@ -197,6 +201,7 @@ module Atom : ATOM = struct
       na = dummy_atom;
       level = -1;
       index = -1;
+      idx = -1;
       reason = None;
       weight = -1.;
       sweight = 0;
@@ -206,14 +211,14 @@ module Atom : ATOM = struct
     { var = dummy_var;
       timp = 0;
       lit = dummy_lit;
-      watched = {Vec.dummy=dummy_clause; data=[||]; sz=0};
+      watched = Vec.create ();
       neg = dummy_atom;
       is_true = false;
       is_guard = false;
       aid = -102 }
   and dummy_clause =
     { name = "";
-      atoms = {Vec.dummy=dummy_atom; data=[||]; sz=0};
+      atoms = Vec.create ();
       activity = -1.;
       removed = false;
       learnt = false;
@@ -291,6 +296,7 @@ module Atom : ATOM = struct
           na = na;
           level = -1;
           index = -1;
+          idx = -1;
           reason = None;
           weight = 0.;
           sweight = max_depth lit;
@@ -300,7 +306,7 @@ module Atom : ATOM = struct
       and pa =
         { var = var;
           lit = lit;
-          watched = Vec.make 10 dummy_clause;
+          watched = Vec.make ~cap:10 ~dummy:dummy_clause;
           neg = na;
           is_true = false;
           is_guard = false;
@@ -309,7 +315,7 @@ module Atom : ATOM = struct
       and na =
         { var = var;
           lit = E.neg lit;
-          watched = Vec.make 10 dummy_clause;
+          watched = Vec.make ~cap:10 ~dummy:dummy_clause;
           neg = pa;
           is_true = false;
           is_guard = false;
@@ -347,8 +353,8 @@ module Atom : ATOM = struct
     try (HT.find hcons.tbl (E.neg lit)).na
     with Not_found -> assert false
 
-  let make_clause name ali f sz_ali is_learnt premise =
-    let atoms = Vec.from_list ali sz_ali dummy_atom in
+  let make_clause name ali f is_learnt premise =
+    let atoms = Vec.of_list ali in
     { name  = name;
       atoms = atoms;
       removed = false;
@@ -374,9 +380,10 @@ module Atom : ATOM = struct
 
   let to_int f = int_of_float f
 
+  let cmp_var v1 v2 = v1.vid - v2.vid
+  let eq_var v1 v2 = v1.vid - v2.vid = 0
+
   (* unused --
-     let cmp_var v1 v2 = v1.vid - v2.vid
-     let eq_var v1 v2 = v1.vid - v2.vid = 0
      let tag_var v = v.vid
      let h_var v = v.vid
   *)

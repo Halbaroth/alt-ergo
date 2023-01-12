@@ -231,7 +231,7 @@ let () =
   ; ("runtest", "cdcl", [
       "--output=smtlib2"
     ; "--timelimit=1"
-    ; "--sat-solver CDCL" ])
+    ; "--sat-solver CDCL" ; "--disable-weaks" ])
   ; ("runtest", "cdcl_tableaux", [
       "--output=smtlib2"
     ; "--timelimit=1"

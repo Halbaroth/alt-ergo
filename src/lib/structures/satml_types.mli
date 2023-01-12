@@ -16,6 +16,7 @@ module type ATOM = sig
     {  vid : int;
        pa : atom;
        na : atom;
+       mutable idx : int;
        mutable weight : float;
        mutable sweight : int;
        mutable seen : bool;
@@ -81,11 +82,13 @@ module type ATOM = sig
 
   val fresh_dname : unit -> string
 
-  val make_clause : string -> atom list -> Expr.t -> int -> bool ->
+  val make_clause : string -> atom list -> Expr.t -> bool ->
     premise-> clause
 
   (*val made_vars_info : unit -> int * var list*)
 
+  val cmp_var : var -> var -> int
+  val eq_var : var -> var -> bool
   val cmp_atom : atom -> atom -> int
   val eq_atom   : atom -> atom -> bool
   val hash_atom  : atom -> int

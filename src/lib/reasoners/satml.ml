@@ -87,6 +87,22 @@ end
 module MFF = FF.Map
 module SFF = FF.Set
 
+module IMap = Map.Make (struct
+    type t = int
+
+    let compare = Int.compare
+  end)
+
+
+module Var_heap = Heap.Make (struct
+    type t = Atom.var
+
+    let idx ({ idx; _ } : Atom.var) = idx
+    let set_idx (v : Atom.var) idx = v.idx <- idx
+    let cmp (v1 : Atom.var) (v2 : Atom.var) =
+      Stdlib.compare v1.weight v2.weight < 0
+  end)
+
 module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
 
   module Matoms = Atom.Map
@@ -112,7 +128,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
       mutable var_inc : float;
 
       (* un vecteur des variables du probleme *)
-      mutable vars : Atom.var Vec.t;
+      mutable vars : Atom.var IMap.t;
 
       (* la pile de decisions avec les faits impliques *)
       mutable trail : Atom.atom Vec.t;
@@ -133,7 +149,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
       mutable simpDB_props : int;
 
       (* Un tas ordone en fonction de l'activite des variables *)
-      mutable order : Iheap.t;
+      mutable order : Var_heap.t;
 
       (* estimation de progressions, mis a jour par 'search()' *)
       mutable progress_estimate : float;
@@ -229,21 +245,22 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
 
       unsat_core = None;
 
-      clauses = Vec.make 0 Atom.dummy_clause;
+      clauses = Vec.create ();
       (*sera mis a jour lors du parsing*)
 
-      learnts = Vec.make 0 Atom.dummy_clause;
+      learnts = Vec.create ();
       (*sera mis a jour lors du parsing*)
 
       clause_inc = 1.;
 
       var_inc = 1.;
 
-      vars = Vec.make 0 Atom.dummy_var; (*sera mis a jour lors du parsing*)
+      vars = IMap.empty;
+      (*sera mis a jour lors du parsing*)
 
-      trail = Vec.make 601 Atom.dummy_atom;
+      trail = Vec.make ~cap:601 ~dummy:Atom.dummy_atom;
 
-      trail_lim = Vec.make 601 (-105);
+      trail_lim = Vec.make ~cap:601 ~dummy:(-105);
 
       qhead = 0;
 
@@ -251,7 +268,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
 
       simpDB_props = 0;
 
-      order = Iheap.init 0; (* sera mis a jour dans solve *)
+      order = Var_heap.create (); (* sera mis a jour dans solve *)
 
       progress_estimate = 0.;
 
@@ -293,13 +310,13 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
 
       nb_init_clauses = 0;
 
-      model = Vec.make 0 Atom.dummy_var;
+      model = Vec.create ();
 
-      tenv = Th.empty();
+      tenv = Th.empty ();
 
-      unit_tenv = Th.empty();
+      unit_tenv = Th.empty ();
 
-      tenv_queue = Vec.make 100 (Th.empty());
+      tenv_queue = Vec.make ~cap:100 ~dummy:(Th.empty ());
 
       tatoms_queue = Queue.create ();
 
@@ -312,17 +329,17 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
       lazy_cnf = Matoms.empty;
 
       lazy_cnf_queue =
-        Vec.make 100
-          (Matoms.singleton (Atom.faux_atom) (MFF.empty, FF.faux));
+        Vec.make ~cap:100
+          ~dummy:(Matoms.singleton (Atom.faux_atom) (MFF.empty, FF.faux));
 
       relevants = SFF.empty;
-      relevants_queue = Vec.make 100 (SFF.singleton (FF.faux));
+      relevants_queue = Vec.make ~cap:100 ~dummy:(SFF.singleton (FF.faux));
 
       ff_lvl = MFF.empty;
 
       lvl_ff = Util.MI.empty;
 
-      increm_guards = Vec.make 1 Atom.dummy_atom;
+      increm_guards = Vec.make ~cap:1 ~dummy:Atom.dummy_atom;
 
       next_dec_guard = 0;
     }
@@ -359,14 +376,10 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
   else*) vj.weight < vi.weight
 *)
 
-  let f_weight env i j =
-    (Stdlib.compare
-       (Vec.get env.vars j).weight (Vec.get env.vars i).weight) < 0
-
   (* unused -- let f_filter env i = (Vec.get env.vars i).level < 0 *)
 
   let insert_var_order env (v : Atom.var) =
-    Iheap.insert (f_weight env) env.order v.vid
+    Var_heap.insert env.order v
 
   let var_decay_activity env = env.var_inc <- env.var_inc *. env.var_decay
 
@@ -376,22 +389,21 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
   let var_bump_activity env (v : Atom.var) =
     v.weight <- v.weight +. env.var_inc;
     if (Stdlib.compare v.weight 1e100) > 0 then begin
-      for i = 0 to env.vars.Vec.sz - 1 do
-        (Vec.get env.vars i).weight <- (Vec.get env.vars i).weight *. 1e-100
-      done;
+      IMap.iter (fun _ (var : Atom.var) ->
+          var.weight <- var.weight *. 1e-100
+        ) env.vars;
       env.var_inc <- env.var_inc *. 1e-100;
     end;
-    if Iheap.in_heap env.order v.vid then
-      Iheap.decrease (f_weight env) env.order v.vid
+    if Var_heap.in_heap v then
+      Var_heap.decrease env.order v
 
 
   let clause_bump_activity env (c : Atom.clause) =
     c.activity <- c.activity +. env.clause_inc;
     if (Stdlib.compare c.activity 1e20) > 0 then begin
-      for i = 0 to env.learnts.Vec.sz - 1 do
-        (Vec.get env.learnts i).activity <-
-          (Vec.get env.learnts i).activity *. 1e-20;
-      done;
+      Vec.iter env.learnts ~f:(fun cla ->
+          cla.activity <- cla.activity *. 1e-20
+        );
       env.clause_inc <- env.clause_inc *. 1e-20
     end
 
@@ -400,7 +412,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
   let nb_assigns env = Vec.size env.trail
   let nb_clauses env = Vec.size env.clauses
   (* unused -- let nb_learnts env = Vec.size env.learnts *)
-  let nb_vars    env = Vec.size env.vars
+  let nb_vars    env = IMap.cardinal env.vars
 
   let new_decision_level env =
     env.decisions <- env.decisions + 1;
@@ -423,10 +435,6 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
 
   let detach_clause env (c : Atom.clause) =
     c.removed <- true;
-  (*
-    Vec.remove (Vec.get c.atoms 0).neg.watched c;
-    Vec.remove (Vec.get c.atoms 1).neg.watched c;
-  *)
     if c.learnt then
       env.learnts_literals <- env.learnts_literals - Vec.size c.atoms
     else
@@ -509,14 +517,14 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
         env.lazy_cnf <- Vec.get env.lazy_cnf_queue lvl;
         env.relevants <- Vec.get env.relevants_queue lvl;
       end;
-      Vec.shrink env.trail ((Vec.size env.trail) - env.qhead) true;
-      Vec.shrink env.trail_lim ((Vec.size env.trail_lim) - lvl) true;
-      Vec.shrink env.tenv_queue ((Vec.size env.tenv_queue) - lvl) true;
+      Vec.shrink env.trail ((Vec.size env.trail) - env.qhead);
+      Vec.shrink env.trail_lim ((Vec.size env.trail_lim) - lvl);
+      Vec.shrink env.tenv_queue ((Vec.size env.tenv_queue) - lvl);
       if Options.get_cdcl_tableaux () then begin
         Vec.shrink
-          env.lazy_cnf_queue ((Vec.size env.lazy_cnf_queue) - lvl) true;
+          env.lazy_cnf_queue ((Vec.size env.lazy_cnf_queue) - lvl);
         Vec.shrink env.relevants_queue
-          ((Vec.size env.relevants_queue) - lvl) true
+          ((Vec.size env.relevants_queue) - lvl)
         [@ocaml.ppwarning "TODO: try to disable 'fill_with_dummy'"]
       end;
       (try
@@ -532,9 +540,8 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
     List.iter (enqueue_assigned env) !repush
 
   let rec pick_branch_var env =
-    if Iheap.size env.order = 0 then raise Sat;
-    let max = Iheap.remove_min (f_weight env) env.order in
-    let v = Vec.get env.vars max in
+    if Var_heap.size env.order = 0 then raise Sat;
+    let v = Var_heap.remove_min env.order in
     if v.level>= 0 then begin
       assert (v.pa.is_true || v.na.is_true);
       pick_branch_var env
@@ -567,7 +574,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
 
   let max_level_in_clause (c : Atom.clause) =
     let max_lvl = ref 0 in
-    Vec.iter c.atoms (fun a ->
+    Vec.iter c.atoms ~f:(fun a ->
         max_lvl := max !max_lvl a.var.level);
     !max_lvl
 
@@ -680,7 +687,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
       with Conflict c -> assert (!res == C_none); res := C_bool c
     end;
     let dead_part = Vec.size watched - !new_sz_w in
-    Vec.shrink watched dead_part true
+    Vec.shrink watched dead_part
 
 
   let do_case_split env origin =
@@ -963,7 +970,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
         incr j
       end
     done;
-    Vec.shrink vec (k + 1 - !j) true
+    Vec.shrink vec (k + 1 - !j)
 
 
   module HUC = Hashtbl.Make
@@ -1144,7 +1151,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
     end
 
 
-  let record_learnt_clause env ~is_T_learn blevel learnt history size =
+  let record_learnt_clause env ~is_T_learn blevel learnt history =
     let curr_level = decision_level env in
     if not is_T_learn || Options.get_minimal_bj () ||
        blevel = curr_level then begin
@@ -1157,7 +1164,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
       | fuip :: _ ->
         let name = Atom.fresh_lname () in
         let lclause =
-          Atom.make_clause name learnt vraie_form size true history
+          Atom.make_clause name learnt vraie_form true history
         in
         Vec.push env.learnts lclause;
         attach_clause env lclause;
@@ -1182,7 +1189,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
     while !cond do
       if !c.learnt then clause_bump_activity env !c;
       history := !c :: !history;
-      Vec.iter !c.atoms (fun a ->
+      Vec.iter !c.atoms ~f:(fun a ->
           assert (a.is_true || a.neg.is_true && a.var.level >= 0);
           if not a.var.seen && a.var.level > 0 then begin
             var_bump_activity env a.var;
@@ -1216,7 +1223,6 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
     let learnt = SA.elements !learnt in
     let learnt = List.fast_sort (fun (a : Atom.atom) (b : Atom.atom) ->
         b.var.level - a.var.level) learnt in
-    let size = List.length learnt in
     let bj_level =
       if Options.get_minimal_bj () then
         match learnt with
@@ -1224,7 +1230,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
         | a :: _ -> max 0 (a.var.level - 1)
       else !blevel
     in
-    bj_level, learnt, !history, size
+    bj_level, learnt, !history
 
   let fixable_with_simple_backjump (confl : Atom.clause) max_lvl lv =
     if not (Options.get_minimal_bj ()) then None
@@ -1263,19 +1269,19 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
     match confl with
     | C_none -> assert false
     | C_theory dep ->
-      let atoms, sz, max_lvl, c_hist =
+      let atoms, max_lvl, c_hist =
         Ex.fold_atoms
-          (fun ex (acc, sz, max_lvl, c_hist) ->
+          (fun ex (acc, max_lvl, c_hist) ->
              match ex with
              | Ex.Literal a ->
                let c_hist = List.rev_append a.var.vpremise c_hist in
                let c_hist = match a.var.reason with
                  | None -> c_hist | Some r -> r:: c_hist
                in
-               if a.var.level = 0 then acc, sz, max_lvl, c_hist
-               else a.neg :: acc, sz + 1, max max_lvl a.var.level, c_hist
+               if a.var.level = 0 then acc, max_lvl, c_hist
+               else a.neg :: acc, max max_lvl a.var.level, c_hist
              | _ -> assert false (* TODO *)
-          ) dep ([], 0, 0, [])
+          ) dep ([], 0, []) (* TODO: remove the size accumulator. *)
       in
       if atoms == [] || max_lvl == 0 then begin
         (* check_inconsistence_of dep; *)
@@ -1283,26 +1289,26 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
         (* une conjonction de faits unitaires etaient deja unsat *)
       end;
       let name = Atom.fresh_dname() in
-      let c = Atom.make_clause name atoms vraie_form sz false c_hist in
+      let c = Atom.make_clause name atoms vraie_form false c_hist in
       c.removed <- true;
-      let blevel, learnt, history, size = conflict_analyze_aux env c max_lvl in
+      let blevel, learnt, history = conflict_analyze_aux env c max_lvl in
       cancel_until env blevel;
-      record_learnt_clause env ~is_T_learn:false blevel learnt history size
+      record_learnt_clause env ~is_T_learn:false blevel learnt history
 
     | C_bool c ->
       let max_lvl = ref 0 in
       let lv = ref [] in
-      Vec.iter c.atoms (fun a ->
+      Vec.iter c.atoms ~f:(fun a ->
           max_lvl := max !max_lvl a.var.level;
           lv := a.var :: !lv
         );
       if !max_lvl == 0 then report_b_unsat env [c];
       match fixable_with_simple_backjump c !max_lvl !lv with
       | None  ->
-        let blevel, learnt, history, size =
+        let blevel, learnt, history =
           conflict_analyze_aux env c !max_lvl in
         cancel_until env blevel;
-        record_learnt_clause env ~is_T_learn:false blevel learnt history size
+        record_learnt_clause env ~is_T_learn:false blevel learnt history
       | Some (a, blevel, propag_lvl) ->
         assert (a.neg.is_true);
         cancel_until env blevel;
@@ -1346,7 +1352,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
 
         | Some r ->
           Vec.iter r.atoms
-            (fun a -> if not (SA.mem a !seen) then Queue.push a q)
+            ~f:(fun a -> if not (SA.mem a !seen) then Queue.push a q)
       end
     done;
     raise (Last_UIP_reason !res)
@@ -1359,7 +1365,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
 
   let reason_of_conflict (confl_clause : Atom.clause) =
     let q = Queue.create () in
-    Vec.iter confl_clause.atoms (fun a -> Queue.push a q);
+    Vec.iter confl_clause.atoms ~f:(fun a -> Queue.push a q);
     find_uip_reason q
 
   let rec propagate_and_stabilize env propagator conflictC strat =
@@ -1392,18 +1398,16 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
         else raise e
 
   let clause_of_dep d fuip =
-    let cpt = ref 0 in
     let l =
       Ex.fold_atoms
         (fun e acc ->
            match e with
            | Ex.Literal a ->
-             incr cpt;
              a.neg :: acc
            | _ -> assert false
         )d []
     in
-    fuip :: l, !cpt + 1
+    fuip :: l
 
   let th_entailed tenv a =
     if Options.get_no_tcp () || not (Options.get_minimal_bj ()) then None
@@ -1459,8 +1463,8 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
         (* Printer.print_dbg
            "decide: %a" Atom.pr_atom next; *)
         enqueue env next current_level None
-      | Some(c,sz) ->
-        record_learnt_clause env ~is_T_learn:true (decision_level env) c [] sz
+      | Some c ->
+        record_learnt_clause env ~is_T_learn:true (decision_level env) c []
         (* right decision level will be set inside record_learnt_clause *)
     done
 
@@ -1530,7 +1534,8 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
     let init_name = string_of_int cnumber in
     let init0 =
       if Options.get_unsat_core () then
-        [Atom.make_clause init_name atoms f (List.length atoms) false []]
+        [Atom.make_clause init_name atoms f false []]
+        (* TODO: remove list.length here *)
       else
         [] (* no deps if unsat cores generation is not enabled *)
     in
@@ -1550,14 +1555,13 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
               a.var.vid - b.var.vid) atoms, init
         else partition atoms init0
       in
-      let size = List.length atoms in
       match atoms with
       | [] ->
         report_b_unsat env init0;
 
       | a::b::_ ->
         let name = Atom.fresh_name () in
-        let clause = Atom.make_clause name atoms vraie_form size false init in
+        let clause = Atom.make_clause name atoms vraie_form false init in
         attach_clause env clause;
         Vec.push env.clauses clause;
         if Options.(get_debug_sat () && get_verbose ()) then
@@ -1632,16 +1636,17 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
     | [] -> unit_cnf, nunit_cnf
     | _ ->
       let tenv0 = env.unit_tenv in
-      Vec.grow_to_by_double env.vars nbv;
-      Iheap.grow_to_by_double env.order nbv;
+      (*Vec.grow_by_double env.vars ~dummy:Atom.dummy_var ~limit:nbv;*)
+      (*Var_heap.grow_by_double env.order ~limit:nbv;*)
       let accu =
         List.fold_left
           (fun ((unit_cnf, nunit_cnf) as accu) (v : Atom.var) ->
-             Vec.set env.vars v.vid v;
+             env.vars <- IMap.add v.vid v env.vars;
              insert_var_order env v;
              match th_entailed tenv0 v.pa with
              | None -> accu
-             | Some (c, sz) ->
+             | Some c ->
+               let sz = List.length c in
                assert (sz >= 1);
                if sz = 1 then c :: unit_cnf, nunit_cnf
                else unit_cnf, c :: nunit_cnf
@@ -1651,7 +1656,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
           ) (unit_cnf, nunit_cnf) new_v
       in
       env.nb_init_vars <- nbv;
-      Vec.grow_to_by_double env.model nbv;
+      Vec.grow_by_double env.model ~dummy:Atom.dummy_var ~limit:nbv;
       accu
 
   let set_new_proxies env proxies =
@@ -1691,8 +1696,8 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
       | _, _ ->
         let nbc =
           env.nb_init_clauses + List.length unit_cnf + List.length nunit_cnf in
-        Vec.grow_to_by_double env.clauses nbc;
-        Vec.grow_to_by_double env.learnts nbc;
+        Vec.grow_by_double env.clauses ~dummy:Atom.dummy_clause ~limit:nbc;
+        Vec.grow_by_double env.learnts ~dummy:Atom.dummy_clause ~limit:nbc;
         env.nb_init_clauses <- nbc;
 
         List.iter (add_clause env f ~cnumber) unit_cnf;
@@ -1770,8 +1775,8 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
     | [] -> ()
     | _ ->
       let nbc = env.nb_init_clauses + List.length cnf in
-      Vec.grow_to_by_double env.clauses nbc;
-      Vec.grow_to_by_double env.learnts nbc;
+      Vec.grow_by_double env.clauses ~dummy:Atom.dummy_clause ~limit:nbc;
+      Vec.grow_by_double env.learnts ~dummy:Atom.dummy_clause ~limit:nbc;
       env.nb_init_clauses <- nbc;
 
       List.iter (add_clause env vraie_form ~cnumber:0) cnf;
@@ -1811,7 +1816,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
   let pop env =
     (assert (not (Vec.is_empty env.increm_guards)));
     let g = Vec.last env.increm_guards in
-    Vec.pop env.increm_guards;
+    ignore (Vec.pop env.increm_guards);
     g.is_guard <- false;
     g.neg.is_guard <- false;
     assert (not g.var.na.is_true); (* atom not false *)

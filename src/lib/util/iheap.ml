@@ -9,13 +9,13 @@
 (*                                                                            *)
 (******************************************************************************)
 
-type t = {heap : int Vec.t; indices : int Vec.t }
+type t = { heap : int Vec.t; indices : int Vec.t }
 
 let dummy = -100
 
-let init sz =
-  { heap    =  Vec.init sz (fun i -> i) dummy;
-    indices =  Vec.init sz (fun i -> i) dummy}
+let init size =
+  { heap    =  Vec.init ~size ~dummy;
+    indices =  Vec.init ~size ~dummy }
 
 let left i   = (i lsl 1) + 1 (* i*2 + 1 *)
 let right i  = (i + 1) lsl 1 (* (i+1)*2 *)
@@ -87,7 +87,7 @@ let filter s filt cmp =
     end
     else Vec.set s.indices (Vec.get s.heap i) (-1);
   done;
-  Vec.shrink s.heap (lim - !j) true;
+  Vec.shrink s.heap (lim - !j);
   for i = (lim / 2) - 1 downto 0 do
     percolate_down cmp s i
   done
@@ -104,9 +104,9 @@ let insert cmp s n =
       percolate_up cmp s (Vec.get s.indices n)
     end
 
-let grow_to_by_double s sz =
-  Vec.grow_to_by_double s.indices sz;
-  Vec.grow_to_by_double s.heap sz
+let grow_by_double { indices; heap } ~limit =
+  Vec.grow_by_double indices ~dummy ~limit;
+  Vec.grow_by_double heap ~dummy ~limit
 
 (*
   let update cmp s n =
@@ -127,6 +127,6 @@ let remove_min cmp ({heap=heap; indices=indices} as s) =
   Vec.set heap 0 (Vec.last heap); (*heap.last()*)
   Vec.set indices (Vec.get heap 0) 0;
   Vec.set indices x (-1);
-  Vec.pop s.heap;
+  ignore (Vec.pop s.heap);
   if Vec.size s.heap > 1 then percolate_down cmp s 0;
   x
