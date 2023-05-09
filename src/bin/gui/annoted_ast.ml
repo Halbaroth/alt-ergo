@@ -2182,19 +2182,19 @@ let findtags_dep_adecl ad l =
   List.fold_left (fun acc (td, _) -> findtags_atyped_delc_dep sl td acc) [] l
 
 
-let rec findproof_aform ids af acc depth found =
-  match af with
-  | AFatom _ -> acc, found
-  | AFop ((AOPand), aafl) ->
+(* let rec findproof_aform ids af acc depth found =
+   match af with
+   | AFatom _ -> acc, found
+   | AFop ((AOPand), aafl) ->
     List.fold_left
       (fun (acc, found) aaf -> findproof_aaform ids aaf acc depth found)
       (acc,found) aafl
-  | AFop (_, aafl) ->
+   | AFop (_, aafl) ->
     List.fold_left
       (fun (acc, found) aaf ->
          findproof_aaform ids aaf acc depth found)
       (acc,found) aafl
-  | AFforall aaqf | AFexists aaqf ->
+   | AFforall aaqf | AFexists aaqf ->
     let acc, found =
       try
         let m = Explanation.MI.find aaqf.id ids in
@@ -2206,48 +2206,48 @@ let rec findproof_aform ids af acc depth found =
           findproof_aaform ids aaf acc depth found)
         (acc,found) aaqf.c.aqf_hyp in
     findproof_aaform ids aaqf.c.aqf_form acc depth found
-  | AFlet (_,_, aaf) | AFnamed (_, aaf) ->
+   | AFlet (_,_, aaf) | AFnamed (_, aaf) ->
     findproof_aaform ids aaf acc depth found
 
-and findproof_aaform ids aaf acc depth found =
-  let acc, found =
+   and findproof_aaform ids aaf acc depth found =
+   let acc, found =
     try
       let m = Explanation.MI.find aaf.id ids in
       MTag.add aaf.ptag m acc, true
     with Not_found -> acc, found
-  in
-  findproof_aform ids aaf.c acc (depth) found
+   in
+   findproof_aform ids aaf.c acc (depth) found
 
-let rec findproof_atyped_decl ids td (ax,acc) =
-  let acc =
+   let rec findproof_atyped_decl ids td (ax,acc) =
+   let acc =
     try
       let m = Explanation.MI.find td.id ids in
       MTag.add td.ptag m acc
     with Not_found -> acc
-  in
-  match td.c with
-  | ATheory (_, _, _, l) ->
+   in
+   match td.c with
+   | ATheory (_, _, _, l) ->
     List.fold_left
       (fun accu td -> findproof_atyped_decl ids td accu) (ax, acc) l
 
-  | ARewriting _ -> assert false
+   | ARewriting _ -> assert false
 
-  | ALogic _ | ATypeDecl _ -> ax,acc
+   | ALogic _ | ATypeDecl _ -> ax,acc
 
-  | APredicate_def (_,_,_, af)
-  | AFunction_def (_,_,_,_,_, af)
-  | AAxiom (_, _, _, af) ->
+   | APredicate_def (_,_,_, af)
+   | AFunction_def (_,_,_,_,_, af)
+   | AAxiom (_, _, _, af) ->
     let acc, found = findproof_aform ids af acc 1 false in
     if found then td.ptag::ax, acc else ax,acc
 
-  | AGoal (_,_,_, aaf) ->
+   | AGoal (_,_,_, aaf) ->
     let acc, found = findproof_aaform ids aaf acc 1 false in
-    if found then td.ptag::ax, acc else ax,acc
+    if found then td.ptag::ax, acc else ax,acc *)
 
-let findtags_proof expl l =
-  let ids = Explanation.literals_ids_of expl in
-  List.fold_left (fun acc (td, _) ->
-      findproof_atyped_decl ids td acc) ([], MTag.empty) l
+(* let findtags_proof expl l =
+   let ids = Explanation.literals_ids_of expl in
+   List.fold_left (fun acc (td, _) ->
+      findproof_atyped_decl ids td acc) ([], MTag.empty) l *)
 
 
 exception FoundLine of int * GText.tag

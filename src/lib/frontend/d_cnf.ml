@@ -720,7 +720,7 @@ let rec mk_expr ?(loc = Loc.dummy) ?(name_base = "")
             let e1 = aux_mk_expr x in
             let e2 = aux_mk_expr y in
             let e3 = aux_mk_expr z in
-            E.mk_ite e1 e2 e3 0
+            E.mk_ite e1 e2 e3
 
           | B.Store, [ x; y; z ] ->
             let ty = dty_to_ty term_ty in
@@ -749,19 +749,19 @@ let rec mk_expr ?(loc = Loc.dummy) ?(name_base = "")
           | B.And, h :: (_ :: _ as t) ->
             List.fold_left (
               fun acc x ->
-                E.mk_and acc (aux_mk_expr x) false 0
+                E.mk_and acc (aux_mk_expr x) false
             ) (aux_mk_expr h) t
 
           | B.Or, h :: (_ :: _ as t) ->
             List.fold_left (
               fun acc x ->
-                E.mk_or acc (aux_mk_expr x) false 0
+                E.mk_or acc (aux_mk_expr x) false
             ) (aux_mk_expr h) t
 
           | B.Xor, h :: (_ :: _ as t) ->
             List.fold_left (
               fun acc x ->
-                E.mk_xor acc (aux_mk_expr x) 0
+                E.mk_xor acc (aux_mk_expr x)
             ) (aux_mk_expr h) t
 
           | B.Imply, _ ->
@@ -769,7 +769,7 @@ let rec mk_expr ?(loc = Loc.dummy) ?(name_base = "")
               | h :: t ->
                 List.fold_left (
                   fun acc x ->
-                    E.mk_imp x acc 0
+                    E.mk_imp x acc
                 ) h t
               | _ -> assert false
             end
@@ -777,7 +777,7 @@ let rec mk_expr ?(loc = Loc.dummy) ?(name_base = "")
           | B.Equiv, h :: (_ :: _ as t) ->
             List.fold_left (
               fun acc x ->
-                E.mk_iff acc (aux_mk_expr x) 0
+                E.mk_iff acc (aux_mk_expr x)
             ) (aux_mk_expr h) t
 
           | B.Lt ty, h1 :: h2 :: t ->
@@ -785,7 +785,7 @@ let rec mk_expr ?(loc = Loc.dummy) ?(name_base = "")
               List.fold_left (
                 fun (acc, curr) next ->
                   E.mk_and acc
-                    (mk_lt aux_mk_expr ty curr next) false 0,
+                    (mk_lt aux_mk_expr ty curr next) false,
                   next
               ) (mk_lt aux_mk_expr ty h1 h2, h2) t
             in res
@@ -795,7 +795,7 @@ let rec mk_expr ?(loc = Loc.dummy) ?(name_base = "")
               List.fold_left (
                 fun (acc, curr) next ->
                   E.mk_and acc
-                    (mk_gt aux_mk_expr ty curr next) false 0,
+                    (mk_gt aux_mk_expr ty curr next) false,
                   next
               ) (mk_gt aux_mk_expr ty h1 h2, h2) t
             in res
@@ -807,7 +807,7 @@ let rec mk_expr ?(loc = Loc.dummy) ?(name_base = "")
                   E.mk_and acc (
                     E.mk_builtin ~is_pos:true Sy.LE
                       [aux_mk_expr curr; aux_mk_expr next]
-                  ) false 0,
+                  ) false,
                   next
               ) (
                 E.mk_builtin ~is_pos:true Sy.LE
@@ -823,7 +823,7 @@ let rec mk_expr ?(loc = Loc.dummy) ?(name_base = "")
                   E.mk_and acc (
                     E.mk_builtin ~is_pos:true Sy.LE
                       [aux_mk_expr next; aux_mk_expr curr]
-                  ) false 0,
+                  ) false,
                   next
               ) (
                 E.mk_builtin ~is_pos:true Sy.LE
@@ -886,13 +886,13 @@ let rec mk_expr ?(loc = Loc.dummy) ?(name_base = "")
                       E.mk_and acc (
                         let e1 = aux_mk_expr curr in
                         let e2 = aux_mk_expr next in
-                        E.mk_iff e1 e2 0
-                      ) false 0,
+                        E.mk_iff e1 e2
+                      ) false,
                       next
                   ) (
                     let e1 = aux_mk_expr h1 in
                     let e2 = aux_mk_expr h2 in
-                    E.mk_iff e1 e2 0,
+                    E.mk_iff e1 e2,
                     h2
                   ) t
                 in res
@@ -903,7 +903,7 @@ let rec mk_expr ?(loc = Loc.dummy) ?(name_base = "")
                       E.mk_and acc (
                         E.mk_eq
                           ~iff:false (aux_mk_expr curr) (aux_mk_expr next)
-                      ) false 0,
+                      ) false,
                       next
                   ) (
                     E.mk_eq ~iff:false (aux_mk_expr h1) (aux_mk_expr h2),
@@ -974,7 +974,7 @@ let rec mk_expr ?(loc = Loc.dummy) ?(name_base = "")
         let body = aux_mk_expr body in
         List.fold_left (
           fun acc (sy, e) ->
-            E.mk_let sy e acc 0
+            E.mk_let sy e acc
             [@ocaml.ppwarning "TODO: should introduce fresh vars"]
         ) body binders
 
@@ -1047,7 +1047,7 @@ let rec mk_expr ?(loc = Loc.dummy) ?(name_base = "")
             | _ -> assert false (* unreachable *)
           end
           in
-          mk name loc binders triggers qbody (-42) ~toplevel ~decl_kind
+          mk name loc binders triggers qbody ~toplevel ~decl_kind
 
       | _ -> Util.failwith "Unsupported Term %a" DE.Term.print term
     in
@@ -1216,8 +1216,7 @@ let make_form name_base f loc ~decl_kind =
   let ff = E.purify_form ff in
   if Ty.Svty.is_empty (E.free_type_vars ff) then ff
   else
-    let id = E.id ff in
-    E.mk_forall name_base loc SM.empty [] ff id ~toplevel:true ~decl_kind
+    E.mk_forall name_base loc SM.empty [] ff ~toplevel:true ~decl_kind
 
 let make dloc_file acc stmt =
   let rec aux acc (stmt: Typer_Pipe.typechecked Typer_Pipe.stmt) =
@@ -1310,7 +1309,7 @@ let make dloc_file acc stmt =
                 let qb = E.mk_eq ~iff:true defn ff in
                 let binders = E.mk_binders binders_set in
                 let ff =
-                  E.mk_forall name_base Loc.dummy binders [] qb (-42)
+                  E.mk_forall name_base Loc.dummy binders [] qb
                     ~toplevel:true ~decl_kind
                 in
                 assert (Sy.Map.is_empty (E.free_vars ff Sy.Map.empty));
@@ -1318,9 +1317,8 @@ let make dloc_file acc stmt =
                 let e =
                   if Ty.Svty.is_empty (E.free_type_vars ff) then ff
                   else
-                    let id = E.id ff in
                     E.mk_forall name_base loc
-                      Symbols.Map.empty [] ff id ~toplevel:true ~decl_kind
+                      Symbols.Map.empty [] ff ~toplevel:true ~decl_kind
                 in
                 C.{ st_decl = C.PredDef (e, name_base); st_loc }
               | None ->
@@ -1333,7 +1331,7 @@ let make dloc_file acc stmt =
                 let qb = E.mk_eq ~iff defn ff in
                 let binders = E.mk_binders binders_set in
                 let ff =
-                  E.mk_forall name_base Loc.dummy binders [] qb (-42)
+                  E.mk_forall name_base Loc.dummy binders [] qb
                     ~toplevel:true ~decl_kind
                 in
                 assert (Sy.Map.is_empty (E.free_vars ff Sy.Map.empty));
@@ -1341,9 +1339,8 @@ let make dloc_file acc stmt =
                 let e =
                   if Ty.Svty.is_empty (E.free_type_vars ff) then ff
                   else
-                    let id = E.id ff in
                     E.mk_forall name_base loc
-                      Symbols.Map.empty [] ff id ~toplevel:true ~decl_kind
+                      Symbols.Map.empty [] ff ~toplevel:true ~decl_kind
                 in
                 if Options.get_verbose () then
                   Format.eprintf "defining term of %a@." DE.Term.print body;

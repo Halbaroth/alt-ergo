@@ -973,17 +973,17 @@ let clear_used_lemmas_tags env =
   env.proof_tags <- MTag.empty;
   env.proof_toptags <- []
 
-let show_used_lemmas env expl =
-  let atags,ftags = findtags_proof expl env.ast in
-  clear_used_lemmas_tags env;
-  let max_mul = MTag.fold (fun _ m acc -> max acc m) ftags 0 in
-  let green_0 =
-    Gdk.Color.color_parse (
+let show_used_lemmas _env _expl =
+  (* let atags, ftags = findtags_proof expl env.ast in
+     clear_used_lemmas_tags env;
+     let max_mul = MTag.fold (fun _ m acc -> max acc m) ftags 0 in
+     let green_0 =
+     Gdk.Color.color_parse (
       Gui_util.dec_to_hex_color (65535*3/4) 65535 (65535*3/4)
-    )
-  in
-  List.iter (fun t -> t#set_property (`BACKGROUND_GDK green_0)) atags;
-  MTag.iter (fun t m ->
+     )
+     in
+     List.iter (fun t -> t#set_property (`BACKGROUND_GDK green_0)) atags;
+     MTag.iter (fun t m ->
       let perc = ((max_mul - m) * 65535) / max_mul in
       let green_n = Gdk.Color.color_parse
           (Gui_util.dec_to_hex_color
@@ -992,8 +992,9 @@ let show_used_lemmas env expl =
           )
       in
       t#set_property (`BACKGROUND_GDK green_n)) ftags;
-  env.proof_tags <- ftags;
-  env.proof_toptags <- atags
+     env.proof_tags <- ftags;
+     env.proof_toptags <- atags *)
+  ()
 
 
 (* More efficient but invariant broken when using user instanciated axioms

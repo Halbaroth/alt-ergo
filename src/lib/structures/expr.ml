@@ -789,8 +789,6 @@ let is_ground t =
   SMap.is_empty (free_vars t SMap.empty) &&
   Ty.Svty.is_empty (free_type_vars t)
 
-let id _ = 0
-
 let size t = t.nb_nodes
 
 let depth t = t.depth
@@ -971,7 +969,7 @@ let pred t = mk_term (Sy.Op Sy.Minus) [t;int "1"] Ty.Tint
 
 (** simple smart constructors for formulas *)
 
-let mk_or f1 f2 is_impl _id =
+let mk_or f1 f2 is_impl =
   if equal f1 (neg f2) then vrai
   else
   if equal f1 f2 then f1
@@ -1002,7 +1000,7 @@ let mk_or f1 f2 is_impl _id =
       neg.neg <- Some pos;
       pos
 
-let mk_iff f1 f2 _id =
+let mk_iff f1 f2 =
   if equal f1 (neg f2) then faux
   else if equal f1 f2 then vrai
   else if equal f1 faux then neg f2
@@ -1032,21 +1030,21 @@ let mk_iff f1 f2 _id =
       neg.neg <- Some pos;
       pos
 
-let mk_and f1 f2 is_impl id =
-  neg @@ mk_or (neg f1) (neg f2) is_impl id
+let mk_and f1 f2 is_impl =
+  neg @@ mk_or (neg f1) (neg f2) is_impl
 
-let mk_imp f1 f2 id = mk_or (neg f1) f2 true id
+let mk_imp f1 f2 = mk_or (neg f1) f2 true
 
-let mk_xor f1 f2 id =
-  neg (mk_iff f1 f2 id)
+let mk_xor f1 f2 =
+  neg (mk_iff f1 f2)
 
-let mk_if cond f2 f3 id =
+let mk_if cond f2 f3 =
   mk_or
-    (mk_and cond f2 true id) (mk_and (neg cond) f3 true id) false id
+    (mk_and cond f2 true) (mk_and (neg cond) f3 true) false
 
-let mk_ite cond th el id =
+let mk_ite cond th el =
   let ty = type_info th in
-  if ty == Ty.Tbool then mk_if cond th el id
+  if ty == Ty.Tbool then mk_if cond th el
   else mk_term (Sy.Op Sy.Tite) [cond; th; el] ty
 
 let [@inline always] const_term e =
@@ -1063,7 +1061,7 @@ let [@inline always] const_term e =
 
 let mk_forall_ter =
   let env = F_Htbl.create 101 in
-  fun new_q _id ->
+  fun new_q ->
     let { name; main = f; _ } = new_q in
     (* when calling mk_forall_ter, binders should not contains
        ununsed binders. Eventual simplification is done in
@@ -1173,7 +1171,7 @@ let mk_eq ~iff t1 t2 =
       if t1 == neg t2 then faux
       else
         (* translate to iff, eventual simplification made in mk_or *)
-        let res = mk_iff t1 t2 0 in
+        let res = mk_iff t1 t2 in
         match res.f with
         | Sy.Form _ when not iff ->
           (* in some situation (eg. theories deductions, mk_iff may
@@ -1200,7 +1198,7 @@ let mk_nary_eq l =
           ) e r
       in
       if type_info e == Ty.Tbool then
-        List.fold_left (fun x y -> mk_iff x y 0) e  r
+        List.fold_left (fun x y -> mk_iff x y) e  r
       else
         mk_positive_lit (Sy.Lit Sy.L_eq) (Sy.Lit Sy.L_neg_eq) l
   with Exit ->
@@ -1303,10 +1301,10 @@ let rec apply_subst_aux (s_t, s_ty) t =
         in
         begin match f with
           | Sy.Form Sy.F_Lemma  ->
-            mk_forall_bis q 0
+            mk_forall_bis q
 
           | Sy.Form Sy.F_Skolem ->
-            neg @@ mk_forall_bis {q with main = neg main} 0
+            neg @@ mk_forall_bis {q with main = neg main}
           | _ -> assert false
         end
 
@@ -1344,25 +1342,25 @@ let rec apply_subst_aux (s_t, s_ty) t =
 
       | Sy.Form (Sy.F_Unit _), _ ->
         begin match xs' with
-          | [u; v] -> mk_and u v false (*b*) 0
+          | [u; v] -> mk_and u v false (*b*)
           | _ -> assert false
         end
 
       | Sy.Form (Sy.F_Clause b), _ ->
         begin match xs' with
-          | [u; v] -> mk_or u v b 0
+          | [u; v] -> mk_or u v b
           | _ -> assert false
         end
 
       | Sy.Form Sy.F_Iff, _ ->
         begin match xs' with
-          | [u; v] -> mk_iff u v 0
+          | [u; v] -> mk_iff u v
           | _ -> assert false
         end
 
       | Sy.Form Sy.F_Xor, _ ->
         begin match xs' with
-          | [u; v] -> mk_xor u v 0
+          | [u; v] -> mk_xor u v
           | _ -> assert false
         end
 
@@ -1415,7 +1413,7 @@ and mk_let_aux ({ let_v; let_e; in_e; _ } as x) =
         pos
   with Not_found -> in_e (* let_v does not appear in in_e *)
 
-and mk_forall_bis (q : quantified) id =
+and mk_forall_bis (q : quantified) =
   let binders =  (* ignore binders that are not used in f *)
     SMap.filter (fun sy _ -> SMap.mem sy q.main.vars) q.binders
   in
@@ -1423,7 +1421,7 @@ and mk_forall_bis (q : quantified) id =
   else
     let q = {q with binders} in
     match find_particular_subst binders q.user_trs q.main with
-    | None -> mk_forall_ter q 0
+    | None -> mk_forall_ter q
 
     | Some sbs ->
       let subst = sbs, Ty.esubst in
@@ -1434,7 +1432,7 @@ and mk_forall_bis (q : quantified) id =
         let sko_v   = List.map (apply_subst_aux subst) q.sko_v in
         let binders = SMap.filter (fun x _ -> not (SMap.mem x sbs)) binders in
         let q = {q with binders; user_trs = trs; sko_v; main = f } in
-        mk_forall_bis q id
+        mk_forall_bis q
 
 and find_particular_subst =
   let exception Found of Sy.t * t in
@@ -1687,7 +1685,7 @@ let free_type_vars_as_types e =
 
 
 (* let let_v = let_e in in_e *)
-let mk_let let_v let_e in_e _id =
+let mk_let let_v let_e in_e =
   (* !!! DANGER !!! only keep up vars that are bound with forall or
      exists, not those bound with a let is buggy:
      let up = SMap.filter (fun x _ -> Sy.Set.mem x quant_vars) up in *)
@@ -1745,18 +1743,18 @@ let rec mk_ite_eq x c th el =
   else
     let e1 = mk_eq_aux x th in
     let e2 = mk_eq_aux x el in
-    mk_and (mk_imp c e1 0) (mk_imp (neg c) e2 0) false 0
+    mk_and (mk_imp c e1) (mk_imp (neg c) e2) false
 
 and mk_eq_aux x e =
   match e.xs with
   | [c;th;el] when is_ite e.f -> mk_ite_eq x c th el
   | _ -> mk_eq ~iff:true  x e
 
-let mk_let_equiv let_sko let_e id  =
+let mk_let_equiv let_sko let_e  =
   match let_e.xs with
   | [_;_;_] when is_ite let_e.f -> mk_eq_aux let_sko let_e
   | _ ->
-    if type_info let_e == Ty.Tbool then mk_iff let_sko let_e id
+    if type_info let_e == Ty.Tbool then mk_iff let_sko let_e
     else mk_eq ~iff:true let_sko let_e
 
 let rec elim_let =
@@ -1786,9 +1784,8 @@ let rec elim_let =
                          inlining a form inside a term"]
     else
       let subst = SMap.add let_v let_sko subst in
-      let id = id in_e in
-      let equiv = mk_let_equiv let_sko let_e id in
-      let conjs = (fun f' -> mk_and equiv f' false id) :: conjs in
+      let equiv = mk_let_equiv let_sko let_e in
+      let conjs = (fun f' -> mk_and equiv f' false) :: conjs in
       elim_let_rec subst in_e ~recursive ~conjs
 
 and elim_let_rec subst in_e ~recursive ~conjs =
@@ -1808,15 +1805,15 @@ let elim_let ~recursive letin =
   res
 
 
-let elim_iff f1 f2 id ~with_conj =
+let elim_iff f1 f2 ~with_conj =
   if with_conj then
     mk_and
-      (mk_imp f1 f2 id)
-      (mk_imp f2 f1 id) false id
+      (mk_imp f1 f2)
+      (mk_imp f2 f1) false
   else
     mk_or
-      (mk_and f1 f2 false id)
-      (mk_and (neg f1) (neg f2) false id) false id
+      (mk_and f1 f2 false)
+      (mk_and (neg f1) (neg f2) false) false
 
 
 module Triggers = struct
@@ -2426,7 +2423,7 @@ let make_triggers = Triggers.make
 
 let clean_trigger = Triggers.clean_trigger
 
-let mk_forall name loc binders trs f id ~toplevel ~decl_kind =
+let mk_forall name loc binders trs f ~toplevel ~decl_kind =
   let decl_kind =
     if toplevel then decl_kind
     else match decl_kind with
@@ -2448,11 +2445,11 @@ let mk_forall name loc binders trs f id ~toplevel ~decl_kind =
   let trs = Triggers.check_user_triggers f toplevel binders trs ~decl_kind in
   mk_forall_bis
     {name; loc; binders; toplevel;
-     user_trs = trs; main = f; sko_v; sko_vty; kind = decl_kind} id
+     user_trs = trs; main = f; sko_v; sko_vty; kind = decl_kind}
 
-let mk_exists name loc binders trs f id ~toplevel ~decl_kind =
+let mk_exists name loc binders trs f ~toplevel ~decl_kind =
   if not toplevel || Ty.Svty.is_empty f.vty then
-    neg (mk_forall name loc binders trs (neg f) id ~toplevel ~decl_kind)
+    neg (mk_forall name loc binders trs (neg f) ~toplevel ~decl_kind)
   else
     (* If there are type variables in a toplevel exists: 1 - we add
        a forall quantification without term variables (ie. only with
@@ -2460,9 +2457,9 @@ let mk_exists name loc binders trs f id ~toplevel ~decl_kind =
        to instantiate these type variables *)
     let nm = Format.sprintf "#%s#sub-%d" name 0 in
     let tmp =
-      neg (mk_forall nm loc binders trs (neg f) id ~toplevel:false ~decl_kind)
+      neg (mk_forall nm loc binders trs (neg f) ~toplevel:false ~decl_kind)
     in
-    mk_forall name loc SMap.empty trs tmp id ~toplevel ~decl_kind
+    mk_forall name loc SMap.empty trs tmp ~toplevel ~decl_kind
 
 
 let rec compile_match mk_destr mker e cases accu =
@@ -2478,7 +2475,7 @@ let rec compile_match mk_destr mker e cases accu =
         (fun acc (var, destr, ty) ->
            let destr = mk_destr destr in
            let d = mk_term destr [e] ty in
-           mk_let (Sy.var var) d acc 0
+           mk_let (Sy.var var) d acc
         )p args
     in
     match l with
@@ -2486,7 +2483,7 @@ let rec compile_match mk_destr mker e cases accu =
     | _ ->
       let _else = compile_match mk_destr mker e l accu in
       let cond = mker e name in
-      mk_ite cond _then _else 0
+      mk_ite cond _then _else
 
 (* TO BE REMOVED *)
 let debug_compile_match e cases res =
@@ -2693,32 +2690,32 @@ module Purification = struct
           | Sy.F_Unit imp, [a;b], _ ->
             let a' = purify_form a in
             let b' = purify_form b in
-            if a == a' && b == b' then e else mk_and a' b' imp 0
+            if a == a' && b == b' then e else mk_and a' b' imp
 
           | Sy.F_Clause imp, [a;b], _ ->
             let a' = purify_form a in
             let b' = purify_form b in
-            if a == a' && b == b' then e else mk_or a' b' imp 0
+            if a == a' && b == b' then e else mk_or a' b' imp
 
           | Sy.F_Iff, [a;b], _ ->
             let a' = purify_form a in
             let b' = purify_form b in
-            if a == a' && b == b' then e else mk_iff a' b' 0
+            if a == a' && b == b' then e else mk_iff a' b'
 
           | Sy.F_Xor, [a;b], _ ->
             let a' = purify_form a in
             let b' = purify_form b in
-            if a == a' && b == b' then e else mk_xor a' b' 0
+            if a == a' && b == b' then e else mk_xor a' b'
 
           | Sy.F_Lemma, [], B_lemma q ->
             let m = purify_form q.main in
             if m == q.main then e
-            else mk_forall_ter {q with main = m} 0
+            else mk_forall_ter {q with main = m}
 
           | Sy.F_Skolem, [], B_skolem q ->
             let m = purify_form q.main in
             if m == q.main then e
-            else neg (mk_forall_ter {q with main = (neg m)} 0)
+            else neg (mk_forall_ter {q with main = (neg m)})
 
           | (Sy.F_Unit _ | Sy.F_Clause _ | Sy.F_Iff
             | Sy.F_Xor | Sy.F_Skolem | Sy.F_Lemma),
@@ -2735,7 +2732,7 @@ module Purification = struct
       (fun acc (let_v, (let_e, _cpt)) ->
          let let_e, lets = purify_non_toplevel_ite let_e SMap.empty in
          assert (let_e.ty != Ty.Tbool || SMap.is_empty lets);
-         mk_lifted (mk_let let_v let_e acc 0) lets
+         mk_lifted (mk_let let_v let_e acc) lets
       )e ord_lets
 
   and purify_non_toplevel_ite e lets =

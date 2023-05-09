@@ -75,10 +75,6 @@ val formulas_of : t -> Expr.Set.t
 
 val bj_formulas_of : t -> Expr.Set.t
 
-module MI : Map.S with type key = int
-
-val literals_ids_of : t -> int MI.t
-
 val make_deps : Expr.Set.t -> t
 
 val has_no_bj : t -> bool
