@@ -36,10 +36,10 @@ depends: [
   "menhirLib" {= "20230608"}
   "menhirSdk" {= "20230608"}
   "num" {= "1.4"}
-  "ocaml" {= "4.14.1"}
+  "ocaml" {= "4.10.1"}
+  "ocaml-base-compiler" {= "4.10.1"}
   "ocaml-compiler-libs" {= "v0.12.4"}
-  "ocaml-config" {= "2"}
-  "ocaml-system" {= "4.14.1"}
+  "ocaml-config" {= "1"}
   "ocamlbuild" {= "0.14.2"}
   "ocamlfind" {= "1.9.6"}
   "ocplib-simplex" {= "0.5"}
