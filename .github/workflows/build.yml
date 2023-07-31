@@ -121,6 +121,7 @@ jobs:
       - name: Use OCaml 4.14.1
         uses: ocaml/setup-ocaml@v2
         with:
+          ocaml-compiler: 4.14.1
           opam-depext: false
           opam-pin: false
           dune-cache: true
