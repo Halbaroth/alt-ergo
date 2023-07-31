@@ -29,6 +29,8 @@ jobs:
           - 4.10.1
 
     runs-on: ${{ matrix.os }}
+    env:
+      OPAMLOCKED: locked
 
     steps:
       - name: Checkout
