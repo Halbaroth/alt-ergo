@@ -106,3 +106,33 @@ jobs:
 
       - name: Run make install
         run: opam exec -- make install
+
+  reproducible:
+    runs-on: ubuntu-latest
+    env:
+      OPAMLOCKED: locked
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+
+      - name: Use OCaml 4.14.1
+        uses: ocaml/setup-ocaml@v2
+        with:
+          opam-depext: false
+          opam-pin: false
+          dune-cache: true
+
+      - name: Install dependencies
+        run: opam exec -- make test-deps
+
+      - name: Build alt-ergo with opam
+        run: opam exec -- opam reinstall .
+
+      - name: Generate tests
+        run: opam exec -- make gentest
+
+      - name: Run tests
+        run: opam exec -- make runtest-ci
