@@ -247,6 +247,9 @@ deps:
 test-deps:
 	opam install -y . --locked --deps-only --with-test
 
+lock:
+	opam lock ./alt-ergo-lib.opam -w
+
 dune-deps:
 	dune-deps . | dot -Tpng -o docs/deps.png
 
