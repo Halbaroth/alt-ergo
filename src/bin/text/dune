@@ -1,6 +1,3 @@
-(documentation
-  (package alt-ergo))
-
 (executable
   (name Main_text)
   (public_name alt-ergo)

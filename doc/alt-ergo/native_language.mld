@@ -1,0 +1,259 @@
+{0 Alt-Ergo's native language}
+
+This page documents Alt-Ergo's native language and its syntax.
+
+{1 Types}
+
+{2 Built-in types}
+
+The native language includes the following built-in types:
+{ul
+  {- [unit] is the Alt-Ergo's
+     {{:https://en.wikipedia.org/wiki/Unit_type}unit type}.}
+  {- [bitv[n]] is the type of fixed-size
+     {{:https://smtlib.cs.uiowa.edu/theories-FixedSizeBitVectors.shtml}bitvectors}
+     of length [n]. For example, [bitv[8]] is the type of bitvector of length [8].}
+  {- Boolean types:
+   - [bool] represents boolean values.
+   - [prop] is an historical type still supported in {e Alt-Ergo} 2.5.0.
+     This historical separation comes form Al-Ergo origins in the Coq ecosystem
+     where type [Prop] is much richer than [Bool]. Since version 2.3.0, the types
+     [prop] and [bool] have been merged in order to simplify the
+     SMT-LIB standard support.
+  }
+  {- Numerical types:
+   - [int] represents mathematical integers.
+   - [real] represents mathematical reals. More precisely, this type actually
+     reprensents the smallest extension of the rational field which is
+     algebraically closed and closed by exponentiation. Rationals with arbitrary
+     precison are used under the hood.
+  }
+}
+
+{2 Type variables}
+The native language supports prenex polymorphism. This allows efficient reasoning
+about generic data structure. Any formula which requires a type can accept a type
+variable.
+
+Type variables are prefixed by an apostroph. For instance, ['a] is a type variable.
+
+Type variables can be used to parametrize datatypes. For instance
+{e Alt-Ergo} includes a built-in theory of functional polymorphic arrays that deals
+with values of type [('a, 'b) farray] where ['a], respectively ['b], is a type
+variable for the key, respectively for the value.
+
+{2 User-defined types}
+You can declare your own types with the command [type].
+
+{3 Abstract types}
+You can declare abstract types. They may be parametrized by several
+type variables. For instance:
+- [type person] is non-parametrized abstract type.
+- [type 'a list] is abstract type parametrized by one variable:
+- [type ('a, 'b, 'c) t] is abstract type parametrized by several variables.
+
+{3 Records}
+{@alt-ergo[
+type sa_family_t
+
+type sockaddr = {
+  sa_len:    int;
+  sa_family: sa_family_t;
+  sa_data:   bitv[112]
+}
+]}
+
+{@alt-ergo[
+type 'a pair = {fst: 'a; snd: 'a}
+]}
+
+{3 Enums and Algebraic datatypes}
+
+{1 Declaration of symbols}
+In order to introduce the problem's vocabulary, the user can declare its own
+symbols:
+
+{2 Uninterpreted symbols}
+The [logic] keyword allows the user to define new uninterpreted typed symbols.
+Those symbols may be used to represent simple variables, uninterpreted functions
+and predicates, data structures, etc.
+
+- Introducing propositional variables:
+{@alt-ergo[
+logic p, q, r: prop
+
+axiom a: p and q -> r
+goal g: p -> r
+]}
+- Introducing uninterpreted functions:
+{@alt-ergo[
+logic f: int -> int
+
+axiom a1: forall x: int, f(x) > 0
+goal g1: f(1) >= 0
+]}
+
+- Functions can have multiple arguments:
+{@alt-ergo[
+logic h, g, f: int, int -> int
+logic a, b: int
+
+goal g_2:
+    h(g(a, a), g(b, b)) = g(b, b) ->
+    a = b ->
+    g(f(h(g(a, a), g(b, b)), b) - f(g(b, b), a),
+      f(h(g(a, a), g(b, b)), a) - f(g(b, b), b)) = g(0, 0)
+]}
+
+- Axioms can be used to add constraints:
+{@alt-ergo[
+logic Ack: int, int -> int
+axiom Ack_n:
+    forall n: int.
+        Ack(0, n) = n + 1
+axiom Ack_m:
+    forall m: int. m > 0 ->
+        Ack(m, 0) = Ack(m - 1, 1)
+axiom Ack_nm:
+    forall n, m: int. n > 0 -> m > 0 ->
+        Ack(m, n) = Ack(m - 1, Ack(m, n - 1))
+]}
+
+{2 Interpreted functions}
+You can declare and define intepreted functions using the [function] keyword.
+
+{@alt-ergo[
+function abs(x: int): int =
+    if x >= 0 then x else -x
+
+goal g: forall x: int. abs(x) >= 0
+]}
+
+{@alt-ergo[
+type person
+logic father_of: person, person -> prop
+logic mother_of: person, person -> prop
+
+function son_of(kid: person, parent: person): bool =
+    father_of(parent, kid) or mother_of(parent, kid)
+]}
+
+{2 Interpreted predicates}
+The [predicate] keyword allows you to defined intepreted functions whose the
+return type is [prop]. It is possible to create {e ground predicates}, i.e.
+predicates without arguments.
+
+{b Note:} Since version 2.3.0, the types [prop] and [bool] have the same
+behaviour. The [predicate] keyword can therefore be seen as a shorthand for
+as boolean-valued [function]. See the types section for more information.
+
+{@alt-ergo[
+type person
+logic father_of: person, person -> prop
+logic mother_of: person, person -> prop
+
+predicate son_of(kid: person, parent: person) =
+    father_of(parent, kid) or mother_of(parent, kid)
+]}
+
+{2 Associative and commutative symbols}
+When creating a uninterpreted symbol with the [logic] keyword, you
+can prefix your symbol with the [ac] modifier to inform {e Alt-Ergo} that this
+symbol is associative and commutative, shorten {e AC}. Using the [ac] modifier
+makes it possible to take advantage of Alt-Ergo’s built-in support for AC-symbols.
+
+Most automated theorem provers have difficulties in handling associative and
+commutative symbols. Indeed, it is possible to write constraints to make the
+symbol associative and commutative:
+
+{@alt-ergo[
+logic f: int, int -> int
+axiom associative: forall x, y, z: int. f(f(x, y), z) = f(x, f(y, z))
+axiom commutative: forall x, y: int. f(x, y) = f(y, x)
+]}
+
+However, handling universally-quantified axioms is challenging for this kind of
+solvers as the solver has to create {e instantiations} of those axioms in order
+to use them, and the number of potential instances can quickly become overwhelming
+in presence of associativity and commutativity axioms as above.
+
+One can simply write
+{@alt-ergo[
+logic ac f: int, int -> int
+]}
+
+in order to specify that [f] is an {e AC-symbol}. Once this is done, {e Alt-Ergo}
+will use  the built-in {e AC(X) algorithm} to handle this symbol much more
+efficiently than what would have been done through axioms.
+
+{@alt-ergo[
+type person
+(* Last common ancestor *)
+logic ac lca: person, person -> person
+logic Alice, Bob, Eve: person
+
+goal g: lca(Alice, lca(Bob, Eve)) = lca(Eve, lca(Alice, Bob))
+]}
+
+{@alt-ergo[
+logic ac u: int, int -> int
+goal g1: u(1, u(2, u(3, u(4, 5)))) = u(u(u(u(5, 4), 3), 2), 1)
+goal g2: forall a, b, c, v, w:int. u(a, b) = w and u(a, c) = v -> u(b, v) = u(c, w)
+]}
+
+{1 Axioms and triggers}
+
+{e Alt-Ergo} handles universal formula through an instantiation mechanism. In
+other words, any formula containing must be instantiated for a specific term
+[x] before it can be used. The heuristic for choosing new instances is based
+on {e triggers}, see the subsection {!label-triggers}. {e Alt-Ergo} constructs
+triggers for you but you can also define your own triggers to instantiane more
+efficiency those axioms.
+
+{2 Declaration of axioms}
+Use the [axiom] keyword to declare a new axiom. Note that all axioms must be
+named.
+
+{@alt-ergo[
+logic x: bitv[4]
+logic y, z: int
+
+axiom a1: x^{0,1} = [|11|]
+axiom a2: y = 3 and z < 4
+]}
+
+{@alt-ergo[
+logic f: int -> int
+axiom f_pos: forall x: int. f(x) >= 0
+]}
+
+{2:triggers Triggers}
+
+The heuristic used by {e Alt-Ergo} to handle quantified formula relies on triggers.
+More precisely, {e Alt-Ergo} uses {e multi-triggers}. A multi-trigger is a list
+of patterns that restrict instantiation to known ground terms matching these patterns.
+
+For instance
+{[
+logic P, Q, R : int -> prop
+axiom ax : forall x: int. (P(x) or Q(x)) -> R(x)
+goal g1 : P(1) -> R(1)
+goal g2 : Q(2) -> R(2)
+]}
+
+{2:semantictriggers Semantic triggers}
+
+{1 Setting goals}
+{e Alt-Ergo} answers [Valid] if the statement is true in all cases and [I don't know] otherwise.
+
+{2 Declaration of goals}
+Use the [goal] keyword to declare a new goal. Note that goals are named.
+
+{2 Check satisfability}
+
+{1 Syntax}
+
+{@ebnf[
+  logic_ac_declaration = "logic", "ac", identifier_list, ":", type;
+  identifier_list = identifier. (",", identifier);
+]}

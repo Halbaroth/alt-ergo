@@ -1,0 +1,209 @@
+{0 Alt-Ergo}
+
+{1:overview What is {e Alt-Ergo}?}
+
+{e Alt-Ergo} is an open source automatic prover based on the SMT technology.
+
+{1 Installation}
+
+{2 Opam}
+{e Alt-Ergo} is available on the OCaml package manager [opam] with the command :
+{[
+  opam install alt-ergo
+]}
+
+This command installs both the Alt-Ergo binary and library.
+
+{2 On Debian}
+{e Alt-Ergo} is also available in the Debian package manager. Run :
+{[
+  sudo apt-get install alt-ergo
+]}
+
+{2 From the source}
+To compile the {e Alt-Ergo} sources, we recommand to install its
+dependencies with {e opam}. Run [make deps] to install all the required
+dependencies in your opam switch or create a development switch with [make dev-switch].
+
+If you want to install everything (binaries, plugins and the library), run
+{[
+  make install
+]}
+
+{1 Usage}
+
+Alt-Ergo
+
+{2 Files extensions}
+{e Alt-Ergo} supports different input formats:
+- the original input language with the extension [.ae] based on the language of
+  the Why3 platform. Please refer to {{:./native_language.html}[refences]}.
+- the SMT-LIB language v2 and its polymorphic extension with respectively
+  the extensions [.smt2] and [.psmt2]. Since version 2.5.0, improved support
+  is provided by the Dolmen frontend, see
+- {b (deprecated)} a fragment of the input language of Why3 is supported through
+  the AB-Why3 plugin.
+
+{2 Output}
+The results of an Alt-Ergo's execution have the following form:
+{[File "<path_to_file>/<filename>", line <l>, characters <n-m>: <status> (<time in seconde>) (<number of steps> steps) (goal <name of the goal>)]}
+
+The status can be [Valid], [Invalid] or [I don't know]. If the input file is
+in the SMT-LIB language, the status will be either [unsat], [sat] or [unknown].
+You can force {e Alt-Ergo} to output in the SMT-LIB format with the option
+[--output smtlib2].
+
+{b Note:} When {e Alt-Ergo} tries to prove a {e goal} (with the native input language),
+it actually tries to prove the unsatisfability of its negation. That is why we
+get {e unsat} answer as an SMT-LIB format output while proving a valid {e goal}.
+The same goes for {e Invalid} and {e sat}.
+
+{2 Frontend option}
+The [--frontend] option lets you select the frontend used to parse and type the
+input file. Since version 2.5.0, {e Alt-Ergo} integrates two frontends:
+- The {e legacy} frontend is the historical frontend of {e Alt-Ergo} supporting
+the native language and (partially) supporting the SMT-LIB language. The legacy
+frontend is currently the default.
+- The {e Dolmen} frontend is a new frontend using the Dolmen library. The native
+and SMT-LIB languages are both supported by this frontend. You can select it with
+the [--frontend dolmen] option, which is planned to become the default in a
+future release.
+
+{2 Generating models}
+{e Alt-Ergo} can generate best-effort models in the case it cannot conclude the
+unsatisfability of the context. The model format is a SMT-LIB compatible format,
+even if you use the native input language.
+
+{3 Activation}
+Model generation is disabled by default. There are two recommanded ways to
+enable it:
+- With the native language and the [--dump-models] flag, {e Alt-Ergo} tries to
+produce a model after each unsuccessful [check_sat] or a counterexample after
+each [goal] it cannot prove {e valid}. Note that both [goal] and [check_sat]
+statements are independent in the native language.
+- With the SMT-LIB language and the [--produce-models] flag, {e Alt-Ergo} tries
+to produce a model after each unsuccessful [(check-sat)]. Models are output on
+demand using the [(get-model)] statement.
+
+Alternatively, you can enable model generation using the statement
+[(set-option :produce-models true)]. This currently requires using the options
+[--sat-solver tableaux] and [--frontend dolmen].
+
+{3 Examples}
+Lets see some examples.
+- Using the below input file [INPUT.ae] in native language:
+{[
+logic a, b, c : int
+axiom A : a <> c
+
+check_sat c1: a = b + c
+check_sat c2: a <> b
+]}
+with the command [alt-ergo --dump-models INPUT.ae], we got the output models:
+{[
+; Model for c1
+(
+  (define-fun a () Int 2)
+  (define-fun b () Int 2)
+  (define-fun c () Int 0)
+)
+
+I don't known
+; Model for c2
+(
+  (define-fun a () Int 2)
+  (define-fun b () Int 0)
+  (define-fun c () Int 0)
+)
+I don't known
+]}
+{b Note:} In this example the model outputs by the statement [check_sat c2] is
+not a model for the [c1] since [check_sat] are independent in the native language.
+The same goes for {e goals}.
+
+- Using the below input file [INPUT.smt2] in SMT-LIB language:
+{[
+(set-logic ALL)
+(declare-fun a () Int)
+(declare-fun b () Int)
+(declare-fun c () Int)
+
+(assert (= a (+ b c)))
+(check-sat)
+(get-model)
+
+(assert (distinct a b))
+(check-sat)
+]}
+with the command [alt-ergo --produce-models INPUT.smt2], we got the output
+models:
+{[
+unknown
+(
+  (define-fun a () Int 0)
+  (define-fun b () Int 0)
+  (define-fun c () Int 0)
+)
+
+unknown
+]}
+{b Note:} There is no model printed after the second [(check-sat)] as we don't
+demand it with the statement [(get-model)].
+
+- Alternatively, using the statement [(set-option :produce-models true)] as follow:
+{[
+(set-logic ALL)
+(set-option :produce-models true)
+(declare-fun a () Int)
+(declare-fun b () Int)
+(declare-fun c () Int)
+
+(assert (= a (+ b c)))
+(check-sat)
+(get-model)
+]}
+and the command [alt-ergo --frontend dolmen --sat-solver tableaux INPUT.smt2]
+produces the output model:
+{[
+unknown
+(
+  (define-fun a () Int 0)
+  (define-fun b () Int 0)
+  (define-fun c () Int 0)
+)
+]}
+{b Note:} You need to select the Dolmen frontend and the SAT solver Tableaux as
+the model generation is not supported yet by the other SAT solvers. The options
+[--dump-models] and [--produce-models] select the right frontend and SAT solver
+for you.
+
+{1 Extras}
+
+{2 Plugins}
+The current version of {e Alt-Ergo} is released with two plugins:
+- The {{:../alt-ergo-plugin-ab-why3/index.html}[ABWhy3]} plugin.
+- The Fourier-Motzkin simplex plugin.
+
+Please refer to their documentation to use them.
+
+{b Note:} The location of the default plugins directory is printed by the command
+[alt-ergo --where plugins].
+
+{2 Preludes}
+Preludes can be passed to {e Alt-Ergo} as follow:
+{[alt-ergo --prelude <path/filename1.ae> --prelude <path/filename2.ae> ... [INPUT]]}
+{e Alt-Ergo} tries first to load a local prelude. If it fails, it tries to load it
+from the default preludes directory. You can also provide a relative or
+an absolute path.
+
+{b Note:} The location of the default preludes directory is printed by the command
+[alt-ergo --where preludes].
+
+{2 About plugins and preludes directories}
+The location of the default plugins and preludes directories is relative
+to the location of the [alt-ergo] executable, so that the executable, as well as
+its preludes and plugins, can be relocated. For instance, on Linux system, the
+[alt-ergo] executable is at some path [path]. Then these directories are respectively
+located at [path/preludes] and [path/plugins]. The same goes on Windows system.
+
+{1 Page index}

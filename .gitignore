@@ -11,8 +11,7 @@ META
 
 # Generated build artifacts
 _build
-alt-ergo
-altgr-ergo
+/alt-ergo
 AB-Why3-plugin.cma
 AB-Why3-plugin.cmxs
 fm-simplex-plugin.cma
