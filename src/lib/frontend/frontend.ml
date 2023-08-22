@@ -34,27 +34,28 @@ open Options
 
 module E = Expr
 module Ex = Explanation
+
+type 'a status =
+  | Unsat of Commands.sat_tdecl * Explanation.t
+  | Inconsistent of Commands.sat_tdecl
+  | Unknown of Commands.sat_tdecl * 'a
+  | Timeout of Commands.sat_tdecl option
+  | Preprocess
+
 module type S = sig
 
   type sat_env
   type used_context
 
-  type status =
-    | Unsat of Commands.sat_tdecl * Ex.t
-    | Inconsistent of Commands.sat_tdecl
-    | Unknown of Commands.sat_tdecl * sat_env
-    | Timeout of Commands.sat_tdecl option
-    | Preprocess
-
   val process_decl:
-    (status -> int -> unit) ->
+    (sat_env status -> int -> unit) ->
     used_context ->
     (bool * Ex.t) Stack.t ->
     sat_env * bool * Ex.t ->
     Commands.sat_tdecl ->
     sat_env * bool * Ex.t
 
-  val print_status : status -> int -> unit
+  val print_status : sat_env status -> int -> unit
 
   val init_all_used_context : unit -> used_context
   val choose_used_context : used_context -> goal_name:string -> used_context
@@ -66,13 +67,6 @@ module Make(SAT : Sat_solver_sig.S) : S with type sat_env = SAT.t = struct
   type sat_env = SAT.t
 
   type used_context = Util.SS.t option
-
-  type status =
-    | Unsat of Commands.sat_tdecl * Ex.t
-    | Inconsistent of Commands.sat_tdecl
-    | Unknown of Commands.sat_tdecl * sat_env
-    | Timeout of Commands.sat_tdecl option
-    | Preprocess
 
   let output_used_context g_name dep =
     if not (Options.get_js_mode ()) then begin

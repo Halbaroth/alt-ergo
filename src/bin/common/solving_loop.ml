@@ -177,7 +177,7 @@ let main () =
         I.parse_files ~filename ~preludes
       with
       | Util.Timeout ->
-        FE.print_status (FE.Timeout None) 0;
+        FE.print_status (Frontend.Timeout None) 0;
         exit 142
       | Parsing.Parse_error ->
         Printer.print_err "%a" Errors.report
@@ -190,7 +190,7 @@ let main () =
 
     let all_used_context = FE.init_all_used_context () in
     if Options.get_timelimit_per_goal() then
-      FE.print_status FE.Preprocess 0;
+      FE.print_status Frontend.Preprocess 0;
     let assertion_stack = Stack.create () in
     let typing_loop state p =
       if get_parse_only () then state else begin
@@ -214,7 +214,7 @@ let main () =
       let _ : _ state = Seq.fold_left typing_loop state parsed_seq in
       Options.Time.unset_timeout ();
     with Util.Timeout ->
-      FE.print_status (FE.Timeout None) 0;
+      FE.print_status (Frontend.Timeout None) 0;
       exit 142
   in
 
