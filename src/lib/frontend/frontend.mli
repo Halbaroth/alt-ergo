@@ -37,7 +37,6 @@ module type S = sig
   type status =
     | Unsat of Commands.sat_tdecl * Explanation.t
     | Inconsistent of Commands.sat_tdecl
-    | Sat of Commands.sat_tdecl * sat_env
     | Unknown of Commands.sat_tdecl * sat_env
     | Timeout of Commands.sat_tdecl option
     | Preprocess

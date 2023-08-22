@@ -112,7 +112,6 @@ let main worker_id content =
         begin match status with
           | FE.Unsat _ -> Worker_interface.Unsat n
           | FE.Inconsistent _ -> Worker_interface.Inconsistent n
-          | FE.Sat _ -> Worker_interface.Sat n
           | FE.Unknown _ -> Worker_interface.Unknown n
           | FE.Timeout _ -> Worker_interface.LimitReached "timeout"
           | FE.Preprocess -> Worker_interface.Unknown n

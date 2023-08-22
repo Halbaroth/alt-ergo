@@ -902,7 +902,6 @@ let statistics_encoding =
 type status =
   | Unsat of int
   | Inconsistent of int
-  | Sat of int
   | Unknown of int
   | LimitReached of string
   | Error of string
@@ -920,21 +919,16 @@ let status_encoding =
       (function Inconsistent n -> Some n | _ -> None)
       (fun n -> Inconsistent(n));
     case(Tag 3)
-      ~title:"Sat"
-      (obj1 (req "Sat" int31))
-      (function Sat n -> Some n | _ -> None)
-      (fun n -> Sat(n));
-    case(Tag 4)
       ~title:"Unknown"
       (obj1 (req "Unknown" int31))
       (function Unknown n -> Some n | _ -> None)
       (fun n -> Unknown(n));
-    case(Tag 5)
+    case(Tag 4)
       ~title:"LimitReached"
       (obj1 (req "LimitReached" string))
       (function LimitReached s -> Some s | _ -> None)
       (fun s -> LimitReached(s));
-    case(Tag 6)
+    case(Tag 5)
       ~title:"Error"
       (obj1 (req "Error" string))
       (function Error s -> Some s | _ -> None)

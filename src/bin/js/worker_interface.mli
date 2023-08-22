@@ -183,7 +183,6 @@ type statistics =
 type status =
   | Unsat of int
   | Inconsistent of int
-  | Sat of int
   | Unknown of int
   | LimitReached of string
   | Error of string
