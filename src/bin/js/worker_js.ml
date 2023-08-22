@@ -109,12 +109,11 @@ let main worker_id content =
 
     let get_status_and_print status n =
       returned_status :=
-        begin match status with
-          | FE.Unsat _ -> Worker_interface.Unsat n
-          | FE.Inconsistent _ -> Worker_interface.Inconsistent n
-          | FE.Unknown _ -> Worker_interface.Unknown n
-          | FE.Timeout _ -> Worker_interface.LimitReached "timeout"
-          | FE.Preprocess -> Worker_interface.Unknown n
+        begin match (status : _ Frontend.status) with
+          | Unsat _ -> Worker_interface.Unsat n
+          | Unknown _ -> Worker_interface.Unknown n
+          | Timeout _ -> Worker_interface.LimitReached "timeout"
+          | Preprocess -> Worker_interface.Unknown n
         end;
       FE.print_status status n
     in

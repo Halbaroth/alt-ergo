@@ -30,7 +30,6 @@
 
 type 'a status =
   | Unsat of Commands.sat_tdecl * Explanation.t
-  | Inconsistent of Commands.sat_tdecl
   | Unknown of Commands.sat_tdecl * 'a
   | Timeout of Commands.sat_tdecl option
   | Preprocess

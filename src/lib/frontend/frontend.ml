@@ -37,7 +37,6 @@ module Ex = Explanation
 
 type 'a status =
   | Unsat of Commands.sat_tdecl * Explanation.t
-  | Inconsistent of Commands.sat_tdecl
   | Unknown of Commands.sat_tdecl * 'a
   | Timeout of Commands.sat_tdecl option
   | Preprocess
@@ -222,7 +221,6 @@ module Make(SAT : Sat_solver_sig.S) : S with type sat_env = SAT.t = struct
          status should be printed at the next query. *)
       let dep = Ex.union dep dep' in
       if get_debug_unsat_core () then check_produced_unsat_core dep;
-      (* print_status (Inconsistent d) (Steps.get_steps ()); *)
       env , false, dep
     | SAT.I_dont_know t ->
       (* In this case, it's not clear whether we want to print the status.
@@ -247,7 +245,7 @@ module Make(SAT : Sat_solver_sig.S) : S with type sat_env = SAT.t = struct
             "This file is known to be Sat but Alt-Ergo return Unsat";
           Errors.warning_as_error ()
         end
-      | Inconsistent _ | Unknown _ | Timeout _ | Preprocess ->
+      | Unknown _ | Timeout _ | Preprocess ->
         assert false
     in
     let validity_mode =
@@ -275,11 +273,6 @@ module Make(SAT : Sat_solver_sig.S) : S with type sat_env = SAT.t = struct
           "unsat-core:@,%a@."
           (Ex.print_unsat_core ~tab:true) dep;
       check_status_consistency status;
-
-    | Inconsistent d ->
-      let loc = d.st_loc in
-      Printer.print_status_inconsistent ~validity_mode
-        (Some loc) (Some time) (Some steps) (get_goal_name d);
 
     | Unknown (d, _) ->
       let loc = d.st_loc in
