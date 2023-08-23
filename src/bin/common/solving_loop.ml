@@ -65,6 +65,12 @@ let main () =
 
   let module FE = Frontend.Make (SAT) in
 
+  let is_query (decl : Commands.sat_tdecl) =
+    match decl.st_decl with
+    | Query _ -> true
+    | _ -> false
+  in
+
   let solve all_context (cnf, goal_name) =
     if Options.get_debug_commands () then
       Printer.print_dbg "@[<v 2>goal %s:@ %a@]@."
@@ -82,9 +88,19 @@ let main () =
         end;
       SAT.reset_refs ();
       let partial_model, consistent, _ =
-        List.fold_left
-          (FE.process_decl FE.print_status used_context consistent_dep_stack)
-          (SAT.empty (), true, Explanation.empty) cnf
+        List.fold_left (fun state decl ->
+            let status, state =
+              FE.process_decl used_context consistent_dep_stack decl state
+            in
+            match status with
+            | Timeout _ ->
+              FE.print_status status (Steps.get_steps ());
+              raise Util.Timeout
+            | Unknown _ | Unsat _ when is_query decl ->
+              FE.print_status status (Steps.get_steps ());
+              state
+            | _-> state
+          ) (SAT.empty (), true, Explanation.empty) cnf
       in
       if Options.get_timelimit_per_goal() then
         Options.Time.unset_timeout ();

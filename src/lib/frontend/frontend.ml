@@ -37,9 +37,12 @@ module Ex = Explanation
 
 type 'a status =
   | Unsat of Commands.sat_tdecl * Explanation.t
+  | Inconsistent of Commands.sat_tdecl
   | Unknown of Commands.sat_tdecl * 'a
   | Timeout of Commands.sat_tdecl option
   | Preprocess
+
+type 'a state = 'a * bool * Explanation.t
 
 module type S = sig
 
@@ -47,12 +50,11 @@ module type S = sig
   type used_context
 
   val process_decl:
-    (sat_env status -> int -> unit) ->
     used_context ->
-    (bool * Ex.t) Stack.t ->
-    sat_env * bool * Ex.t ->
+    (bool * Explanation.t) Stack.t ->
     Commands.sat_tdecl ->
-    sat_env * bool * Ex.t
+    sat_env state ->
+    sat_env status * sat_env state
 
   val print_status : sat_env status -> int -> unit
 
@@ -134,52 +136,59 @@ module Make(SAT : Sat_solver_sig.S) : S with type sat_env = SAT.t = struct
     if Options.get_unsat_core () then Ex.singleton (Ex.RootDep {name;f;loc})
     else Ex.empty
 
-  let process_decl print_status used_context consistent_dep_stack
-      ((env, consistent, dep) as acc) d =
+  let process_decl used_context consistent_dep_stack decl
+      ((env, consistent, dep) as acc) =
     try
-      match d.st_decl with
+      match decl.st_decl with
       | Push n ->
         Util.loop ~f:(fun _n env () -> Stack.push env consistent_dep_stack)
           ~max:n ~elt:(consistent,dep) ~init:();
-        SAT.push env n, consistent, dep
+        let env = SAT.push env n in
+        Unknown (decl, env), (env, consistent, dep)
       | Pop n ->
         let consistent,dep =
           Util.loop ~f:(fun _n () _env -> Stack.pop consistent_dep_stack)
             ~max:n ~elt:() ~init:(consistent,dep)
         in
-        SAT.pop env n, consistent, dep
-      | Assume(n, f, mf) ->
+        let env = SAT.pop env n in
+        Unknown (decl, env), (env, consistent, dep)
+      | Assume (n, f, mf) ->
         let is_hyp = try (Char.equal '@' n.[0]) with _ -> false in
         if not is_hyp && unused_context n used_context then
-          acc
+          Unknown (decl, env), acc
         else
-          let dep = if is_hyp then Ex.empty else mk_root_dep n f d.st_loc in
+          let dep = if is_hyp then Ex.empty else mk_root_dep n f decl.st_loc in
           if consistent then
-            SAT.assume env
-              {E.ff=f;
-               origin_name = n;
-               gdist = -1;
-               hdist = (if is_hyp then 0 else -1);
-               trigger_depth = max_int;
-               nb_reductions = 0;
-               age=0;
-               lem=None;
-               mf=mf;
-               gf=false;
-               from_terms = [];
-               theory_elim = true;
-              } dep,
-            consistent, dep
-          else env, consistent, dep
+            let env =
+              SAT.assume env
+                {E.ff=f;
+                 origin_name = n;
+                 gdist = -1;
+                 hdist = (if is_hyp then 0 else -1);
+                 trigger_depth = max_int;
+                 nb_reductions = 0;
+                 age=0;
+                 lem=None;
+                 mf=mf;
+                 gf=false;
+                 from_terms = [];
+                 theory_elim = true;
+                } dep
+            in
+            Unknown (decl, env), (env, consistent, dep)
+          else
+            Unknown (decl, env), (env, consistent, dep)
       | PredDef (f, name) ->
-        if unused_context name used_context then acc
+        if unused_context name used_context then
+          Unknown (decl, env), acc
         else
-          let dep = mk_root_dep name f d.st_loc in
-          SAT.pred_def env f name dep d.st_loc, consistent, dep
+          let dep = mk_root_dep name f decl.st_loc in
+          let env = SAT.pred_def env f name dep decl.st_loc in
+          Unknown (decl, env), (env, consistent, dep)
 
       | RwtDef _ -> assert false
 
-      | Query(n, f, sort) ->
+      | Query (n, f, sort) ->
         let dep =
           if consistent then
             let dep' = SAT.unsat env
@@ -201,18 +210,18 @@ module Make(SAT : Sat_solver_sig.S) : S with type sat_env = SAT.t = struct
         in
         if get_debug_unsat_core () then check_produced_unsat_core dep;
         if get_save_used_context () then output_used_context n dep;
-        print_status (Unsat (d, dep)) (Steps.get_steps ());
-        env, false, dep
+        Unsat (decl, dep), (env, false, dep)
 
       | ThAssume ({ Expr.ax_name; Expr.ax_form ; _ } as th_elt) ->
         if unused_context ax_name used_context then
-          acc
+          Unknown (decl, env), acc
         else
         if consistent then
-          let dep = mk_root_dep ax_name ax_form d.st_loc in
+          let dep = mk_root_dep ax_name ax_form decl.st_loc in
           let env = SAT.assume_th_elt env th_elt dep in
-          env, consistent, dep
-        else env, consistent, dep
+          Unknown (decl, env), (env, consistent, dep)
+        else
+          Unknown (decl, env), (env, consistent, dep)
 
     with
     | SAT.Unsat dep' ->
@@ -221,19 +230,16 @@ module Make(SAT : Sat_solver_sig.S) : S with type sat_env = SAT.t = struct
          status should be printed at the next query. *)
       let dep = Ex.union dep dep' in
       if get_debug_unsat_core () then check_produced_unsat_core dep;
-      env , false, dep
+      Inconsistent decl, (env, false, dep)
     | SAT.I_dont_know t ->
       (* In this case, it's not clear whether we want to print the status.
          Instead, it'd be better to accumulate in `consistent` a 3-case adt
          and not a simple bool. *)
-      print_status (Unknown (d, t)) (Steps.get_steps ());
-      (*if get_model () then SAT.print_model ~header:true (get_fmt_mdl ()) t;*)
-      env , consistent, dep
-    | Util.Timeout as e ->
+      Unknown (decl, t), (env, consistent, dep)
+    | Util.Timeout ->
       (* In this case, we obviously want to print the status,
          since we exit right after  *)
-      print_status (Timeout (Some d)) (Steps.get_steps ());
-      raise e
+      Timeout (Some decl), (env, consistent, dep)
 
   let print_status status steps =
     let check_status_consistency s =
@@ -245,7 +251,7 @@ module Make(SAT : Sat_solver_sig.S) : S with type sat_env = SAT.t = struct
             "This file is known to be Sat but Alt-Ergo return Unsat";
           Errors.warning_as_error ()
         end
-      | Unknown _ | Timeout _ | Preprocess ->
+      | Unknown _ | Timeout _ | Preprocess | Inconsistent _ ->
         assert false
     in
     let validity_mode =
@@ -255,7 +261,7 @@ module Make(SAT : Sat_solver_sig.S) : S with type sat_env = SAT.t = struct
     in
     let get_goal_name d =
       match d.st_decl with
-      | Query(g,_,_) -> Some g
+      | Query (g, _, _) -> Some g
       | _ -> None
     in
 
@@ -291,6 +297,8 @@ module Make(SAT : Sat_solver_sig.S) : S with type sat_env = SAT.t = struct
     | Preprocess ->
       Printer.print_status_preprocess ~validity_mode
         (Some time) (Some steps)
+
+    | Inconsistent _ -> assert false
 
 
 

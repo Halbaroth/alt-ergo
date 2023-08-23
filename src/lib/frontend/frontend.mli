@@ -30,9 +30,12 @@
 
 type 'a status =
   | Unsat of Commands.sat_tdecl * Explanation.t
+  | Inconsistent of Commands.sat_tdecl
   | Unknown of Commands.sat_tdecl * 'a
   | Timeout of Commands.sat_tdecl option
   | Preprocess
+
+type 'a state = 'a * bool * Explanation.t
 
 module type S = sig
 
@@ -41,12 +44,11 @@ module type S = sig
   type used_context
 
   val process_decl:
-    (sat_env status -> int -> unit) ->
     used_context ->
     (bool * Explanation.t) Stack.t ->
-    sat_env * bool * Explanation.t ->
     Commands.sat_tdecl ->
-    sat_env * bool * Explanation.t
+    sat_env state ->
+    sat_env status * sat_env state
 
   val print_status : sat_env status -> int -> unit
 
