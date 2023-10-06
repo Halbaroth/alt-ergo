@@ -130,7 +130,7 @@ let int2bv_const n z =
   done;
   !acc
 
-let equal_abstract eq = Lists.equal (equal_simple_term eq)
+let equal_abstract eq = Stdcompat.List.equal (equal_simple_term eq)
 
 (* for the solver *)
 
@@ -200,7 +200,7 @@ module Shostak(X : ALIEN) = struct
           if c2 <> 0 then c2 else X.str_cmp t1 t2
     )
 
-  let compare_abstract = Lists.compare compare_simple_term
+  let compare_abstract = Stdcompat.List.compare compare_simple_term
 
   (* Compare two simple terms. The [equalities_propagation] function below
      requires that : [false ≤ st ≤ true] for all simple terms [st]. *)
@@ -977,9 +977,9 @@ module Shostak(X : ALIEN) = struct
               let _fw = apply_subs subs r in
               let eq (_, l1) (_, l2) =
                 (* [apply_subs] does not change the left-hand sides *)
-                Lists.equal (Lists.equal equal_solver_simple_term) l1 l2
+                Stdcompat.List.(equal (equal equal_solver_simple_term) l1 l2)
               in
-              if Lists.equal eq _bw bw
+              if Stdcompat.List.equal eq _bw bw
               then slice_rec ((t,vls')::bw) _fw
               else slice_rec [] (_bw@((t,vls'):: _fw))
             end

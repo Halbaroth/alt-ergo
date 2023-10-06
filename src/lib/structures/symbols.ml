@@ -107,7 +107,7 @@ let var s = Var s
 let int i = Int (Z.of_string i)
 let bitv s =
   let biv =
-    Compat.String.fold_left (fun n c ->
+    Stdcompat.String.fold_left (fun n c ->
         match c with
         | '0' -> Z.(n lsl 1)
         | '1' -> Z.((n lsl 1) lor ~$1)
@@ -135,8 +135,8 @@ let is_internal sy =
   match sy with
   | Name (hs, _, _) ->
     let s = Hstring.view hs in
-    Compat.String.starts_with ~prefix:"." s ||
-    Compat.String.starts_with ~prefix:"@" s
+    Stdcompat.String.starts_with ~prefix:"." s ||
+    Stdcompat.String.starts_with ~prefix:"@" s
   | _ -> false
 
 let underscore =
