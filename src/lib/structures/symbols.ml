@@ -278,28 +278,7 @@ let string_of_bound b =
 
 let print_bound fmt b = Format.fprintf fmt "%s" (string_of_bound b)
 
-let string_of_lit lit = match lit with
-  | L_eq -> "="
-  | L_neg_eq -> "<>"
-  | L_neg_pred -> "not "
-  | L_built LE -> "<="
-  | L_built LT -> "<"
-  | L_neg_built LE -> ">"
-  | L_neg_built LT -> ">="
-  | L_built (IsConstr h) ->
-    Format.sprintf "? %s" (Hstring.view h)
-  | L_neg_built (IsConstr h) ->
-    Format.sprintf "?not? %s" (Hstring.view h)
-
-let string_of_form f = match f with
-  | F_Unit _ -> "/\\"
-  | F_Clause _ -> "\\/"
-  | F_Lemma -> "Lemma"
-  | F_Skolem -> "Skolem"
-  | F_Iff -> "<->"
-  | F_Xor -> "xor"
-
-let name_to_string =
+let pp_name ppf =
   let no_need_to_quote s =
     String.length s > 0 &&
     (match s.[0] with | '0'..'9' -> false | _ -> true) &&
@@ -317,82 +296,236 @@ let name_to_string =
       true
     with Exit -> false
   in
-  fun s -> if no_need_to_quote s then s else Format.sprintf "|%s|" s
-
-let to_string ?(show_vars=true) x = match x with
-  | Name (n, _, _) -> name_to_string @@ Hstring.view n
-  | Var v when show_vars -> Format.sprintf "'%s'" (Var.to_string v)
-  | Var v -> Var.to_string v
-  | Int n -> Z.to_string n
-  | Real n -> Q.to_string n
-  | Bitv (n, s) -> Fmt.str "[|%s|]" (Z.format (Fmt.str "%%0%db" n) s)
-  | Op Plus -> "+"
-  | Op Minus -> "-"
-  | Op Mult -> "*"
-  | Op Div -> "/"
-  | Op Modulo -> "%"
-  | Op (Access s) ->
-    if Options.get_output_smtlib () then
-      (Hstring.view s)
+  fun s ->
+    if no_need_to_quote s then
+      Fmt.string ppf s
     else
-      "@Access_"^(Hstring.view s)
-  | Op (Constr s) -> (Hstring.view s)
-  | Op (Destruct (s,g)) ->
-    Format.sprintf "%s%s" (if g then "" else "!") (Hstring.view s)
+      Fmt.pf ppf "|%s|" s
 
-  | Op Record -> "@Record"
-  | Op Get -> "get"
-  | Op Set -> "set"
-  | Op Float -> "float"
-  | Op Fixed -> "fixed"
-  | Op Abs_int -> "abs_int"
-  | Op Abs_real -> "abs_real"
-  | Op Sqrt_real -> "sqrt_real"
-  | Op Sqrt_real_default -> "sqrt_real_default"
-  | Op Sqrt_real_excess -> "sqrt_real_excess"
-  | Op Real_of_int -> "real_of_int"
-  | Op Real_is_int -> "real_is_int"
-  | Op Int_floor -> "int_floor"
-  | Op Int_ceil -> "int_ceil"
-  | Op Max_real -> "max_real"
-  | Op Max_int -> "max_int"
-  | Op Min_real -> "min_real"
-  | Op Min_int -> "min_int"
-  | Op Integer_log2 -> "integer_log2"
-  | Op Pow -> "**"
-  | Op Integer_round -> "integer_round"
-  | Op Not_theory_constant -> "not_theory_constant"
-  | Op Is_theory_constant -> "is_theory_constant"
-  | Op Linear_dependency -> "linear_dependency"
-  | Op Concat -> "@"
-  | Op Extract (i, j) -> Format.sprintf "^{%d; %d}" i j
-  | Op BVnot -> "bvnot"
-  | Op BVand -> "bvand"
-  | Op BVor -> "bvor"
-  | Op Int2BV n -> Format.sprintf "int2bv[%d]" n
-  | Op BV2Nat -> "bv2nat"
-  | Op Tite -> "ite"
-  | Op Reach -> assert false
-  | True -> "true"
-  | False -> "false"
-  | Void -> "void"
-  | In (lb, rb) ->
-    Format.sprintf "%s , %s" (string_of_bound lb) (string_of_bound rb)
+module AEPrinter = struct
+  let pp_lit ppf lit =
+    match lit with
+    | L_eq -> Fmt.pf ppf "="
+    | L_neg_eq -> Fmt.pf ppf "distinct"
+    | L_built LE -> Fmt.pf ppf "<="
+    | L_built LT -> Fmt.pf ppf "<"
+    | L_neg_built LE -> Fmt.pf ppf ">"
+    | L_neg_built LT -> Fmt.pf ppf ">="
+    | L_neg_pred -> Fmt.pf ppf "not "
+    | L_built (IsConstr h) ->
+      Fmt.pf ppf "? %a" Hstring.print h
+    | L_neg_built (IsConstr h) ->
+      Fmt.pf ppf "?not? %a" Hstring.print h
 
-  | MapsTo x ->  Format.sprintf "%s |->" (Var.to_string x)
+  let pp_form ppf f =
+    match f with
+    | F_Unit _ -> Fmt.pf ppf "/\\"
+    | F_Clause _ -> Fmt.pf ppf "\\/"
+    | F_Lemma -> Fmt.pf ppf "Lemma"
+    | F_Skolem -> Fmt.pf ppf "Skolem"
+    | F_Iff -> Fmt.pf ppf "<->"
+    | F_Xor -> Fmt.pf ppf "xor"
 
-  | Lit lit -> string_of_lit lit
-  | Form form -> string_of_form form
-  | Let -> "let"
+  let pp ?(show_vars = true) ppf sy =
+    match sy with
+    (* Core theory *)
+    | True -> Fmt.pf ppf "true"
+    | False -> Fmt.pf ppf "false"
+    | Void -> Fmt.pf ppf "void"
+    | Name (n, _, _) -> pp_name ppf (Hstring.view n)
+    | Var v when show_vars -> Fmt.pf ppf "'%s'" (Var.to_string v)
+    | Var v -> Fmt.string ppf (Var.to_string v)
+    | Op Tite -> Fmt.pf ppf "ite"
 
-  | Op (Optimize {order; is_max=true}) -> Format.sprintf "maximize(-,%d)" order
-  | Op (Optimize {order; is_max=false}) -> Format.sprintf "minimize(-,%d)" order
+    (* Reals and Ints theories *)
+    | Int i -> Z.pp_print ppf i
+    | Real q -> Q.pp_print ppf q
+    | Op Plus -> Fmt.pf ppf "+"
+    | Op Minus -> Fmt.pf ppf "-"
+    | Op Mult -> Fmt.pf ppf "*"
+    | Op Div -> Fmt.pf ppf "/"
+    | Op Modulo -> Fmt.pf ppf "%%"
+    | Op Pow -> Fmt.pf ppf "**"
+    | Op Sqrt_real -> Fmt.pf ppf "sqrt_real"
+    | Op Sqrt_real_default -> Fmt.pf ppf "sqrt_real_default"
+    | Op Sqrt_real_excess -> Fmt.pf ppf "sqrt_real_excess"
+    | Op Int_floor -> Fmt.pf ppf "int_floor"
+    | Op Int_ceil -> Fmt.pf ppf "int_ceil"
+    | Op Max_real -> Fmt.pf ppf "max_real"
+    | Op Max_int -> Fmt.pf ppf "max_int"
+    | Op Min_real -> Fmt.pf ppf "min_real"
+    | Op Min_int -> Fmt.pf ppf "min_int"
+    | Op Integer_log2 -> Fmt.pf ppf "integer_log2"
+    | Op Integer_round -> Fmt.pf ppf "integer_round"
 
-let to_string_clean s = to_string ~show_vars:false s
-let to_string s = to_string ~show_vars:true s
+    (* Reals_Ints theory *)
+    | Op Abs_int -> Fmt.pf ppf "abs_int"
+    | Op Abs_real -> Fmt.pf ppf "abs_real"
+    | Op Real_of_int -> Fmt.pf ppf "real_of_int"
+    | Op Real_is_int -> Fmt.pf ppf "real_is_int"
 
-let print_clean fmt s = Format.fprintf fmt "%s" (to_string_clean s)
-let print fmt s = Format.fprintf fmt "%s" (to_string s)
+    (* FixedSizedBitVectors theory *)
+    | Bitv (n, s) ->
+      Fmt.pf ppf "[|%s|]" (Z.format (Fmt.str "%%0%db" n) s)
+    | Op Extract (i, j) ->
+      Fmt.pf ppf "^{%d; %d}" i j
+    | Op Concat -> Fmt.pf ppf "@"
+    | Op BV2Nat -> Fmt.pf ppf "bv2nat"
+    | Op Int2BV n -> Fmt.pf ppf "int2bv[%d]" n
+    | Op BVnot -> Fmt.pf ppf "bvnot"
+    | Op BVand -> Fmt.pf ppf "bvand"
+    | Op BVor -> Fmt.pf ppf "bvor"
+
+    (* ArraysEx theory *)
+    | Op Get -> Fmt.pf ppf "get"
+    | Op Set -> Fmt.pf ppf "set"
+
+    (* DT theory *)
+    | Op Record -> Fmt.pf ppf "@Record"
+    | Op (Access s) -> Fmt.pf ppf "@Access_%a" Hstring.print s
+    | Op (Constr s) -> Hstring.print ppf s
+    | Op (Destruct (s, g)) ->
+      Fmt.pf ppf "%s%a" (if g then "" else "!") Hstring.print s
+
+    (* Float theory *)
+    | Op Float -> Fmt.pf ppf "float"
+    | Op Fixed -> Fmt.pf ppf "fixed"
+
+    (* Symbols used in semantic triggers *)
+    | In (lb, rb) ->
+      Fmt.pf ppf "%s, %s" (string_of_bound lb) (string_of_bound rb)
+    | MapsTo x -> Fmt.pf ppf "%s |->" (Var.to_string x)
+    | Op Not_theory_constant -> Fmt.pf ppf "not_theory_constant"
+    | Op Is_theory_constant -> Fmt.pf ppf "is_theory_constant"
+    | Op Linear_dependency -> Fmt.pf ppf "linear_dependency"
+
+    | Lit lit -> pp_lit ppf lit
+    | Form form -> pp_form ppf form
+    | Let -> Fmt.pf ppf "let"
+
+    | Op (Optimize {order; is_max=true}) ->
+      Fmt.pf ppf "maximize(-,%d)" order
+    | Op (Optimize {order; is_max=false}) ->
+      Fmt.pf ppf "minimize(-,%d)" order
+
+    | Op Reach -> assert false
+end
+
+module SmtPrinter = struct
+  let pp_lit ppf lit =
+    match lit with
+    | L_eq -> Fmt.pf ppf "="
+    | L_neg_eq -> Fmt.pf ppf "distinct"
+    | L_built LE -> Fmt.pf ppf "<="
+    | L_built LT -> Fmt.pf ppf "<"
+    | L_neg_built LE -> Fmt.pf ppf ">"
+    | L_neg_built LT -> Fmt.pf ppf ">="
+    | L_neg_pred -> Fmt.pf ppf "not"
+    | L_built (IsConstr hs) -> Fmt.pf ppf "(_ is %a)" Hstring.print hs
+    | L_neg_built (IsConstr _) -> assert false
+
+  let pp_form ppf f =
+    match f with
+    | F_Unit _ -> Fmt.pf ppf "and"
+    | F_Clause _ -> Fmt.pf ppf "or"
+    | F_Lemma -> assert false
+    | F_Skolem -> assert false
+    | F_Iff -> Fmt.pf ppf "="
+    | F_Xor -> Fmt.pf ppf "xor"
+
+  let pp ppf sy =
+    match sy with
+    (* Core theory *)
+    | True -> Fmt.pf ppf "true"
+    | False -> Fmt.pf ppf "false"
+    | Name (n, _, _) -> pp_name ppf (Hstring.view n)
+    | Var v -> Fmt.string ppf (Var.to_string v)
+    | Op Tite -> Fmt.pf ppf "ite"
+
+    (* Reals and Ints theories *)
+    | Int i ->
+      if Z.sign i = -1 then
+        Fmt.pf ppf "(- %a)" Z.pp_print (Z.abs i)
+      else
+        Fmt.pf ppf "%a" Z.pp_print i
+    | Real q ->
+      if Z.equal (Q.den q) Z.one then
+        Fmt.pf ppf "%a.0" Z.pp_print (Q.num q)
+      else if Q.sign q = -1 then
+        Fmt.pf ppf "(/ (- %a) %a)"
+          Z.pp_print (Z.abs (Q.num q))
+          Z.pp_print (Q.den q)
+      else
+        Fmt.pf ppf "(/ %a %a)" Z.pp_print (Q.num q) Z.pp_print (Q.den q)
+    | Op Plus -> Fmt.pf ppf "+"
+    | Op Minus -> Fmt.pf ppf "-"
+    | Op Mult -> Fmt.pf ppf "*"
+    | Op Div -> Fmt.pf ppf "/"
+    | Op Modulo -> Fmt.pf ppf "%%"
+
+    (* Reals_Ints theory *)
+    | Op Abs_int | Op Abs_real -> Fmt.pf ppf "abs"
+    | Op Real_of_int -> Fmt.pf ppf "to_real"
+    | Op Real_is_int -> Fmt.pf ppf "is_int"
+
+    (* FixedSizedBitVectors theory *)
+    | Bitv (n, s) ->
+      Fmt.pf ppf "#b%s" (Z.format (Fmt.str "%%0%db" n) s)
+    | Op Extract (i, j) ->
+      Fmt.pf ppf "(_ extract %d %d)" i j
+    | Op Concat -> Fmt.pf ppf "concat"
+    | Op BV2Nat -> Fmt.pf ppf "bv2nat"
+    | Op BVnot -> Fmt.pf ppf "bvnot"
+    | Op BVand -> Fmt.pf ppf "bvand"
+    | Op BVor -> Fmt.pf ppf "bvor"
+
+    (* ArraysEx theory *)
+    | Op Get -> Fmt.pf ppf "select"
+    | Op Set -> Fmt.pf ppf "store"
+
+    (* DT theory *)
+    | Op Record -> ()
+    | Op (Access s | Constr s | Destruct (s, _)) -> Hstring.print ppf s
+
+    | Form f -> pp_form ppf f
+    | Lit lit -> pp_lit ppf lit
+    | Let -> Fmt.pf ppf "let"
+
+    (* Not in the SMT-LIB standard *)
+    | Op (Int2BV _) -> Fmt.pf ppf "(_ int2bv)"
+    | Op Not_theory_constant -> Fmt.pf ppf "(_ not_theory_constant)"
+    | Op Is_theory_constant -> Fmt.pf ppf "(_ is_theory_constant)"
+    | Op Linear_dependency -> Fmt.pf ppf "(_ linear_dependency)"
+    | Op Sqrt_real -> Fmt.pf ppf "(_ sqrt_real)"
+    | Op Sqrt_real_default -> Fmt.pf ppf "(_ sqrt_real_default)"
+    | Op Sqrt_real_excess -> Fmt.pf ppf "(_ sqrt_real_excess)"
+    | Op Int_floor -> Fmt.pf ppf "(_ int_floor)"
+    | Op Int_ceil -> Fmt.pf ppf "(_ int_ceil)"
+    | Op Max_real -> Fmt.pf ppf "(_ max_real)"
+    | Op Max_int -> Fmt.pf ppf "(_ max_int)"
+    | Op Min_real -> Fmt.pf ppf "(_ min_real)"
+    | Op Min_int -> Fmt.pf ppf "(_ min_int)"
+    | Op Integer_log2 -> Fmt.pf ppf "(_ integer_log2)"
+    | Op Pow -> Fmt.pf ppf "(_ pow)"
+    | Op Integer_round -> Fmt.pf ppf "(_ integer_round)"
+    | Op (Optimize _) -> assert false
+    | MapsTo _ | In _ -> assert false
+
+    | Op (Fixed | Float) ->  assert false
+    | Op Reach -> assert false
+    | Void -> failwith "there is no unit type in the SMT-LIB format"
+end
+
+let print_clean = AEPrinter.pp ~show_vars:false
+let print = AEPrinter.pp ~show_vars:true
+
+let to_string_clean sy =
+  Fmt.str "%a" (AEPrinter.pp ~show_vars:false) sy
+
+let to_string sy =
+  Fmt.str "%a"(AEPrinter.pp ~show_vars:true) sy
+
+let pp_smtlib = SmtPrinter.pp
 
 module type Id = sig
   val fresh : ?base:string -> unit -> string

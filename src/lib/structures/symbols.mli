@@ -127,6 +127,10 @@ val print : Format.formatter -> t -> unit
 val to_string_clean : t -> string
 val print_clean : Format.formatter -> t -> unit
 
+val pp_smtlib : t Fmt.t
+(* [pp_smtlib ppf sy] prints the symbol [sy] on the formatter [ppf]
+   using the SMT-LIB format. *)
+
 (*val dummy : t*)
 
 val fresh_internal_string : unit -> string
