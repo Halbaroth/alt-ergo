@@ -1544,7 +1544,7 @@ module Shostak(X : ALIEN) = struct
         Some (E.bitv bv (Ty.Tbitv sz), true)
 
   let to_model_term r =
-    match embed r with
+    match r with
     | [{ bv = Cte b; sz }] ->
       let s = Z.format ("%0" ^ string_of_int sz ^ "b") b in
       Some (Expr.bitv s Ty.(Tbitv sz))

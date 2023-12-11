@@ -194,7 +194,7 @@ module Shostak (X : ALIEN) = struct
     None
 
   let to_model_term r =
-    match embed r with
+    match r with
     | Cons (hs, ty) ->
       Some (E.mk_term Sy.(Op (Constr hs)) [] ty)
     | Alien a -> X.to_model_term a

@@ -810,7 +810,7 @@ module Shostak
         Some (term_of_cst (Q.to_string !cpt), true)
 
   let to_model_term r =
-    match P.is_const (embed r), X.type_info r with
+    match P.is_const r, type_info r with
     | Some i, Ty.Tint ->
       assert (Z.equal (Q.den i) Z.one);
       Some (Expr.Ints.of_Z (Q.num i))

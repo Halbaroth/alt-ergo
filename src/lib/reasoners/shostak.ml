@@ -273,13 +273,13 @@ struct
   let to_model_term r =
     let res =
       match r.v with
-      | Arith _ -> ARITH.to_model_term r
-      | Records _ -> RECORDS.to_model_term r
-      | Bitv _ -> BITV.to_model_term r
-      | Arrays _ -> ARRAYS.to_model_term r
-      | Enum _ -> ENUM.to_model_term r
-      | Adt _ -> ADT.to_model_term r
-      | Ite _ -> ITE.to_model_term r
+      | Arith r -> ARITH.to_model_term r
+      | Records r -> RECORDS.to_model_term r
+      | Bitv r -> BITV.to_model_term r
+      | Arrays r -> ARRAYS.to_model_term r
+      | Enum r -> ENUM.to_model_term r
+      | Adt r -> ADT.to_model_term r
+      | Ite r -> ITE.to_model_term r
       | Term t when Expr.is_model_term t -> Some t
       | Ac _ | Term _ -> None
     in

@@ -128,7 +128,7 @@ module type SHOSTAK = sig
      [Some (t, false)], then there must be no context in which
      [solve r (fst X.make t)] raises [Unsolvable]. You have been warned! *)
 
-  val to_model_term : r -> Expr.t option
+  val to_model_term : t -> Expr.t option
   (** [to_model_term r] creates a model term if [r] is constant.
       The function cannot fail if [r] is a constant (that is statisfied the
       predicate [X.is_constant]).
