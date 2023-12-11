@@ -320,15 +320,15 @@ struct
     if CX.equal a b then 0
     else
       match a.v, b.v with
-      | Arith _, Arith _ -> ARITH.compare a b
-      | Records _, Records _ -> RECORDS.compare a b
-      | Bitv _, Bitv _ -> BITV.compare a b
-      | Arrays _, Arrays _ -> ARRAYS.compare a b
-      | Enum _, Enum _ -> ENUM.compare a b
-      | Adt _, Adt _ -> ADT.compare a b
-      | Ite _, Ite _ -> ITE.compare a b
-      | Term x, Term y -> Expr.compare x y
-      | Ac x, Ac y -> AC.compare x y
+      | Arith r1, Arith r2 -> ARITH.compare r1 r2
+      | Records r1, Records r2 -> RECORDS.compare r1 r2
+      | Bitv r1, Bitv r2 -> BITV.compare r1 r2
+      | Arrays r1, Arrays r2 -> ARRAYS.compare r1 r2
+      | Enum r1, Enum r2 -> ENUM.compare r1 r2
+      | Adt r1, Adt r2 -> ADT.compare r1 r2
+      | Ite r1, Ite r2 -> ITE.compare r1 r2
+      | Term t1, Term t2 -> Expr.compare t1 t2
+      | Ac r1, Ac r2 -> AC.compare r1 r2
       | va, vb -> compare_tag va vb
 
   (*** implementations before hash-consing semantic values

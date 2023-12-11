@@ -134,7 +134,7 @@ module Shostak (X : ALIEN) = struct
 
   let compare_mine t u = raw_compare (normalize t) (normalize u)
 
-  let compare x y = compare_mine (embed x) (embed y)
+  let compare x y = compare_mine x y
 
   let rec equal r1 r2 =
     match r1, r2 with

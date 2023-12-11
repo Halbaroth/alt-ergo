@@ -1257,7 +1257,7 @@ module Shostak(X : ALIEN) = struct
 
   (* Note: we must use [X.str_cmp] here because [compare] is the implementation
      called by [X.str_cmp] itself. *)
-  let compare x y = compare_abstract X.str_cmp (embed x) (embed y)
+  let compare = compare_abstract X.str_cmp
 
   let hash = hash_abstract X.hash
 

@@ -71,7 +71,7 @@ module type SHOSTAK = sig
 
   val subst : r -> r -> t -> r
 
-  val compare : r -> r -> int
+  val compare : t -> t -> int
 
   (* tests if two values are equal (using tags) *)
   val equal : t -> t -> bool
