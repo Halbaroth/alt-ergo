@@ -2328,8 +2328,9 @@ module Triggers = struct
          Var.Map.for_all
            (fun v (ty, _) ->
               try
-                let ty', _ = Var.Map.find v f.vars
-                in Ty.equal ty ty'
+                let ty', _ = Var.Map.find v f.vars in
+                assert (Ty.equal ty ty');
+                true
               with Not_found -> false
            )
            e.vars
