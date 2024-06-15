@@ -137,18 +137,7 @@ module Shostak (X : ALIEN) = struct
     | Constr c1, Constr c2 ->
       Uid.equal c1.c_name c2.c_name &&
       Ty.equal c1.c_ty c2.c_ty &&
-      begin
-        try
-          List.iter2
-            (fun (hs1, v1) (hs2, v2) ->
-               assert (Uid.equal hs1 hs2);
-               if not (X.equal v1 v2) then raise Exit
-            ) c1.c_args c2.c_args;
-          true
-        with
-        | Exit -> false
-        | _ -> assert false
-      end
+      Util.Eq.(list (pair nop X.equal)) c1.c_args c2.c_args
 
     | Select d1, Select d2 ->
       Uid.equal d1.d_name d2.d_name &&
@@ -259,19 +248,8 @@ module Shostak (X : ALIEN) = struct
         let c = Ty.compare c1.c_ty c2.c_ty in
         if c <> 0 then c
         else
-          begin
-            try
-              List.iter2
-                (fun (hs1, v1) (hs2, v2) ->
-                   assert (Uid.equal hs1 hs2);
-                   let c = X.str_cmp v1 v2 in
-                   if c <> 0 then raise (Util.Cmp c);
-                )c1.c_args c2.c_args;
-              0
-            with
-            | Util.Cmp c -> c
-            | _ -> assert false
-          end
+          Util.Cmp.(list (pair nop X.str_cmp)) c1.c_args c2.c_args
+
     | Constr _, _ -> 1
     | _, Constr _ -> -1
 

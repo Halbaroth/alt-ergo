@@ -301,9 +301,7 @@ module Make (X : Sig.X) = struct
   *)
 
   let equal { h = f; l = lx; _ } { h = g; l = ly; _ } =
-    Sy.equal f g &&
-    try List.for_all2 (fun (x, m) (y, n) -> m = n && X.equal x y) lx ly
-    with Invalid_argument _ -> false
+    Sy.equal f g && Util.Eq.(list (pair X.equal int)) lx ly
 
   let hash { h = f; l; t; _ } =
     let acc = Sy.hash f + 19 * Ty.hash t in

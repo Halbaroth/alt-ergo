@@ -32,7 +32,7 @@ module SA =
   Set.Make
     (struct
       type t = E.t * Explanation.t
-      let compare (s1,_) (s2,_) = E.compare s1 s2
+      let compare = Util.Cmp.(pair E.compare nop)
     end)
 
 module X = Shostak.Combine

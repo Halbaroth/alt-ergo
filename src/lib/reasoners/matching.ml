@@ -264,8 +264,7 @@ module Make (X : Arg) : S with type theory = X.t = struct
 
   module T2 = struct
     type t = E.t * E.t
-    let compare (a, b) (x, y) =
-      let c = E.compare a x in if c <> 0 then c else E.compare b y
+    let compare = Util.Cmp.pair E.compare E.compare
   end
 
   module MT2 = Map.Make(T2)
@@ -320,17 +319,8 @@ module Make (X : Arg) : S with type theory = X.t = struct
   module SLE = (* sets of lists of terms *)
     Set.Make(struct
       type t = E.t list
-      let compare l1 l2 =
-        try
-          List.iter2
-            (fun t1 t2 ->
-               let c = E.compare t1 t2 in
-               if c <> 0 then raise (Util.Cmp c)
-            ) l1 l2;
-          0
-        with Invalid_argument _ ->
-          List.length l1 - List.length l2
-           | Util.Cmp n -> n
+
+      let compare = Util.Cmp.list E.compare
     end)
 
   let filter_classes mconf cl tbox =

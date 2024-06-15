@@ -97,7 +97,39 @@ val string_of_th_ext : theories_extensions -> string
 *)
 val [@inline always] compare_algebraic : 'a -> 'a -> (('a * 'a) -> int) -> int
 
-val [@inline always] cmp_lists: 'a list -> 'a list -> ('a -> 'a -> int) -> int
+module Eq : sig
+  type 'a t = 'a -> 'a -> bool
+
+  val nop : 'a t
+  val int : int t
+  val bool : bool t
+  val float : float t
+  val string : string t
+
+  val pair : 'a t -> 'b t -> ('a * 'b) t
+  val list : 'a t -> 'a list t
+  val array : 'a t -> 'a array t
+  val iter2 : (('a -> 'a -> unit) -> 'c -> 'c -> unit) -> 'a t -> 'c t
+end
+
+module Cmp : sig
+  type 'a t = 'a -> 'a -> int
+
+  val nop : 'a t
+  val int : int t
+  val bool : bool t
+  val float : float t
+  val string : string t
+
+  val pair : 'a t -> 'b t -> ('a * 'b) t
+  val list : 'a t -> 'a list t
+  val array : 'a t -> 'a array t
+  val iter2 : (('a -> 'a -> unit) -> 'c -> 'c -> unit) -> 'a t -> 'c t
+end
+
+module Hash : sig
+  type 'a t = 'a -> int
+end
 
 type matching_env =
   {

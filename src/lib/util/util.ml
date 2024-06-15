@@ -154,17 +154,72 @@ let [@inline always] compare_algebraic s1 s2 f_same_constrs_with_args =
     let cmp_tags = Obj.tag r1 - Obj.tag r2 in
     if cmp_tags <> 0 then cmp_tags else f_same_constrs_with_args (s1, s2)
 
-let [@inline always] cmp_lists l1 l2 cmp_elts =
-  try
-    List.iter2
-      (fun a b ->
-         let c = cmp_elts a b in
-         if c <> 0 then raise (Cmp c)
-      )l1 l2;
-    0
-  with
-  | Cmp n -> n
-  | Invalid_argument _ -> List.length l1 - List.length l2
+module Eq = struct
+  type 'a t = 'a -> 'a -> bool
+
+  let[@inline always] pair eq1 eq2 (a1, b1) (a2, b2) =
+    eq1 a1 a2 && eq2 b1 b2
+
+  let[@inline always] iter2 iter eq x y =
+    if x == y then true
+    else
+      try
+        iter (fun a b -> if not @@ eq a b then raise_notrace Exit) x y;
+        true
+      with
+      | Exit | Invalid_argument _ -> false
+
+  let[@inline always] list eq = iter2 List.iter2 eq
+  let[@inline always] array eq = iter2 Array.iter2 eq
+
+  let[@inline always] nop _ _ = true
+  let int = Int.equal
+  let bool = Bool.equal
+  let float = Float.equal
+  let string = String.equal
+end
+
+module Cmp = struct
+  type 'a t = 'a -> 'a -> int
+
+  exception Cmp of int
+
+  let[@inline always] pair cmp1 cmp2 (a1, b1) (a2, b2) =
+    let c = cmp1 a1 a2 in
+    if c <> 0 then 0
+    else cmp2 b1 b2
+
+  let[@inline always] iter2 iter cmp x y =
+    if x == y then 0
+    else
+      try
+        iter (fun a b ->
+            let c = cmp a b in
+            if c <> 0 then raise_notrace (Cmp c)) x y;
+        0
+      with
+      | Cmp n -> n
+
+  let[@inline always] list cmp l1 l2 =
+    try
+      iter2 List.iter2 cmp l1 l2
+    with Invalid_argument _ -> List.compare_lengths l1 l2
+
+  let[@inline always] array cmp a1 a2 =
+    try
+      iter2 Array.iter2 cmp a1 a2
+    with Invalid_argument _ -> Array.length a1 - Array.length a2
+
+  let[@inline always] nop _ _ = 0
+  let int = Int.compare
+  let bool = Bool.compare
+  let float = Float.compare
+  let string = String.compare
+end
+
+module Hash = struct
+  type 'a t = 'a -> int
+end
 
 type matching_env =
   {

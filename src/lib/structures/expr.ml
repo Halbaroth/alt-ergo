@@ -142,9 +142,7 @@ let hash t = t.tag
 
 let uid t = t.tag
 
-let compare_subst (s_t1, s_ty1) (s_t2, s_ty2) =
-  let c = Ty.compare_subst s_ty1 s_ty2 in
-  if c<>0 then c else Var.Map.compare compare s_t1 s_t2
+let compare_subst = Util.Cmp.pair (Var.Map.compare compare) Ty.compare_subst
 
 let equal_subst (s_t1, s_ty1) (s_t2, s_ty2) =
   Ty.equal_subst s_ty1 s_ty2 || Var.Map.equal equal s_t1 s_t2
@@ -159,24 +157,12 @@ let compare_let let1 let2 =
 
 let compare_binders = Var.Map.compare Ty.compare
 
-let [@inline always] compare_sko_xxx sk1 sk2 cmp_xxx =
-  try
-    List.iter2
-      (fun s t ->
-         let c = cmp_xxx s t in
-         if c <> 0 then raise (Util.Cmp c)
-      )sk1 sk2;
-    0
-  with
-  | Util.Cmp c -> c
-  | Invalid_argument _ -> List.length sk1 - List.length sk2
+let compare_sko_vars sk1 sk2 = Util.Cmp.list compare sk1 sk2
 
-let compare_sko_vars sk1 sk2 = compare_sko_xxx sk1 sk2 compare
-
-let compare_sko_vty sk1 sk2 = compare_sko_xxx sk1 sk2 Ty.compare
+let compare_sko_vty sk1 sk2 = Util.Cmp.list Ty.compare sk1 sk2
 
 let compare_lists l1 l2 cmp_elts =
-  let res = Util.cmp_lists l1 l2 cmp_elts in
+  let res = Util.Cmp.list cmp_elts l1 l2 in
   if res <> 0 then raise (Util.Cmp res)
 
 let compare_triggers trs1 trs2 =
@@ -295,8 +281,7 @@ module Hsko = Hashtbl.Make(H)
 
 module F_Htbl : Hashtbl.S with type key = t =
   Hashtbl.Make(struct
-    type t'=t
-    type t = t'
+    type nonrec t = t
     let hash = hash
     let equal = equal
   end)
@@ -1936,7 +1921,7 @@ module Triggers = struct
       if c <> 0 then c
       else
         let c = Sy.compare s s' in
-        if c <> 0 then c else Util.cmp_lists l1 l2 cmp_trig_term
+        if c <> 0 then c else Util.Cmp.list cmp_trig_term l1 l2
 
     | { f = s; _ }, _ when is_infix s -> -1
     | _ , { f = s'; _ } when is_infix s' -> 1
@@ -1955,34 +1940,34 @@ module Triggers = struct
       let l2 = List.map score_term tl2 in
       let l1 = List.fast_sort Int.compare l1 in
       let l2 = List.fast_sort Int.compare l2 in
-      let c  = Util.cmp_lists l1 l2 Int.compare in
+      let c = Util.Cmp.(list int l1 l2) in
       if c <> 0 then c
       else
         let c = Sy.compare s1 s2 in
-        if c <> 0 then c else Util.cmp_lists tl1 tl2 cmp_trig_term
+        if c <> 0 then c else Util.Cmp.list cmp_trig_term tl1 tl2
 
     | { f = Name _; _ }, _ -> -1
     | _, { f = Name _; _ } -> 1
 
     | { f = Op Get; xs = l1; _ }, { f = Op Get; xs = l2; _ } ->
-      Util.cmp_lists l1 l2 cmp_trig_term
+      Util.Cmp.list cmp_trig_term l1 l2
     | { f = Op Get; _ }, _ -> -1
     | _, { f = Op Get; _ } -> 1
 
     | { f = Op Set; xs = l1; _ }, { f = Op Set; xs = l2; _ } ->
-      Util.cmp_lists l1 l2 cmp_trig_term
+      Util.Cmp.list cmp_trig_term l1 l2
     | { f = Op Set; _ }, _ -> -1
     | _, { f = Op Set; _ } -> 1
 
     | { f = Op Extract (i1, j1); xs = [t1]; _ },
       { f = Op Extract (i2, j2); xs = [t2]; _ } ->
-      let r = Util.cmp_lists [i1; j1] [i2; j2] Int.compare in
+      let r = Util.Cmp.(pair int int (i1, j1) (i2, j2)) in
       if r = 0 then cmp_trig_term t1 t2 else r
 
     | { f = Op Extract _; _ }, _ -> -1
 
     | { f = Op Concat; xs = l1; _ }, { f = Op Concat; xs = l2; _} ->
-      Util.cmp_lists l1 l2 cmp_trig_term
+      Util.Cmp.list cmp_trig_term l1 l2
     | { f = Op Concat; _ }, _ -> -1
     | _, { f = Op Concat; _ } -> 1
 
@@ -2003,7 +1988,7 @@ module Triggers = struct
     | _, { f =Op (Destruct _); _ } -> 1
 
     | { f = Op Record ; xs= lbs1; _ }, { f = Op Record ; xs = lbs2; _ } ->
-      Util.cmp_lists lbs1 lbs2 cmp_trig_term
+      Util.Cmp.list cmp_trig_term lbs1 lbs2
     | { f = Op Record; _ }, _ -> -1
     | _, { f = Op Record; _ } -> 1
 
@@ -2013,11 +1998,11 @@ module Triggers = struct
       let l2 = List.map score_term tl2 in
       let l1 = List.fast_sort Int.compare l1 in
       let l2 = List.fast_sort Int.compare l2 in
-      let c = Util.cmp_lists l1 l2 Int.compare in
+      let c = Util.Cmp.(list int l1 l2) in
       if c <> 0 then c
       else
         let c = Sy.compare s1 s2 in
-        if c <> 0 then c else Util.cmp_lists tl1 tl2 cmp_trig_term
+        if c <> 0 then c else Util.Cmp.(list cmp_trig_term tl1 tl2)
 
     | { f = Op _; _ }, _ -> -1
     | _, { f = Op _; _ } -> 1
@@ -2029,8 +2014,8 @@ module Triggers = struct
     let l2 = List.map score_term tl2 in
     let l1 = List.rev (List.fast_sort Int.compare l1) in
     let l2 = List.rev (List.fast_sort Int.compare l2) in
-    let c = Util.cmp_lists l1 l2 Int.compare in
-    if c <> 0 then c else Util.cmp_lists tl1 tl2 cmp_trig_term
+    let c = Util.Cmp.(list int l1 l2) in
+    if c <> 0 then c else Util.Cmp.list cmp_trig_term tl1 tl2
 
   let unique_stable_sort =
     let rec unique l acc =
