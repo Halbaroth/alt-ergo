@@ -592,7 +592,15 @@ let case_split env uf ~for_model =
         | None -> 0, SX.empty
     in
     (* For now, just pick a value for the most significant bit. *)
-    match SX.choose candidates with
+    let choose =
+      let exception Found of X.r
+      in fun c ->
+        try
+          SX.iter (fun r -> raise_notrace (Found r)) c;
+          raise_notrace Not_found
+        with Found c -> c
+    in
+    match choose candidates with
     | r ->
       let bl = Domains.get r domain in
       let w = Bitlist.width bl in

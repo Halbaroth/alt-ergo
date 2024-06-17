@@ -50,10 +50,10 @@ module Adt : Sig.SHOSTAK
 module Ac : Ac.S with type r = Combine.r and type t = Combine.r Sig.ac
 
 (** map of semantic values using Combine.hash_cmp *)
-module MXH : Map.S with type key = Combine.r
+module MXH : PatriciaTree.MAP with type key = Combine.r
 
 (** set of semantic values using Combine.hash_cmp *)
-module SXH : Set.S with type elt = Combine.r
+module SXH : PatriciaTree.SET with type elt = Combine.r
 
 module L : Xliteral.S with type elt = Combine.r
 

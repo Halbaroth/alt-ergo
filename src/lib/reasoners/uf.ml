@@ -43,12 +43,14 @@ module MapX = struct
 end
 module SetX = Shostak.SXH
 
-module SetXX = Set.Make(struct
+module SetXX =
+  PatriciaTree.MakeSet (struct
     type t = X.r * X.r * Explanation.t
-    let compare (r1, r1', _) (r2, r2', _) =
-      let c = X.hash_cmp r1 r2 in
-      if c <> 0 then c
-      else  X.hash_cmp r1' r2'
+    let to_int (r1, r2, _) =
+      let m = X.hash r1 in
+      let n = X.hash r2 in
+      let z = n + m in
+      (z*(z-1))/2+m
   end)
 
 module SetAc = Set.Make(struct type t = Ac.t let compare = Ac.compare end)

@@ -62,5 +62,14 @@
       "url": "https://github.com/LexiFi/landmarks/archive/b0c753cd2a4c4aa00dffdd3be187d8ed592fabf7.tar.gz",
       "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz",
       "version": "dev"
+    },
+    "patricia-tree": {
+      "description": "Patricia Tree data structure in OCaml",
+      "homepage": "https://github.com/codex-semantics-library/patricia-tree",
+      "owner": "codex-semantics-library",
+      "sha256": "1wxmmd3dz64b9rcr2a9ibkdpxxbb2fz77isa78wm4hzz69lpmjiy",
+      "type": "tarball",
+      "url": "https://github.com/codex-semantics-library/patricia-tree/releases/download/v0.10.0/patricia-tree-0.10.0.tbz",
+      "version": "0.10.0"
     }
 }

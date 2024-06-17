@@ -716,11 +716,17 @@ module Ac = AC
 
 (** map of semantic values using Combine.hash_cmp *)
 module MXH =
-  Map.Make(struct type t = Combine.r let compare = Combine.hash_cmp end)
+  PatriciaTree.MakeMap (struct
+    type t = Combine.r
+    let to_int r = Combine.hash r
+  end)
 
 (** set of semantic values using Combine.hash_cmp *)
 module SXH =
-  Set.Make(struct type t = Combine.r let compare = Combine.hash_cmp end)
+  PatriciaTree.MakeSet (struct
+    type t = Combine.r
+    let to_int r = Combine.hash r
+  end)
 
 module L = Xliteral.Make(struct
     type t = Combine.r

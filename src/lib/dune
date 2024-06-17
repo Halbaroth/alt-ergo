@@ -25,6 +25,7 @@
     alt_ergo_prelude
     fmt
     stdcompat
+    patricia-tree
   )
   (preprocess
     (pps

@@ -41,6 +41,7 @@ pkgs.mkShell {
     odoc
     ppx_deriving
     stdcompat
+    patricia-tree
     landmarks
     landmarks-ppx
   ];
