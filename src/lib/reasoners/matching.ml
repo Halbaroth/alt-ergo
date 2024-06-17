@@ -186,13 +186,34 @@ module Make (X : Arg) : S with type theory = X.t = struct
       op_gen i.age g , op_but i.but b
     with Not_found -> g , b
 
-  let add_term info t env =
+  (* Assuming that [t] is a record term, we produces the record definition:
+      { x1 = t.x1; ...; xn = t.xn }
+     where [xi] are the fields of [t] *)
+  let xs_modulo_records t { Ty.lbs; _  } =
+    List.rev_map
+      (fun (hs, ty) ->
+         E.mk_term (Symbols.Op (Access hs)) [t] ty
+      ) lbs
+    |> List.rev
+
+  let record_def t trecord =
+    let xs = xs_modulo_records t trecord in
+    E.mk_term (Symbols.Op Record) xs (Ty.Trecord trecord)
+
+  let rec add_term info t env =
     let open Matching_types in
     Debug.add_term t;
     let rec add_rec env t =
       if ME.mem t env.info then env
       else
-        let { E.f = f; xs = xs; _ } = E.term_view t in
+        let { E.f = f; xs = xs; ty; _ } = E.term_view t in
+        let env =
+          match f, ty with
+          | Symbols.Name _, Ty.Trecord trecord ->
+            let nt = record_def t trecord in
+            add_term info nt env
+          | _ -> env
+        in
         let env =
           let map_f =
             try Symbols.Map.find f env.fils with Not_found -> ME.empty in
@@ -310,12 +331,6 @@ module Make (X : Arg) : S with type theory = X.t = struct
     | [], _  -> l2
     | _ , [] -> l1
     | _ -> List.fold_left (fun acc e -> e :: acc) l2 (List.rev l1)
-
-  let xs_modulo_records t { Ty.lbs; _  } =
-    List.rev
-      (List.rev_map
-         (fun (hs, ty) ->
-            E.mk_term (Symbols.Op (Symbols.Access hs)) [t] ty) lbs)
 
   module SLE = (* sets of lists of terms *)
     Set.Make(struct
