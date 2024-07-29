@@ -2,8 +2,13 @@
   (package alt-ergo))
 
 (rule
- (with-stdout-to link_flags.dune
-  (run ./gen-link-flags.sh %{env:LINK_MODE=dynamic} %{ocaml-config:system})))
+ (enabled_if
+   (or
+     (= %{ocaml-config:system} "linux")
+     (= %{ocaml-config:system} "macosx")))
+ (action
+   (with-stdout-to link_flags.dune
+    (run ./gen-link-flags.sh %{env:LINK_MODE=dynamic} %{ocaml-config:system}))))
 
 (executable
   (name Main_text)
