@@ -19,9 +19,15 @@
 type t
 (** Type of model. *)
 
+type graph
+
+val eval : graph -> Expr.t list -> Expr.t
+
 val add : Id.typed -> Expr.t list -> Expr.t -> t -> t
 (** [add sy args ret mdl] adds the binding [args -> ret] to the partial graph
     associated with the symbol [sy]. *)
+
+val get : Uid.term_cst -> t -> graph
 
 val empty : suspicious:bool -> Id.typed list -> t
 (** An empty model. The [suspicious] flag is used to remember that this
@@ -34,6 +40,8 @@ val subst : Id.t -> Expr.t -> t -> t
 
     @Raise Error if the expression [e] is not a model term or the type of
            [e] doesn't agree with some occurrence of [id] in the model. *)
+
+val iter : (Id.typed -> graph -> unit) -> t -> unit
 
 val pp : t Fmt.t
 (** [pp ppf mdl] prints the model [mdl] on the formatter [ppf] using the

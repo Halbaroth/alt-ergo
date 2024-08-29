@@ -18,6 +18,10 @@
 
 module X = Shostak.Combine
 module Sy = Symbols
+module DStd = Dolmen.Std
+module DE = Dolmen.Std.Expr
+module DT = Dolmen.Std.Expr.Ty
+module B = Dolmen.Std.Builtin
 
 (* The type of this module represents a model value for a function [f] by a
    finite set of constraints of the form:
@@ -37,6 +41,7 @@ module Constraints = struct
   let empty = M.empty
   let add = M.add
   let map = M.map
+  let eval = M.find
 
   (* A fiber of the function [f] over a value [v] is the set of all the values
      in the domain of [f] whose the image by [f] is [v].
@@ -118,10 +123,25 @@ type graph =
 
   | C of Constraints.t
 
+let eval graph args =
+  match graph with
+  | Free e -> e
+  | C c -> Constraints.eval args c
+
 type t = {
   values : graph P.t;
   suspicious : bool;
 }
+
+let empty ~suspicious declared_ids =
+  let values =
+    List.fold_left
+      (fun values ((_, _, ret_ty) as sy) ->
+         P.add sy (Free (Expr.mk_abstract ret_ty)) values
+      )
+      P.empty declared_ids
+  in
+  { values; suspicious }
 
 let add ((id, arg_tys, _) as sy) arg_vals ret_val { values; suspicious } =
   if List.compare_lengths arg_tys arg_vals <> 0 then
@@ -137,15 +157,55 @@ let add ((id, arg_tys, _) as sy) arg_vals ret_val { values; suspicious } =
   in
   { values; suspicious }
 
-let empty ~suspicious declared_ids =
-  let values =
-    List.fold_left
-      (fun values ((_, _, ret_ty) as sy) ->
-         P.add sy (Free (Expr.mk_abstract ret_ty)) values
-      )
-      P.empty declared_ids
+(** Helper function: returns the basename of a dolmen path, since in AE
+    the problems are contained in one-file (for now at least), the path is
+    irrelevant and only the basename matters *)
+let get_basename = function
+  | DStd.Path.Local { name; }
+  | Absolute { name; path = []; } -> name
+  | Absolute { name; path; } ->
+    Fmt.failwith
+      "Expected an empty path to the basename: \"%s\" but got: [%a]."
+      name (fun fmt l ->
+          match l with
+          | h :: t ->
+            Format.fprintf fmt "%s" h;
+            List.iter (Format.fprintf fmt "; %s") t
+          | _ -> ()
+        ) path
+
+let rec dty_to_ty dty =
+  let rec simple_type dty =
+    match DT.view dty with
+    | `Prop | `App (`Builtin B.Prop, []) -> Ty.Tbool
+    | `Int  | `App (`Builtin B.Int, []) -> Ty.Tint
+    | `Real | `App (`Builtin B.Real, []) -> Ty.Treal
+    | `App (`Builtin B.Unit, []) -> Ty.tunit
+
+    | `Array (ity, vty) -> Ty.Tfarray (simple_type ity, simple_type vty)
+
+    | `Bitv n ->
+      if n <= 0 then Errors.typing_error (NonPositiveBitvType n) Loc.dummy;
+      Ty.Tbitv n
+
+    | `App (`Builtin _, [ty]) -> simple_type ty
+
+    | `Arrow (_, _) -> assert false
+
+    | _ -> Fmt.failwith "not a supported type %a" DT.print dty
   in
-  { values; suspicious }
+  match DT.view dty with
+  | `Arrow (args, ret) ->
+    List.map simple_type args, simple_type ret
+  | _ -> [], simple_type dty
+
+let get uid { values; _ } =
+  match uid with
+  | Uid.Term_cst DE.{ path; id_ty; _ } ->
+    let name = Hstring.make @@ get_basename path in
+    let arg_tys, ret_ty = dty_to_ty id_ty in
+    P.find (name, arg_tys, ret_ty) values
+  | _ -> assert false
 
 let rec subst_in_term id e c =
   let Expr.{ f; xs; ty = ty'; _ } = Expr.term_view c in
@@ -195,6 +255,8 @@ let pp_define_fun ppf (sy, graph) =
     let inverse_rel = Constraints.inverse constraints  in
     let is_constant = Expr.Map.cardinal inverse_rel = 1 in
     pp_define_fun ~is_constant Constraints.pp_inverse ppf (sy, inverse_rel)
+
+let iter f { values; _ } = P.iter f values
 
 let pp ppf {values; suspicious} =
   if suspicious then begin
