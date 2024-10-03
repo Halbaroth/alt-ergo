@@ -67,14 +67,14 @@ module Output = struct
     dump_models_output;
   ]
 
-  let close o =
-    match o with
-    | Stdout | Stderr | Fmt _ ->
-      Format.pp_print_flush (to_formatter o) ();
-    | Channel (_, cout, _) ->
-      Format.pp_print_flush (to_formatter o) ();
-      close_out cout
-    | Invalid -> ()
+  let close o = ()
+  (* match o with
+     | Stdout | Stderr | Fmt _ ->
+     Format.pp_print_flush (to_formatter o) ();
+     | Channel (_, cout, _) ->
+     Format.pp_print_flush (to_formatter o) ();
+     close_out cout
+     | Invalid -> () *)
 
   let set_output output o =
     close !output;

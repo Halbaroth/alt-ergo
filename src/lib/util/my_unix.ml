@@ -42,12 +42,15 @@ module Default_Unix = struct
     ignore (Unix.setitimer Unix.ITIMER_VIRTUAL
               { Unix.it_value = 0.; Unix.it_interval = 0. })
 
+  let exit = Stdlib.exit
 end
 
 include Default_Unix
 
 (* !! This commented code is used when compiling to javascript !!
    module JavaScript_Unix = struct
+
+   exception AE_exit of int
 
    let cur_time () =
     let today = jsnew Js.date_now () in
@@ -57,6 +60,8 @@ include Default_Unix
    let set_timeout _ = ()
 
    let unset_timeout () = ()
+
+   let exit code = raise (AE_exit code)
 
    end
 

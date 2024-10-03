@@ -67,7 +67,7 @@ let recoverable_error ?(code = 1) =
           | Smtlib2 _ -> Printer.print_smtlib_err "%s" msg
           | _ -> Printer.print_err "%s" msg
       in
-      if Options.get_exit_on_error () then exit code)
+      if Options.get_exit_on_error () then ())
 
 let fatal_error ?(code = 1) =
   Format.kasprintf (fun msg -> recoverable_error ~code "%s" msg; exit code)
@@ -130,7 +130,7 @@ type solve_res =
 
 exception StopProcessDecl
 
-let main () =
+let process_source src =
   let () = Dolmen_loop.Code.init [] in
 
   let solve (module SAT : Sat_solver_sig.S) all_context (cnf, goal_name) =
@@ -294,6 +294,7 @@ let main () =
           Errors.report
           (Syntax_error ((Lexing.dummy_pos,Lexing.dummy_pos),""))
       | Errors.Error e ->
+        ignore (My_unix.exit 30);
         fatal_error "%a" Errors.report e
     in
 
@@ -429,21 +430,55 @@ let main () =
     | Sat model ->
       set_mode Sat ~model st
   in
-  (* The function In_channel.input_all is not available before OCaml 4.14. *)
-  let read_all ch =
-    let b = Buffer.create 113 in
-    try
-      while true do
-        Buffer.add_channel b ch 30
-      done;
-      assert false
-    with End_of_file ->
-      Buffer.contents b
+  (* Prepare the input source for Dolmen from an input source for Alt-Ergo. *)
+  let mk_files src =
+    let lang =
+      match Options.get_input_format () with
+      | Some Native -> Some Dl.Logic.Alt_ergo
+      | Some Smtlib2 version -> Some (Dl.Logic.Smtlib2 version)
+      | Some (Why3 | Unknown _) | None -> None
+    in
+    let filename, dir, path =
+      match src with
+      | `Stdin -> "<stdin>", "", ""
+      | `File path -> Filename.basename path, Filename.dirname path, path
+      | `Raw (filename, _) -> filename, "", ""
+    in
+    let is_incremental =
+      match lang with
+      | Some (Dl.Logic.Smtlib2 _) | None -> true
+      | _ -> false
+    in
+    let src =
+      match src with
+      | `Stdin when is_incremental ->
+        set_output_format ".smt2";
+        `Stdin
+      | `Stdin ->
+        `Raw (filename, Compat.In_channel.input_all stdin)
+      | `File path when Filename.check_suffix path ".zip" ->
+        Filename.(chop_extension path |> extension) |> set_output_format;
+        let content = AltErgoLib.My_zip.extract_zip_file path in
+        `Raw (Filename.chop_extension filename, content)
+      | `File path ->
+        Filename.extension path |> set_output_format;
+        let cin = open_in path in
+        let content = Compat.In_channel.input_all cin in
+        close_in cin;
+        `Raw (filename, content)
+      | `Raw _ -> src
+    in
+    let input_file =
+      State.mk_file ?lang ~loc:(Dolmen.Std.Loc.mk_file path) dir src
+    in
+    let response_file = State.mk_file dir (`Raw ("", "")) in
+    input_file, response_file
   in
   let mk_state ?(debug = false) ?(report_style = State.Contextual)
       ?(max_warn = max_int) ?(time_limit = Float.infinity)
       ?(size_limit = Float.infinity) ?(type_check = true)
-      ?(solver_ctx = empty_solver_ctx) path =
+      ?(solver_ctx = empty_solver_ctx) src =
+
     let reports =
       Dolmen_loop.Report.Conf.(
         let disable m t =
@@ -458,45 +493,7 @@ let main () =
         |> disable "shadowing"
       )
     in
-    let dir = Filename.dirname path in
-    let filename = Filename.basename path in
-    let lang =
-      match Options.get_input_format () with
-      | Some Native -> Some Dl.Logic.Alt_ergo
-      | Some Smtlib2 version -> Some (Dl.Logic.Smtlib2 version)
-      | Some (Why3 | Unknown _) | None -> None
-    in
-    let source =
-      if Filename.check_suffix path ".zip" then (
-        Filename.(chop_extension path |> extension) |> set_output_format;
-        let content = AltErgoLib.My_zip.extract_zip_file path in
-        `Raw (Filename.chop_extension filename, content))
-      else
-        let is_stdin = String.equal path "" in
-        let is_incremental =
-          match lang with
-          | Some (Dl.Logic.Smtlib2 _) | None -> true
-          | _ -> false
-        in
-        if is_stdin then (
-          if is_incremental then (
-            set_output_format ".smt2";
-            `Stdin
-          ) else (
-            `Raw (filename, read_all stdin)
-          )
-        ) else (
-          Filename.extension path |> set_output_format;
-          let cin = open_in path in
-          let content = read_all cin in
-          close_in cin;
-          `Raw (filename, content)
-        )
-    in
-    let logic_file =
-      State.mk_file ?lang ~loc:(Dolmen.Std.Loc.mk_file path) dir source
-    in
-    let response_file = State.mk_file dir (`Raw ("", "")) in
+    let logic_file, response_file = mk_files src in
     logic_file,
     State.empty
     |> State.set solver_ctx_key solver_ctx
@@ -1003,8 +1000,8 @@ let main () =
     in
     aux (State.get named_terms st) st l
   in
-  let d_fe filename =
-    let logic_file, st = mk_state filename in
+  let d_fe src =
+    let logic_file, st = mk_state src in
     let () = on_strict_mode (O.get_strict_mode ()) in
     try
       Options.with_timelimit_if (not (Options.get_timelimit_per_goal ()))
@@ -1046,8 +1043,39 @@ let main () =
       let bt = Printexc.get_raw_backtrace () in
       ignore (handle_exn st bt exn)
   in
-
-  let filename = O.get_file () in
   match O.get_frontend () with
-  | "dolmen" -> d_fe filename
-  | frontend -> ae_fe filename frontend
+  | "dolmen" -> d_fe src
+  | frontend ->
+    match src with
+    | `File path -> ae_fe path frontend
+    | _ -> Fmt.failwith "not supported source"
+
+let main () =
+  let path = O.get_file () in
+  if String.equal path "" then
+    process_source `Stdin
+  else
+    process_source @@ (`File path)
+
+(* let source =
+   if Filename.check_suffix path ".zip" then (
+    Filename.(chop_extension path |> extension) |> set_output_format;
+    let content = AltErgoLib.My_zip.extract_zip_file path in
+    `Raw (Filename.chop_extension filename, content))
+   else
+    let is_stdin = String.equal path "" in
+    if is_stdin then (
+      if is_incremental then (
+        set_output_format ".smt2";
+        `Stdin
+      ) else (
+        `Raw (filename, Compat.In_channel.input_all stdin)
+      )
+    ) else (
+      Filename.extension path |> set_output_format;
+      let cin = open_in path in
+      let content = Compat.In_channel.input_all cin in
+      close_in cin;
+      `Raw (filename, content)
+    )
+   in *)

@@ -25,5 +25,7 @@
 (*                                                                        *)
 (**************************************************************************)
 
+val process_source : Dolmen_loop.State.source -> unit
+
 (** Main function solve the input problem *)
 val main : unit -> unit

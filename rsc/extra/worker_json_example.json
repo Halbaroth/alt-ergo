@@ -19,7 +19,7 @@
     "case_split_policy": "AfterTheoryAssume", "enable_adts_cs": false,
     "max_split": 0, "replay": false, "replay_all_used_context": false,
     "save_used_context": false, "answers_with_loc": false,
-    "answers_with_loc": false, "frontend": "Legacy", "input_format": "Native",
+    "answers_with_loc": false, "input_format": "Native",
     "infer_input_format": false, "parse_only": false, "parsers": [],
     "preludes": [], "type_only": false, "type_smt2": false,
     "disable_weaks": false, "enable_assertions": false, "age_bound": 100,

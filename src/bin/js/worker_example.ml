@@ -70,7 +70,7 @@ let solve () =
      verbose = Some true;
      answers_with_loc = Some false;
      interpretation = Some IEvery;
-     sat_solver = Some Worker_interface.Tableaux;
+     sat_solver = Some Worker_interface.CDCL_Tableaux;
      unsat_core = Some true;
     } in
 

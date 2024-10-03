@@ -41,3 +41,5 @@ val set_timeout : float -> unit
 
 val unset_timeout : unit -> unit
 (** Unset the previously set timer. *)
+
+val exit : int -> 'a
