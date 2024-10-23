@@ -858,10 +858,13 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
         let nbv = FF.nb_made_vars env.ff_hcons_env in
         let unit, nunit = SAT.new_vars env.satml ~nbv new_vars unit nunit in
         (*update_lazy_cnf done inside assume at the right place *)
-        SAT.assume env.satml unit nunit f ~cnumber:0 activate ~dec_lvl;
+        let new_terms =
+          SAT.assume env.satml unit nunit f ~cnumber:0 activate ~dec_lvl
+        in
+        env.inst <- Inst.add_terms env.inst new_terms (mk_gf E.vrai)
       with
       | Satml.Unsat (lc) -> raise (IUnsat (env, make_explanation lc))
-      | Satml.Sat -> assert false
+      | Satml.Sat _ -> assert false
 
   let assume_aux_bis ~dec_lvl env l : bool * Atom.atom list =
     let pending = {
@@ -996,7 +999,7 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
 
   let do_case_split env policy =
     match SAT.do_case_split env.satml policy with
-    | C_none -> ()
+    | C_none new_terms -> new_terms
     | C_bool _ -> assert false
     | C_theory expl -> raise (Ex.Inconsistent (expl, []))
 
@@ -1166,9 +1169,11 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
     | Satml.Unsat lc -> raise (IUnsat (env, make_explanation lc))
     | Util.Timeout -> i_dont_know env (Timeout ProofSearch)
     | Util.Step_limit_reached n -> i_dont_know env (Step_limit n)
-    | Satml.Sat ->
+    | Satml.Sat new_terms ->
       try
-        do_case_split env Util.BeforeMatching;
+        env.inst <- Inst.add_terms env.inst new_terms (mk_gf E.vrai);
+        let new_terms = do_case_split env Util.BeforeMatching in
+        env.inst <- Inst.add_terms env.inst new_terms (mk_gf E.vrai);
         may_update_last_saved_model env (Options.get_every_interpretation ());
         let () =
           env.nb_mrounds <- env.nb_mrounds + 1
@@ -1186,7 +1191,8 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
         (*let strat = Auto in*)
         let dec_lvl = SAT.decision_level env.satml in
         let updated = instantiation env strat dec_lvl in
-        do_case_split env Util.AfterMatching;
+        let new_terms = do_case_split env Util.AfterMatching in
+        env.inst <- Inst.add_terms env.inst new_terms (mk_gf E.vrai);
         let updated =
           if not updated && strat != Auto then instantiation env Auto dec_lvl
           else updated

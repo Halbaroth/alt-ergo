@@ -27,12 +27,12 @@
 
 open Satml_types
 
-exception Sat
+exception Sat of Expr.Set.t
 exception Unsat of Satml_types.Atom.clause list option
 exception Last_UIP_reason of Atom.Set.t
 
 type conflict_origin =
-  | C_none
+  | C_none of Expr.Set.t
   | C_bool of Atom.clause
   | C_theory of Explanation.t
 
@@ -66,7 +66,7 @@ module type SAT_ML = sig
     Expr.t ->
     cnumber : int ->
     Flat_Formula.Set.t -> dec_lvl:int ->
-    unit
+    Expr.Set.t
 
   val boolean_model : t -> Satml_types.Atom.atom list
   val instantiation_context :

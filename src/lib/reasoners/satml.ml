@@ -70,14 +70,14 @@ module Ex = Explanation
 let src = Logs.Src.create ~doc:"Sat" __MODULE__
 module Log = (val Logs.src_log src : Logs.LOG)
 
-exception Sat
+exception Sat of Expr.Set.t
 exception Unsat of Atom.clause list option
 exception Last_UIP_reason of Atom.Set.t
 exception Restart
 exception Stopped
 
 type conflict_origin =
-  | C_none
+  | C_none of Expr.Set.t
   | C_bool of Atom.clause
   | C_theory of Ex.t
 
@@ -110,7 +110,7 @@ module type SAT_ML = sig
     Atom.atom list list -> Atom.atom list list -> E.t ->
     cnumber : int ->
     FF.Set.t -> dec_lvl:int ->
-    unit
+    Expr.Set.t
 
   val boolean_model : t -> Atom.atom list
   val instantiation_context :
@@ -874,7 +874,14 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
             if not clause.removed then
               propagate_in_clause env a clause i watched new_sz_w
           ) watched;
-      with Conflict c -> assert (!res == C_none); res := C_bool c
+      with Conflict c ->
+      match !res with
+      | C_none new_terms ->
+        (* Boolean propagation do not produce new terms. *)
+        (assert (Expr.Set.is_empty new_terms);
+         res := C_bool c)
+      | C_bool _ | C_theory _ ->
+        assert false
     end;
     Vec.shrink watched !new_sz_w
 
@@ -912,10 +919,9 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
   let do_case_split env origin =
     try
       let acts = theory_slice env in
-      let tenv, _terms = Th.do_case_split ~acts env.tenv origin in
-      (* TODO: terms not added to matching !!! *)
+      let tenv, new_terms = Th.do_case_split ~acts env.tenv origin in
       env.tenv <- tenv;
-      C_none
+      C_none new_terms
     with Ex.Inconsistent (expl, _) ->
       C_theory expl
 
@@ -1079,18 +1085,18 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
     in
     if Options.get_debug_sat () then
       Printer.print_dbg "[satml] Unit theory_propagate of %d atoms@." !nb_f;
-    if facts == [] then C_none
+    if facts == [] then C_none Expr.Set.empty
     else
       try
         (*let full_model = nb_assigns() = nb_vars () in*)
         (* XXX what to do with the other results of Th.assume ? *)
-        let t,_,cpt =
+        let t, new_terms, cpt =
           Th.assume ~ordered:false
             (List.rev facts) env.unit_tenv
         in
         Steps.incr (Steps.Th_assumed cpt);
         env.unit_tenv <- t;
-        C_none
+        C_none new_terms
       with Ex.Inconsistent (dep, _terms) ->
         (* XXX what to do with terms ? *)
         (* Printer.print_dbg
@@ -1112,7 +1118,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
     match unit_theory_propagate env env.tatoms_queue tatoms_queue with
     | C_theory _ as res -> res
     | C_bool _ -> assert false
-    | C_none ->
+    | C_none new_terms ->
       let nb_f = ref 0 in
       while not (Queue.is_empty tatoms_queue) do
         let a = Queue.pop tatoms_queue in
@@ -1153,20 +1159,22 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
         Printer.print_dbg "[satml] Theory_propagate of %d atoms@." !nb_f;
       Queue.clear env.tatoms_queue;
       Queue.clear env.th_tableaux;
-      if !facts == [] then C_none
+      if !facts == [] then C_none new_terms
       else
         try
           (*let full_model = nb_assigns() = nb_vars () in*)
           (* XXX what to do with the other results of Th.assume ? *)
-          let t,_,cpt =
+          let t, new_terms2,cpt =
             Th.assume ~ordered:(not (Options.get_cdcl_tableaux_th ()))
               (List.rev !facts) env.tenv
           in
           Steps.incr (Steps.Th_assumed cpt);
           env.tenv <- t;
-          do_case_split env Util.AfterTheoryAssume
-        (*if full_model then expensive_theory_propagate ()
-          else None*)
+          match do_case_split env Util.AfterTheoryAssume with
+          | C_none new_terms3 ->
+            C_none Expr.Set.(
+                new_terms |> union new_terms2 |> union new_terms3)
+          | _ as c -> c
         with Ex.Inconsistent (dep, _terms) ->
           (* XXX what to do with terms ? *)
           (* Printer.print_dbg
@@ -1176,7 +1184,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
 
   let propagate env =
     let num_props = ref 0 in
-    let res = ref C_none in
+    let res = ref (C_none Expr.Set.empty) in
     (*assert (Queue.is_empty env.tqueue);*)
     while env.qhead < Vec.size env.trail do
       let a = Vec.get env.trail env.qhead in
@@ -1394,20 +1402,25 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
     match propagate env with
     | C_bool c -> C_bool c
     | C_theory _ -> assert false
-    | C_none ->
+    | C_none new_terms ->
+      (* The boolean propagatation never produces fresh terms. *)
+      assert (Expr.Set.is_empty new_terms);
       if Options.get_tableaux_cdcl () then
-        C_none
+        C_none new_terms
       else
         match theory_propagate env with
         | C_bool _ -> assert false
         | C_theory dep -> C_theory dep
-        | C_none -> C_none
+        | C_none new_terms -> C_none new_terms
 
   let report_conflict env c =
     match c with
     | C_bool confl -> report_b_unsat env [confl]
     | C_theory dep -> report_t_unsat env dep
-    | C_none -> ()
+    | C_none _ ->
+      (* Fresh terms of the relations are propagated in
+         [propagate_and_stabilize] and can be ignored here. *)
+      ()
 
   let simplify env =
     assert (decision_level env = 0);
@@ -1599,7 +1612,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
     env.conflicts <- env.conflicts + 1;
     if decision_level env = 0 then report_conflict env confl;
     match confl with
-    | C_none -> assert false
+    | C_none _ -> assert false
     | C_theory dep ->
       let atoms, max_lvl, c_hist =
         Ex.fold_atoms
@@ -1701,7 +1714,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
 
   let rec propagate_and_stabilize env propagator conflictC strat =
     match propagator env with
-    | C_none -> ()
+    | C_none new_terms -> new_terms
     | (C_bool _ | C_theory _ ) as confl -> (* Conflict *)
       let x =
         match strat, confl with
@@ -1714,11 +1727,15 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
       try
         incr conflictC;
         conflict_analyze_and_fix env confl;
-        propagate_and_stabilize env propagator conflictC strat;
+        let new_terms =
+          propagate_and_stabilize env propagator conflictC strat
+        in
         if Options.get_tableaux_cdcl () then
           match x with
-          | None -> ()
+          | None -> new_terms
           | Some r -> raise (Last_UIP_reason r)
+        else
+          new_terms
       with
         Unsat _ as e ->
         if Options.get_tableaux_cdcl () then begin
@@ -1773,6 +1790,8 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
       (* right decision level will be set inside record_learnt_clause *)
       record_learnt_clause env ~is_T_learn:true (decision_level env) c []
 
+  exception No_decision
+
   let rec pick_branch_aux env (atom : Atom.atom) =
     let v = atom.var in
     if v.level >= 0 then begin
@@ -1826,7 +1845,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
           | exception Not_found ->
             if Options.get_cdcl_tableaux_inst () then
               assert (Matoms.is_empty env.lazy_cnf);
-            raise_notrace Sat
+            raise_notrace No_decision
 
   let pick_branch_lit env =
     if env.next_dec_guard < Vec.size env.increm_guards then
@@ -1860,10 +1879,11 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
     let conflictC = ref 0 in
     env.starts <- env.starts + 1;
     while true do
-      propagate_and_stabilize env all_propagations conflictC !strat;
-
+      let new_terms =
+        propagate_and_stabilize env all_propagations conflictC !strat
+      in
       if is_sat env then
-        raise Sat;
+        raise (Sat new_terms);
       if Options.get_enable_restarts ()
       && n_of_conflicts >= 0 && !conflictC >= n_of_conflicts then begin
         (*         env.progress_estimate <- progress_estimate env; *)
@@ -1877,7 +1897,13 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
         reduce_db();
 
       match !strat with
-      | Auto -> pick_branch_lit env
+      | Auto ->
+        begin try
+            pick_branch_lit env
+          with
+          | No_decision -> raise (Sat new_terms)
+          | Sat _ -> assert false
+        end
       | Stop -> raise Stopped
       | Interactive f ->
         strat := Stop;
@@ -1916,11 +1942,11 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
         n_of_learnts   := !n_of_learnts *. env.learntsize_inc;
       done;
     with
-    | Sat ->
+    | Sat new_terms ->
       (*check_model ();*)
       remove_satisfied env env.clauses;
       remove_satisfied env env.learnts;
-      raise Sat
+      raise (Sat new_terms)
     | (Unsat _) as e ->
       (* check_unsat_core cl; *)
       raise e
@@ -1934,7 +1960,8 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
         else
           try
             solve env; assert false
-          with Sat ->
+          with Sat _ ->
+            (* TODO: Should we propagate new_terms here too? *)
             compute_concrete_model ~declared_ids env
       )
     | exception Ex.Inconsistent (ex, _) ->
@@ -1953,7 +1980,9 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
       Th.do_optimize ~acts env.tenv;
       if not (is_sat env) then
         try solve env; assert false
-        with Sat -> loop env
+        with Sat _ ->
+          (* TODO: Should we propagate new_terms here too? *)
+          loop env
       else
         compute_concrete_model ~declared_ids env
     in loop env
@@ -2046,7 +2075,12 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
         end;
         a.var.vpremise <- init;
         enqueue env a 0 None;
-        propagate_and_stabilize env propagate (ref 0) Auto
+        (* We can ignore the returned value as the propagator [propagate]
+           never produce new terms (it only performs boolean propagations). *)
+        let _ : Expr.Set.t =
+          propagate_and_stabilize env propagate (ref 0) Auto
+        in
+        ()
     (* TODO *)
 
     with Trivial ->
@@ -2071,8 +2105,12 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
       env.lvl_ff <- Util.MI.add dec_lvl s env.lvl_ff;
       if do_bcp then
         propagate_and_stabilize (*theory_propagate_opt*)
-          env all_propagations (ref 0) Auto;
+          env all_propagations (ref 0) Auto
+      else
+        Expr.Set.empty
     end
+    else
+      Expr.Set.empty
 
   let new_vars env ~nbv new_v unit_cnf nunit_cnf  =
     match new_v with
@@ -2122,9 +2160,12 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
           sf old_lazy
       in
       env.lazy_cnf <- fictive_lazy;
-      propagate_and_stabilize env all_propagations (ref 0) Auto;
+      let new_terms =
+        propagate_and_stabilize env all_propagations (ref 0) Auto
+      in
       let new_dlvl = decision_level env in
-      if old_dlvl > new_dlvl then better_bj env sf
+      if old_dlvl > new_dlvl then
+        better_bj env sf |> Expr.Set.union new_terms
       else
         begin
           assert (old_dlvl == new_dlvl);
@@ -2133,12 +2174,15 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
           env.tenv     <- old_tenv;
           env.next_decisions <- old_decisions;
           env.next_split <- old_split;
-          env.next_optimized_split <- old_optimized_split
+          env.next_optimized_split <- old_optimized_split;
+          new_terms
         end
     in
     fun env sff ->
       if Options.get_cdcl_tableaux () then
         better_bj env sff
+      else
+        Expr.Set.empty
 
 
   let assume env unit_cnf nunit_cnf f ~cnumber sff ~dec_lvl =
@@ -2162,12 +2206,17 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
             (Vec.size env.learnts);
     end;
     (* do it after add clause and before T-propagate, disable bcp*)
-    update_lazy_cnf env ~do_bcp:false sff ~dec_lvl;
+    let new_terms = update_lazy_cnf env ~do_bcp:false sff ~dec_lvl in
     (* do bcp globally *)
-    propagate_and_stabilize env all_propagations (ref 0) Auto;
+    let new_terms =
+      propagate_and_stabilize env all_propagations (ref 0) Auto
+      |> Expr.Set.union new_terms
+    in
     if dec_lvl > decision_level env then
       (*dec_lvl <> 0 and a bj have been made*)
-      try_to_backjump_further env sff
+      try_to_backjump_further env sff |> Expr.Set.union new_terms
+    else
+      new_terms
 
   let exists_in_lazy_cnf env f' =
     not (Options.get_cdcl_tableaux ()) ||
@@ -2236,7 +2285,12 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
 
       (* do it after add clause and before T-propagate, disable bcp*)
       (* do bcp globally *)
-      propagate_and_stabilize env all_propagations (ref 0) Stop
+      (* We ignore new terms generated by theories as we do not propagate
+         in the hybrid SatML frontend. *)
+      let _ : Expr.Set.t =
+        propagate_and_stabilize env all_propagations (ref 0) Stop
+      in
+      ()
 
 
   let decide env f =
@@ -2249,7 +2303,10 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
         (Atom.to_int !n_of_conflicts) (Atom.to_int !n_of_learnts);
     with
     | Restart -> assert false
-    | Sat -> ()
+    | Sat _ ->
+      (* This function is only called by the hybrid frontend, so we do not
+         propagate new terms for it. *)
+      ()
     | Stopped -> ()
     | Unsat _ -> assert false
 

@@ -165,7 +165,7 @@ module Make (Th : Theory.S) = struct
             List.iter (decide_aux env)
               (List.rev env.decisions);
           with
-          | Satml.Sat ->
+          | Satml.Sat _ ->
             assert false
           (* Uncomment if Sat.solve is called *)
           (* SAT.cancel_until env.sat 0;
