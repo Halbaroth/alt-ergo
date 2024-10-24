@@ -312,10 +312,18 @@ let rec equal t1 t2 =
   | _ -> false
 
 (*** matching with a substitution mechanism ***)
-module M = Util.MI
-type subst = t M.t
 
-let esubst = M.empty
+module Subst = struct
+  module M = Util.MI
+
+  type subst = t M.t
+
+  let id = M.empty
+
+  let eval sbt
+end
+
+type subst = Subst.subst
 
 let rec matching s pat t =
   match pat , t with

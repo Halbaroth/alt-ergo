@@ -1,0 +1,3480 @@
+File "src/lib/reasoners/satml_frontend.ml", line 861, characters 12-21:
+861 |         let new_terms =
+                  ^^^^^^^^^
+Warning 26 [unused-var]: unused variable new_terms.
+File "src/lib/reasoners/satml_frontend.ml", line 1173, characters 16-25:
+1173 |     | Satml.Sat new_terms ->
+                       ^^^^^^^^^
+Warning 27 [unused-var-strict]: unused variable new_terms.
+File "src/lib/reasoners/satml_frontend.ml", line 1178, characters 12-21:
+1178 |         let new_terms = do_case_split env Util.BeforeMatching in
+                   ^^^^^^^^^
+Warning 26 [unused-var]: unused variable new_terms.
+File "src/lib/reasoners/satml_frontend.ml", line 1197, characters 12-21:
+1197 |         let new_terms = do_case_split env Util.AfterMatching in
+                   ^^^^^^^^^
+Warning 26 [unused-var]: unused variable new_terms.
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 0=-to_rep(first4(temp___standard__instr_231))+to_rep(last4(temp___standard__instr_231))+1
+[Debug][Arith][solve_one]
+solving 0 = -to_rep(first4(temp___standard__instr_231))+to_rep(last4(
+                                                                 temp___standard__instr_231))+1 yields:
+1) to_rep(first4(temp___standard__instr_231)) |-> to_rep(last4(temp___standard__instr_231))+1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(lg)=-to_rep(first4(temp___standard__instr_231))+to_rep(
+                                                                  last4(
+                                                                    temp___standard__instr_231))+1
+[Debug][Arith][solve_one]
+solving to_rep(lg) = -to_rep(first4(temp___standard__instr_231))+to_rep(
+                                                                   last4(
+                                                                    temp___standard__instr_231))+1 yields:
+1) to_rep(first4(temp___standard__instr_231)) |-> to_rep(last4(temp___standard__instr_231))-
+to_rep(lg)+1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 0=to_rep(lg)
+[Debug][Arith][solve_one] solving 0 = to_rep(lg) yields:
+                          1) to_rep(lg) |-> 0
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(lg)=to_rep(last4(rt2(temp___standard__instr_0(x9))))
+[Debug][Arith][solve_one]
+solving to_rep(lg) = to_rep(last4(rt2(temp___standard__instr_0(x9)))) yields:
+1) to_rep(last4(rt2(temp___standard__instr_0(x9)))) |-> to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 1=to_rep(first4(rt2(temp___standard__instr_0(x9))))
+[Debug][Arith][solve_one]
+solving 1 = to_rep(first4(rt2(temp___standard__instr_0(x9)))) yields:
+1) to_rep(first4(rt2(temp___standard__instr_0(x9)))) |-> 1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep(lg)=to_rep(last2(s11))
+[Debug][Arith][solve_one]
+solving to_rep(lg) = to_rep(last2(s11)) yields:
+1) to_rep(last2(s11)) |-> to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 1=to_rep(first2(s11))
+[Debug][Arith][solve_one]
+solving 1 = to_rep(first2(s11)) yields:
+1) to_rep(first2(s11)) |-> 1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(instr__display_value__4__lg__assume)=safe_comp_div((to_rep(
+                                                                    x8) * 
+                                                                    to_rep5(
+                                                                    x7)),
+                                                       100)
+[Debug][Arith][solve_one]
+solving to_rep(instr__display_value__4__lg__assume) = safe_comp_div((to_rep(
+                                                                    x8) * 
+                                                                    to_rep5(
+                                                                    x7)),
+                                                        100) yields:
+1) safe_comp_div((to_rep(x8) * to_rep5(x7)), 100) |-> to_rep(instr__display_value__4__lg__assume)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve safe_comp_div((to_rep(x8) * to_rep5(x7)), 100)=to_rep(instr__display_value__4__lg__assume)
+[Debug][Arith][solve_one]
+solving safe_comp_div((to_rep(x8) * to_rep5(x7)), 100) = to_rep(instr__display_value__4__lg__assume) yields:
+1) safe_comp_div((to_rep(x8) * to_rep5(x7)), 100) |-> to_rep(instr__display_value__4__lg__assume)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 1=to_rep(first2(s11))
+[Debug][Arith][solve_one]
+solving 1 = to_rep(first2(s11)) yields:
+1) to_rep(first2(s11)) |-> 1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep(lg)=to_rep(last2(s11))
+[Debug][Arith][solve_one]
+solving to_rep(lg) = to_rep(last2(s11)) yields:
+1) to_rep(last2(s11)) |-> to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(first4(rt2(temp___standard__instr_0(x9))))=1
+[Debug][Arith][solve_one]
+solving to_rep(first4(rt2(temp___standard__instr_0(x9)))) = 1 yields:
+1) to_rep(first4(rt2(temp___standard__instr_0(x9)))) |-> 1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(last4(rt2(temp___standard__instr_0(x9))))=to_rep(lg)
+[Debug][Arith][solve_one]
+solving to_rep(last4(rt2(temp___standard__instr_0(x9)))) = to_rep(lg) yields:
+1) to_rep(last4(rt2(temp___standard__instr_0(x9)))) |-> to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(lg)=to_rep(instr__display_value__4__lg__assume)
+[Debug][Arith][solve_one]
+solving to_rep(lg) = to_rep(instr__display_value__4__lg__assume) yields:
+1) to_rep(instr__display_value__4__lg__assume) |-> to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve safe_comp_div((to_rep(x8) * to_rep5(x7)), 100)=to_rep(instr__display_value__4__lg__assume)
+[Debug][Arith][solve_one]
+solving safe_comp_div((to_rep(x8) * to_rep5(x7)), 100) = to_rep(instr__display_value__4__lg__assume) yields:
+1) safe_comp_div((to_rep(x8) * to_rep5(x7)), 100) |-> to_rep(instr__display_value__4__lg__assume)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 1=to_rep(first2(s11))
+[Debug][Arith][solve_one]
+solving 1 = to_rep(first2(s11)) yields:
+1) to_rep(first2(s11)) |-> 1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep(lg)=to_rep(last2(s11))
+[Debug][Arith][solve_one]
+solving to_rep(lg) = to_rep(last2(s11)) yields:
+1) to_rep(last2(s11)) |-> to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(first4(rt2(temp___standard__instr_0(x9))))=1
+[Debug][Arith][solve_one]
+solving to_rep(first4(rt2(temp___standard__instr_0(x9)))) = 1 yields:
+1) to_rep(first4(rt2(temp___standard__instr_0(x9)))) |-> 1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(last4(rt2(temp___standard__instr_0(x9))))=to_rep(lg)
+[Debug][Arith][solve_one]
+solving to_rep(last4(rt2(temp___standard__instr_0(x9)))) = to_rep(lg) yields:
+1) to_rep(last4(rt2(temp___standard__instr_0(x9)))) |-> to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(lg)=to_rep(instr__display_value__4__lg__assume)
+[Debug][Arith][solve_one]
+solving to_rep(lg) = to_rep(instr__display_value__4__lg__assume) yields:
+1) to_rep(instr__display_value__4__lg__assume) |-> to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 0=-to_rep(first4(temp___standard__instr_231))+to_rep(last4(temp___standard__instr_231))+1
+[Debug][Arith][solve_one]
+solving 0 = -to_rep(first4(temp___standard__instr_231))+to_rep(last4(
+                                                                 temp___standard__instr_231))+1 yields:
+1) to_rep(first4(temp___standard__instr_231)) |-> to_rep(last4(temp___standard__instr_231))+1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(lg)=-to_rep(first4(temp___standard__instr_231))+to_rep(
+                                                                  last4(
+                                                                    temp___standard__instr_231))+1
+[Debug][Arith][solve_one]
+solving to_rep(lg) = -to_rep(first4(temp___standard__instr_231))+to_rep(
+                                                                   last4(
+                                                                    temp___standard__instr_231))+1 yields:
+1) to_rep(first4(temp___standard__instr_231)) |-> to_rep(last4(temp___standard__instr_231))-
+to_rep(lg)+1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep(lg)=to_rep(of_rep(to_rep(lg)))
+[Debug][Arith][solve_one]
+solving to_rep(lg) = to_rep(of_rep(to_rep(lg))) yields:
+1) to_rep(of_rep(to_rep(lg))) |-> to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(x8)=to_rep(last6(mk3((to_rep(lg) + 1), to_rep(x8))))
+[Debug][Arith][solve_one]
+solving to_rep(x8) = to_rep(last6(mk3((to_rep(lg) + 1), to_rep(x8)))) yields:
+1) to_rep(last6(mk3((to_rep(lg) + 1), to_rep(x8)))) |-> to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(lg)+1=to_rep(first6(mk3((to_rep(lg) + 1), to_rep(x8))))
+[Debug][Arith][solve_one]
+solving to_rep(lg)+1 = to_rep(first6(mk3((to_rep(lg) + 1), to_rep(x8)))) yields:
+1) to_rep(first6(mk3((to_rep(lg) + 1), to_rep(x8)))) |-> to_rep(lg)+1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve first9(temp___standard__instr_5(x10))=to_rep(first8(rt4(temp___standard__instr_5(
+                                                                   x10))))
+[Debug][Arith][solve_one]
+solving first9(temp___standard__instr_5(x10)) = to_rep(first8(rt4(temp___standard__instr_5(
+                                                                    x10)))) yields:
+1) to_rep(first8(rt4(temp___standard__instr_5(x10)))) |-> first9(temp___standard__instr_5(
+                                                                   x10))
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve last5(temp___standard__instr_0(x9))=to_rep(lg)
+[Debug][Arith][solve_one]
+solving last5(temp___standard__instr_0(x9)) = to_rep(lg) yields:
+1) last5(temp___standard__instr_0(x9)) |-> to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve first5(temp___standard__instr_0(x9))=1
+[Debug][Arith][solve_one]
+solving first5(temp___standard__instr_0(x9)) = 1 yields:
+1) first5(temp___standard__instr_0(x9)) |-> 1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(x8)'*'to_rep5(x7)=safe_comp_mod((to_rep(x8) * to_rep5(x7)),
+                                    100)+100*to_rep(lg)
+[Debug][Arith][solve_one]
+solving to_rep(x8)'*'to_rep5(x7) = safe_comp_mod((to_rep(x8) * to_rep5(x7)),
+                                     100)+100*to_rep(lg) yields:
+1) to_rep(x8)'*'to_rep5(x7) |-> safe_comp_mod((to_rep(x8) * to_rep5(x7)),
+                                  100)+100*to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 0=100
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 0=to_rep(lg)
+[Debug][Arith][solve_one] solving 0 = to_rep(lg) yields:
+                          1) to_rep(lg) |-> 0
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(lg)=((to_rep(x8) * to_rep5(x7)) / 100)
+[Debug][Arith][solve_one]
+solving to_rep(lg) = ((to_rep(x8) * to_rep5(x7)) / 100) yields:
+1) ((to_rep(x8) * to_rep5(x7)) / 100) |-> to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(lg)=to_rep(last2(mk1(to_rep(first4(temp___standard__instr_231)),
+                                   to_rep(last4(temp___standard__instr_231)))))
+[Debug][Arith][solve_one]
+solving to_rep(lg) = to_rep(last2(mk1(to_rep(first4(temp___standard__instr_231)),
+                                    to_rep(last4(temp___standard__instr_231))))) yields:
+1) to_rep(last2(mk1(to_rep(first4(temp___standard__instr_231)),
+                  to_rep(last4(temp___standard__instr_231))))) |-> to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(lg)=to_rep(last2(mk1(to_rep(first4(temp___standard__instr_231)),
+                                   to_rep(last4(temp___standard__instr_231)))))
+[Debug][Arith][solve_one]
+solving to_rep(lg) = to_rep(last2(mk1(to_rep(first4(temp___standard__instr_231)),
+                                    to_rep(last4(temp___standard__instr_231))))) yields:
+1) to_rep(last2(mk1(to_rep(first4(temp___standard__instr_231)),
+                  to_rep(last4(temp___standard__instr_231))))) |-> to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(last4(temp___standard__instr_231))=to_rep(lg)
+[Debug][Arith][solve_one]
+solving to_rep(last4(temp___standard__instr_231)) = to_rep(lg) yields:
+1) to_rep(last4(temp___standard__instr_231)) |-> to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 1=to_rep(first2(mk1(to_rep(first4(temp___standard__instr_231)),
+                           to_rep(last4(temp___standard__instr_231)))))
+[Debug][Arith][solve_one]
+solving 1 = to_rep(first2(mk1(to_rep(first4(temp___standard__instr_231)),
+                            to_rep(last4(temp___standard__instr_231))))) yields:
+1) to_rep(first2(mk1(to_rep(first4(temp___standard__instr_231)),
+                   to_rep(last4(temp___standard__instr_231))))) |-> 1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 1=to_rep(first2(mk1(to_rep(first4(temp___standard__instr_231)),
+                           to_rep(last4(temp___standard__instr_231)))))
+[Debug][Arith][solve_one]
+solving 1 = to_rep(first2(mk1(to_rep(first4(temp___standard__instr_231)),
+                            to_rep(last4(temp___standard__instr_231))))) yields:
+1) to_rep(first2(mk1(to_rep(first4(temp___standard__instr_231)),
+                   to_rep(last4(temp___standard__instr_231))))) |-> 1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(first4(temp___standard__instr_231))=1
+[Debug][Arith][solve_one]
+solving to_rep(first4(temp___standard__instr_231)) = 1 yields:
+1) to_rep(first4(temp___standard__instr_231)) |-> 1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(lg)=to_rep(last2(mk1(to_rep(first4(rt2(temp___standard__instr_0(
+                                                         x9)))),
+                                   to_rep(last4(rt2(temp___standard__instr_0(
+                                                      x9)))))))
+[Debug][Arith][solve_one]
+solving to_rep(lg) = to_rep(last2(mk1(to_rep(first4(rt2(temp___standard__instr_0(
+                                                          x9)))),
+                                    to_rep(last4(rt2(temp___standard__instr_0(
+                                                       x9))))))) yields:
+1) to_rep(last2(mk1(to_rep(first4(rt2(temp___standard__instr_0(x9)))),
+                  to_rep(last4(rt2(temp___standard__instr_0(x9))))))) |-> 
+to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 1=to_rep(first2(mk1(to_rep(first4(rt2(temp___standard__instr_0(x9)))),
+                           to_rep(last4(rt2(temp___standard__instr_0(x9)))))))
+[Debug][Arith][solve_one]
+solving 1 = to_rep(first2(mk1(to_rep(first4(rt2(temp___standard__instr_0(x9)))),
+                            to_rep(last4(rt2(temp___standard__instr_0(x9))))))) yields:
+1) to_rep(first2(mk1(to_rep(first4(rt2(temp___standard__instr_0(x9)))),
+                   to_rep(last4(rt2(temp___standard__instr_0(x9))))))) |-> 1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 1=to_rep(first2(mk1(to_rep(first4(rt2(temp___standard__instr_0(x9)))),
+                           to_rep(last4(rt2(temp___standard__instr_0(x9)))))))
+[Debug][Arith][solve_one]
+solving 1 = to_rep(first2(mk1(to_rep(first4(rt2(temp___standard__instr_0(x9)))),
+                            to_rep(last4(rt2(temp___standard__instr_0(x9))))))) yields:
+1) to_rep(first2(mk1(to_rep(first4(rt2(temp___standard__instr_0(x9)))),
+                   to_rep(last4(rt2(temp___standard__instr_0(x9))))))) |-> 1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(lg)=to_rep(last2(mk1(to_rep(first4(rt2(temp___standard__instr_0(
+                                                         x9)))),
+                                   to_rep(last4(rt2(temp___standard__instr_0(
+                                                      x9)))))))
+[Debug][Arith][solve_one]
+solving to_rep(lg) = to_rep(last2(mk1(to_rep(first4(rt2(temp___standard__instr_0(
+                                                          x9)))),
+                                    to_rep(last4(rt2(temp___standard__instr_0(
+                                                       x9))))))) yields:
+1) to_rep(last2(mk1(to_rep(first4(rt2(temp___standard__instr_0(x9)))),
+                  to_rep(last4(rt2(temp___standard__instr_0(x9))))))) |-> 
+to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(first4(temp___standard__instr_231))=to_rep(first2(mk1(
+                                                                    to_rep(
+                                                                    first4(
+                                                                    temp___standard__instr_231)),
+                                                                    to_rep(
+                                                                    last4(
+                                                                    temp___standard__instr_231)))))
+[Debug][Arith][solve_one]
+solving to_rep(first4(temp___standard__instr_231)) = to_rep(first2(mk1(
+                                                                    to_rep(
+                                                                    first4(
+                                                                    temp___standard__instr_231)),
+                                                                    to_rep(
+                                                                    last4(
+                                                                    temp___standard__instr_231))))) yields:
+1) to_rep(first2(mk1(to_rep(first4(temp___standard__instr_231)),
+                   to_rep(last4(temp___standard__instr_231))))) |-> to_rep(
+                                                                    first4(
+                                                                    temp___standard__instr_231))
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(last4(temp___standard__instr_231))=to_rep(last2(mk1(to_rep(
+                                                                    first4(
+                                                                    temp___standard__instr_231)),
+                                                                  to_rep(
+                                                                    last4(
+                                                                    temp___standard__instr_231)))))
+[Debug][Arith][solve_one]
+solving to_rep(last4(temp___standard__instr_231)) = to_rep(last2(mk1(
+                                                                   to_rep(
+                                                                    first4(
+                                                                    temp___standard__instr_231)),
+                                                                   to_rep(
+                                                                    last4(
+                                                                    temp___standard__instr_231))))) yields:
+1) to_rep(last2(mk1(to_rep(first4(temp___standard__instr_231)),
+                  to_rep(last4(temp___standard__instr_231))))) |-> to_rep(
+                                                                    last4(
+                                                                    temp___standard__instr_231))
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(x8)'*'to_rep5(x7)=safe_comp_mod((to_rep(x8) * to_rep5(x7)),
+                                    100)+100*to_rep(lg)
+[Debug][Arith][solve_one]
+solving to_rep(x8)'*'to_rep5(x7) = safe_comp_mod((to_rep(x8) * to_rep5(x7)),
+                                     100)+100*to_rep(lg) yields:
+1) to_rep(x8)'*'to_rep5(x7) |-> safe_comp_mod((to_rep(x8) * to_rep5(x7)),
+                                  100)+100*to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 1=first5(temp___standard__instr_0(x9))
+[Debug][Arith][solve_one]
+solving 1 = first5(temp___standard__instr_0(x9)) yields:
+1) first5(temp___standard__instr_0(x9)) |-> 1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(lg)=last5(temp___standard__instr_0(x9))
+[Debug][Arith][solve_one]
+solving to_rep(lg) = last5(temp___standard__instr_0(x9)) yields:
+1) last5(temp___standard__instr_0(x9)) |-> to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(first8(rt4(temp___standard__instr_5(x10))))=first9(temp___standard__instr_5(
+                                                                    x10))
+[Debug][Arith][solve_one]
+solving to_rep(first8(rt4(temp___standard__instr_5(x10)))) = first9(temp___standard__instr_5(
+                                                                    x10)) yields:
+1) to_rep(first8(rt4(temp___standard__instr_5(x10)))) |-> first9(temp___standard__instr_5(
+                                                                   x10))
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep(lg)=to_rep(of_rep(to_rep(lg)))
+[Debug][Arith][solve_one]
+solving to_rep(lg) = to_rep(of_rep(to_rep(lg))) yields:
+1) to_rep(of_rep(to_rep(lg))) |-> to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 1=to_rep(first4(temp___standard__instr_231))
+[Debug][Arith][solve_one]
+solving 1 = to_rep(first4(temp___standard__instr_231)) yields:
+1) to_rep(first4(temp___standard__instr_231)) |-> 1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(lg)=to_rep(last4(temp___standard__instr_231))
+[Debug][Arith][solve_one]
+solving to_rep(lg) = to_rep(last4(temp___standard__instr_231)) yields:
+1) to_rep(last4(temp___standard__instr_231)) |-> to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(last4(temp___standard__instr_231))-to_rep(lg)+1=to_rep(
+                                                                  first2(
+                                                                    mk1(
+                                                                    to_rep(
+                                                                    first4(
+                                                                    temp___standard__instr_231)),
+                                                                    to_rep(
+                                                                    last4(
+                                                                    temp___standard__instr_231)))))
+[Debug][Arith][solve_one]
+solving to_rep(last4(temp___standard__instr_231))-to_rep(lg)+1 = to_rep(
+                                                                   first2(
+                                                                    mk1(
+                                                                    to_rep(
+                                                                    first4(
+                                                                    temp___standard__instr_231)),
+                                                                    to_rep(
+                                                                    last4(
+                                                                    temp___standard__instr_231))))) yields:
+1) to_rep(first2(mk1(to_rep(first4(temp___standard__instr_231)),
+                   to_rep(last4(temp___standard__instr_231))))) |-> to_rep(
+                                                                    last4(
+                                                                    temp___standard__instr_231))-
+to_rep(lg)+1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(last4(temp___standard__instr_231))=to_rep(last2(mk1(to_rep(
+                                                                    first4(
+                                                                    temp___standard__instr_231)),
+                                                                  to_rep(
+                                                                    last4(
+                                                                    temp___standard__instr_231)))))
+[Debug][Arith][solve_one]
+solving to_rep(last4(temp___standard__instr_231)) = to_rep(last2(mk1(
+                                                                   to_rep(
+                                                                    first4(
+                                                                    temp___standard__instr_231)),
+                                                                   to_rep(
+                                                                    last4(
+                                                                    temp___standard__instr_231))))) yields:
+1) to_rep(last2(mk1(to_rep(first4(temp___standard__instr_231)),
+                  to_rep(last4(temp___standard__instr_231))))) |-> to_rep(
+                                                                    last4(
+                                                                    temp___standard__instr_231))
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(x8)'*'to_rep5(x7)=safe_comp_mod((to_rep(x8) * to_rep5(x7)),
+                                    100)+100*to_rep(lg)
+[Debug][Arith][solve_one]
+solving to_rep(x8)'*'to_rep5(x7) = safe_comp_mod((to_rep(x8) * to_rep5(x7)),
+                                     100)+100*to_rep(lg) yields:
+1) to_rep(x8)'*'to_rep5(x7) |-> safe_comp_mod((to_rep(x8) * to_rep5(x7)),
+                                  100)+100*to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 1=first5(temp___standard__instr_0(x9))
+[Debug][Arith][solve_one]
+solving 1 = first5(temp___standard__instr_0(x9)) yields:
+1) first5(temp___standard__instr_0(x9)) |-> 1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(lg)=last5(temp___standard__instr_0(x9))
+[Debug][Arith][solve_one]
+solving to_rep(lg) = last5(temp___standard__instr_0(x9)) yields:
+1) last5(temp___standard__instr_0(x9)) |-> to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(first8(rt4(temp___standard__instr_5(x10))))=first9(temp___standard__instr_5(
+                                                                    x10))
+[Debug][Arith][solve_one]
+solving to_rep(first8(rt4(temp___standard__instr_5(x10)))) = first9(temp___standard__instr_5(
+                                                                    x10)) yields:
+1) to_rep(first8(rt4(temp___standard__instr_5(x10)))) |-> first9(temp___standard__instr_5(
+                                                                   x10))
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 1=to_rep(last4(temp___standard__instr_231))-to_rep(lg)+1
+[Debug][Arith][solve_one]
+solving 1 = to_rep(last4(temp___standard__instr_231))-to_rep(lg)+1 yields:
+1) to_rep(last4(temp___standard__instr_231)) |-> to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(lg)=((to_rep(x8) * to_rep5(x7)) / 100)
+[Debug][Arith][solve_one]
+solving to_rep(lg) = ((to_rep(x8) * to_rep5(x7)) / 100) yields:
+1) ((to_rep(x8) * to_rep5(x7)) / 100) |-> to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)=48
+[Debug][Arith][solve_one]
+solving safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) = 48 yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> 48
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 0=to_rep(lg)
+[Debug][Arith][solve_one] solving 0 = to_rep(lg) yields:
+                          1) to_rep(lg) |-> 0
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep(lg)+1=to_rep(lg)
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep(lg)+1=to_rep(x8)
+[Debug][Arith][solve_one]
+solving to_rep(lg)+1 = to_rep(x8) yields:
+1) to_rep(lg) |-> to_rep(x8)-1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep(x8)-1=to_rep(lg)
+[Debug][Arith][solve_one]
+solving to_rep(x8)-1 = to_rep(lg) yields:
+1) to_rep(lg) |-> to_rep(x8)-1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep(lg)+1=1
+[Debug][Arith][solve_one] solving to_rep(lg)+1 = 1 yields:
+                          1) to_rep(lg) |-> 0
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 0=to_rep(lg)
+[Debug][Arith][solve_one] solving 0 = to_rep(lg) yields:
+                          1) to_rep(lg) |-> 0
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve first9(temp___standard__instr_5(x10))=to_rep(lg)+1
+[Debug][Arith][solve_one]
+solving first9(temp___standard__instr_5(x10)) = to_rep(lg)+1 yields:
+1) first9(temp___standard__instr_5(x10)) |-> to_rep(lg)+1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep(lg)+1=to_rep(lg)
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep(lg)+1=to_rep(x8)
+[Debug][Arith][solve_one]
+solving to_rep(lg)+1 = to_rep(x8) yields:
+1) to_rep(lg) |-> to_rep(x8)-1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep(x8)-1=to_rep(lg)
+[Debug][Arith][solve_one]
+solving to_rep(x8)-1 = to_rep(lg) yields:
+1) to_rep(lg) |-> to_rep(x8)-1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep(lg)+1=1
+[Debug][Arith][solve_one] solving to_rep(lg)+1 = 1 yields:
+                          1) to_rep(lg) |-> 0
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 0=to_rep(lg)
+[Debug][Arith][solve_one] solving 0 = to_rep(lg) yields:
+                          1) to_rep(lg) |-> 0
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve first9(temp___standard__instr_5(x10))=to_rep(lg)+1
+[Debug][Arith][solve_one]
+solving first9(temp___standard__instr_5(x10)) = to_rep(lg)+1 yields:
+1) first9(temp___standard__instr_5(x10)) |-> to_rep(lg)+1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 1=to_rep(of_rep(1))
+[Debug][Arith][solve_one]
+solving 1 = to_rep(of_rep(1)) yields:
+1) to_rep(of_rep(1)) |-> 1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep(x8)=to_rep(of_rep(to_rep(x8)))
+[Debug][Arith][solve_one]
+solving to_rep(x8) = to_rep(of_rep(to_rep(x8))) yields:
+1) to_rep(of_rep(to_rep(x8))) |-> to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=to_rep5(of_rep5(to_rep5(x7)))
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = to_rep5(of_rep5(to_rep5(x7))) yields:
+1) to_rep5(of_rep5(to_rep5(x7))) |-> to_rep5(x7)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve first9(temp___standard__instr_5(x10))=to_rep(of_rep(first9(temp___standard__instr_5(
+                                                                    x10))))
+[Debug][Arith][solve_one]
+solving first9(temp___standard__instr_5(x10)) = to_rep(of_rep(first9(
+                                                                temp___standard__instr_5(
+                                                                  x10)))) yields:
+1) to_rep(of_rep(first9(temp___standard__instr_5(x10)))) |-> first9(temp___standard__instr_5(
+                                                                    x10))
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve abs((to_rep(x8) * to_rep5(x7)))=-safe_comp_mod((to_rep(x8) * 
+                                                          to_rep5(x7)),
+                                            100)-100*to_rep(lg)
+[Debug][Arith][solve_one]
+solving abs((to_rep(x8) * to_rep5(x7))) = -safe_comp_mod((to_rep(x8) * 
+                                                           to_rep5(x7)),
+                                             100)-100*to_rep(lg) yields:
+1) abs((to_rep(x8) * to_rep5(x7))) |-> -safe_comp_mod((to_rep(x8) * to_rep5(
+                                                                    x7)),
+                                          100)-100*to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*to_rep(lg)=
+abs((to_rep(x8) * to_rep5(x7)))
+[Debug][Arith][solve_one]
+solving safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*to_rep(lg) = 
+abs((to_rep(x8) * to_rep5(x7))) yields:
+1) abs((to_rep(x8) * to_rep5(x7))) |-> safe_comp_mod((to_rep(x8) * to_rep5(
+                                                                    x7)),
+                                         100)+100*to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve ((to_rep(x8) * to_rep5(x7)) / 100)=safe_eucl_div((to_rep(x8) * 
+                                                            to_rep5(x7)),
+                                              100)
+[Debug][Arith][solve_one]
+solving ((to_rep(x8) * to_rep5(x7)) / 100) = safe_eucl_div((to_rep(x8) * 
+                                                             to_rep5(
+                                                               x7)),
+                                               100) yields:
+1) safe_eucl_div((to_rep(x8) * to_rep5(x7)), 100) |-> ((to_rep(x8) * 
+                                                         to_rep5(x7)) / 
+                                                        100)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 100=0
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)=safe_comp_mod(
+                                                          (to_rep(x8) * 
+                                                            to_rep5(x7)),
+                                                          100)-100*((to_rep(
+                                                                    x8) * 
+                                                                    to_rep5(
+                                                                    x7)) / 
+                                                                    100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) = safe_comp_mod(
+                                                           (to_rep(x8) * 
+                                                             to_rep5(
+                                                               x7)),
+                                                           100)-100*((to_rep(
+                                                                    x8) * 
+                                                                    to_rep5(
+                                                                    x7)) / 
+                                                                    100)+100*
+to_rep(lg) yields:
+1) ((to_rep(x8) * to_rep5(x7)) / 100) |-> to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*to_rep(lg)=
+safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)
+[Debug][Arith][solve_one]
+solving safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*to_rep(lg) = 
+safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) yields:
+1) to_rep(lg) |-> 0
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve abs((safe_comp_div((to_rep(x8) * to_rep5(x7)), 100) * 100))=-100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving abs((safe_comp_div((to_rep(x8) * to_rep5(x7)), 100) * 100)) = -100*
+to_rep(lg) yields:
+1) abs((safe_comp_div((to_rep(x8) * to_rep5(x7)), 100) * 100)) |-> -100*
+to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 100*to_rep(lg)=abs((safe_comp_div((to_rep(x8) * to_rep5(x7)), 100) * 
+                              100))
+[Debug][Arith][solve_one]
+solving 100*to_rep(lg) = abs((safe_comp_div((to_rep(x8) * to_rep5(x7)), 100) * 
+                               100)) yields:
+1) abs((safe_comp_div((to_rep(x8) * to_rep5(x7)), 100) * 100)) |-> 100*
+to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve first9(temp___standard__instr_5(x10))=to_rep(of_rep(first9(temp___standard__instr_5(
+                                                                    x10))))
+[Debug][Arith][solve_one]
+solving first9(temp___standard__instr_5(x10)) = to_rep(of_rep(first9(
+                                                                temp___standard__instr_5(
+                                                                  x10)))) yields:
+1) to_rep(of_rep(first9(temp___standard__instr_5(x10)))) |-> first9(temp___standard__instr_5(
+                                                                    x10))
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=to_rep5(of_rep5(to_rep5(x7)))
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = to_rep5(of_rep5(to_rep5(x7))) yields:
+1) to_rep5(of_rep5(to_rep5(x7))) |-> to_rep5(x7)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep(x8)=to_rep(of_rep(to_rep(x8)))
+[Debug][Arith][solve_one]
+solving to_rep(x8) = to_rep(of_rep(to_rep(x8))) yields:
+1) to_rep(of_rep(to_rep(x8))) |-> to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 1=to_rep(of_rep(1))
+[Debug][Arith][solve_one]
+solving 1 = to_rep(of_rep(1)) yields:
+1) to_rep(of_rep(1)) |-> 1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(lg)=to_rep(last2(mk1(to_rep(first4(temp___standard__instr_231)),
+                                   to_rep(last4(temp___standard__instr_231)))))
+[Debug][Arith][solve_one]
+solving to_rep(lg) = to_rep(last2(mk1(to_rep(first4(temp___standard__instr_231)),
+                                    to_rep(last4(temp___standard__instr_231))))) yields:
+1) to_rep(last2(mk1(to_rep(first4(temp___standard__instr_231)),
+                  to_rep(last4(temp___standard__instr_231))))) |-> to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 1=to_rep(first2(mk1(to_rep(first4(temp___standard__instr_231)),
+                           to_rep(last4(temp___standard__instr_231)))))
+[Debug][Arith][solve_one]
+solving 1 = to_rep(first2(mk1(to_rep(first4(temp___standard__instr_231)),
+                            to_rep(last4(temp___standard__instr_231))))) yields:
+1) to_rep(first2(mk1(to_rep(first4(temp___standard__instr_231)),
+                   to_rep(last4(temp___standard__instr_231))))) |-> 1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(lg)=to_rep(last2(mk1(to_rep(first4(temp___standard__instr_231)),
+                                   to_rep(last4(temp___standard__instr_231)))))
+[Debug][Arith][solve_one]
+solving to_rep(lg) = to_rep(last2(mk1(to_rep(first4(temp___standard__instr_231)),
+                                    to_rep(last4(temp___standard__instr_231))))) yields:
+1) to_rep(last2(mk1(to_rep(first4(temp___standard__instr_231)),
+                  to_rep(last4(temp___standard__instr_231))))) |-> to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 1=to_rep(first2(mk1(to_rep(first4(temp___standard__instr_231)),
+                           to_rep(last4(temp___standard__instr_231)))))
+[Debug][Arith][solve_one]
+solving 1 = to_rep(first2(mk1(to_rep(first4(temp___standard__instr_231)),
+                            to_rep(last4(temp___standard__instr_231))))) yields:
+1) to_rep(first2(mk1(to_rep(first4(temp___standard__instr_231)),
+                   to_rep(last4(temp___standard__instr_231))))) |-> 1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve first9(temp___standard__instr_5(x10))=to_rep(of_rep(first9(temp___standard__instr_5(
+                                                                    x10))))
+[Debug][Arith][solve_one]
+solving first9(temp___standard__instr_5(x10)) = to_rep(of_rep(first9(
+                                                                temp___standard__instr_5(
+                                                                  x10)))) yields:
+1) to_rep(of_rep(first9(temp___standard__instr_5(x10)))) |-> first9(temp___standard__instr_5(
+                                                                    x10))
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=to_rep5(of_rep5(to_rep5(x7)))
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = to_rep5(of_rep5(to_rep5(x7))) yields:
+1) to_rep5(of_rep5(to_rep5(x7))) |-> to_rep5(x7)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep(x8)=to_rep(of_rep(to_rep(x8)))
+[Debug][Arith][solve_one]
+solving to_rep(x8) = to_rep(of_rep(to_rep(x8))) yields:
+1) to_rep(of_rep(to_rep(x8))) |-> to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 1=to_rep(of_rep(1))
+[Debug][Arith][solve_one]
+solving 1 = to_rep(of_rep(1)) yields:
+1) to_rep(of_rep(1)) |-> 1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(lg)=to_rep(last2(mk1(to_rep(first4(temp___standard__instr_231)),
+                                   to_rep(last4(temp___standard__instr_231)))))
+[Debug][Arith][solve_one]
+solving to_rep(lg) = to_rep(last2(mk1(to_rep(first4(temp___standard__instr_231)),
+                                    to_rep(last4(temp___standard__instr_231))))) yields:
+1) to_rep(last2(mk1(to_rep(first4(temp___standard__instr_231)),
+                  to_rep(last4(temp___standard__instr_231))))) |-> to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 1=to_rep(first2(mk1(to_rep(first4(temp___standard__instr_231)),
+                           to_rep(last4(temp___standard__instr_231)))))
+[Debug][Arith][solve_one]
+solving 1 = to_rep(first2(mk1(to_rep(first4(temp___standard__instr_231)),
+                            to_rep(last4(temp___standard__instr_231))))) yields:
+1) to_rep(first2(mk1(to_rep(first4(temp___standard__instr_231)),
+                   to_rep(last4(temp___standard__instr_231))))) |-> 1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=0
+[Debug][Arith][solve_one] solving to_rep5(x7) = 0 yields:
+                          1) to_rep5(x7) |-> 0
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 1=to_rep(first2(mk1(to_rep(first4(rt2(temp___standard__instr_0(x9)))),
+                           to_rep(last4(rt2(temp___standard__instr_0(x9)))))))
+[Debug][Arith][solve_one]
+solving 1 = to_rep(first2(mk1(to_rep(first4(rt2(temp___standard__instr_0(x9)))),
+                            to_rep(last4(rt2(temp___standard__instr_0(x9))))))) yields:
+1) to_rep(first2(mk1(to_rep(first4(rt2(temp___standard__instr_0(x9)))),
+                   to_rep(last4(rt2(temp___standard__instr_0(x9))))))) |-> 1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(lg)=to_rep(last2(mk1(to_rep(first4(rt2(temp___standard__instr_0(
+                                                         x9)))),
+                                   to_rep(last4(rt2(temp___standard__instr_0(
+                                                      x9)))))))
+[Debug][Arith][solve_one]
+solving to_rep(lg) = to_rep(last2(mk1(to_rep(first4(rt2(temp___standard__instr_0(
+                                                          x9)))),
+                                    to_rep(last4(rt2(temp___standard__instr_0(
+                                                       x9))))))) yields:
+1) to_rep(last2(mk1(to_rep(first4(rt2(temp___standard__instr_0(x9)))),
+                  to_rep(last4(rt2(temp___standard__instr_0(x9))))))) |-> 
+to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep(lg)=to_rep(of_rep(to_rep(lg)))
+[Debug][Arith][solve_one]
+solving to_rep(lg) = to_rep(of_rep(to_rep(lg))) yields:
+1) to_rep(of_rep(to_rep(lg))) |-> to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(first4(temp___standard__instr_231))=to_rep(first2(mk1(
+                                                                    to_rep(
+                                                                    first4(
+                                                                    temp___standard__instr_231)),
+                                                                    to_rep(
+                                                                    last4(
+                                                                    temp___standard__instr_231)))))
+[Debug][Arith][solve_one]
+solving to_rep(first4(temp___standard__instr_231)) = to_rep(first2(mk1(
+                                                                    to_rep(
+                                                                    first4(
+                                                                    temp___standard__instr_231)),
+                                                                    to_rep(
+                                                                    last4(
+                                                                    temp___standard__instr_231))))) yields:
+1) to_rep(first2(mk1(to_rep(first4(temp___standard__instr_231)),
+                   to_rep(last4(temp___standard__instr_231))))) |-> to_rep(
+                                                                    first4(
+                                                                    temp___standard__instr_231))
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(last4(temp___standard__instr_231))=to_rep(last2(mk1(to_rep(
+                                                                    first4(
+                                                                    temp___standard__instr_231)),
+                                                                  to_rep(
+                                                                    last4(
+                                                                    temp___standard__instr_231)))))
+[Debug][Arith][solve_one]
+solving to_rep(last4(temp___standard__instr_231)) = to_rep(last2(mk1(
+                                                                   to_rep(
+                                                                    first4(
+                                                                    temp___standard__instr_231)),
+                                                                   to_rep(
+                                                                    last4(
+                                                                    temp___standard__instr_231))))) yields:
+1) to_rep(last2(mk1(to_rep(first4(temp___standard__instr_231)),
+                  to_rep(last4(temp___standard__instr_231))))) |-> to_rep(
+                                                                    last4(
+                                                                    temp___standard__instr_231))
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(x8)'*'to_rep5(x7)=safe_comp_mod((to_rep(x8) * to_rep5(x7)),
+                                    100)+100*to_rep(lg)
+[Debug][Arith][solve_one]
+solving to_rep(x8)'*'to_rep5(x7) = safe_comp_mod((to_rep(x8) * to_rep5(x7)),
+                                     100)+100*to_rep(lg) yields:
+1) to_rep(x8)'*'to_rep5(x7) |-> safe_comp_mod((to_rep(x8) * to_rep5(x7)),
+                                  100)+100*to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 1=first5(temp___standard__instr_0(x9))
+[Debug][Arith][solve_one]
+solving 1 = first5(temp___standard__instr_0(x9)) yields:
+1) first5(temp___standard__instr_0(x9)) |-> 1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(lg)=last5(temp___standard__instr_0(x9))
+[Debug][Arith][solve_one]
+solving to_rep(lg) = last5(temp___standard__instr_0(x9)) yields:
+1) last5(temp___standard__instr_0(x9)) |-> to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(first8(rt4(temp___standard__instr_5(x10))))=first9(temp___standard__instr_5(
+                                                                    x10))
+[Debug][Arith][solve_one]
+solving to_rep(first8(rt4(temp___standard__instr_5(x10)))) = first9(temp___standard__instr_5(
+                                                                    x10)) yields:
+1) to_rep(first8(rt4(temp___standard__instr_5(x10)))) |-> first9(temp___standard__instr_5(
+                                                                   x10))
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 1=to_rep(first4(temp___standard__instr_231))
+[Debug][Arith][solve_one]
+solving 1 = to_rep(first4(temp___standard__instr_231)) yields:
+1) to_rep(first4(temp___standard__instr_231)) |-> 1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(lg)=to_rep(last4(temp___standard__instr_231))
+[Debug][Arith][solve_one]
+solving to_rep(lg) = to_rep(last4(temp___standard__instr_231)) yields:
+1) to_rep(last4(temp___standard__instr_231)) |-> to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep(lg)+1=to_rep(lg)
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep(lg)+1=to_rep(x8)
+[Debug][Arith][solve_one]
+solving to_rep(lg)+1 = to_rep(x8) yields:
+1) to_rep(lg) |-> to_rep(x8)-1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep(x8)-1=to_rep(lg)
+[Debug][Arith][solve_one]
+solving to_rep(x8)-1 = to_rep(lg) yields:
+1) to_rep(lg) |-> to_rep(x8)-1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep(lg)+1=1
+[Debug][Arith][solve_one] solving to_rep(lg)+1 = 1 yields:
+                          1) to_rep(lg) |-> 0
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 0=to_rep(lg)
+[Debug][Arith][solve_one] solving 0 = to_rep(lg) yields:
+                          1) to_rep(lg) |-> 0
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve first9(temp___standard__instr_5(x10))=to_rep(lg)+1
+[Debug][Arith][solve_one]
+solving first9(temp___standard__instr_5(x10)) = to_rep(lg)+1 yields:
+1) first9(temp___standard__instr_5(x10)) |-> to_rep(lg)+1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve abs((to_rep(x8) * to_rep5(x7)))=-safe_comp_mod((to_rep(x8) * 
+                                                          to_rep5(x7)),
+                                            100)-100*to_rep(lg)
+[Debug][Arith][solve_one]
+solving abs((to_rep(x8) * to_rep5(x7))) = -safe_comp_mod((to_rep(x8) * 
+                                                           to_rep5(x7)),
+                                             100)-100*to_rep(lg) yields:
+1) abs((to_rep(x8) * to_rep5(x7))) |-> -safe_comp_mod((to_rep(x8) * to_rep5(
+                                                                    x7)),
+                                          100)-100*to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve first9(temp___standard__instr_5(x10))=to_rep(of_rep(first9(temp___standard__instr_5(
+                                                                    x10))))
+[Debug][Arith][solve_one]
+solving first9(temp___standard__instr_5(x10)) = to_rep(of_rep(first9(
+                                                                temp___standard__instr_5(
+                                                                  x10)))) yields:
+1) to_rep(of_rep(first9(temp___standard__instr_5(x10)))) |-> first9(temp___standard__instr_5(
+                                                                    x10))
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=to_rep5(of_rep5(to_rep5(x7)))
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = to_rep5(of_rep5(to_rep5(x7))) yields:
+1) to_rep5(of_rep5(to_rep5(x7))) |-> to_rep5(x7)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep(x8)=to_rep(of_rep(to_rep(x8)))
+[Debug][Arith][solve_one]
+solving to_rep(x8) = to_rep(of_rep(to_rep(x8))) yields:
+1) to_rep(of_rep(to_rep(x8))) |-> to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 1=to_rep(of_rep(1))
+[Debug][Arith][solve_one]
+solving 1 = to_rep(of_rep(1)) yields:
+1) to_rep(of_rep(1)) |-> 1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve abs((to_rep(x8) * to_rep5(x7)))=-safe_comp_mod((to_rep(x8) * 
+                                                          to_rep5(x7)),
+                                            100)-100*to_rep(lg)
+[Debug][Arith][solve_one]
+solving abs((to_rep(x8) * to_rep5(x7))) = -safe_comp_mod((to_rep(x8) * 
+                                                           to_rep5(x7)),
+                                             100)-100*to_rep(lg) yields:
+1) abs((to_rep(x8) * to_rep5(x7))) |-> -safe_comp_mod((to_rep(x8) * to_rep5(
+                                                                    x7)),
+                                          100)-100*to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=0
+[Debug][Arith][solve_one] solving to_rep5(x7) = 0 yields:
+                          1) to_rep5(x7) |-> 0
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 0=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*to_rep(lg)
+[Debug][Arith][solve_one]
+solving 0 = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 0=to_rep5(x7)
+[Debug][Arith][solve_one] solving 0 = to_rep5(x7) yields:
+                          1) to_rep5(x7) |-> 0
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=1
+[Debug][Arith][solve_one] solving to_rep5(x7) = 1 yields:
+                          1) to_rep5(x7) |-> 1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(lg)+1=to_rep(first6(mk3((to_rep(lg) + 1), to_rep(x8))))
+[Debug][Arith][solve_one]
+solving to_rep(lg)+1 = to_rep(first6(mk3((to_rep(lg) + 1), to_rep(x8)))) yields:
+1) to_rep(first6(mk3((to_rep(lg) + 1), to_rep(x8)))) |-> to_rep(lg)+1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(x8)=to_rep(last6(mk3((to_rep(lg) + 1), to_rep(x8))))
+[Debug][Arith][solve_one]
+solving to_rep(x8) = to_rep(last6(mk3((to_rep(lg) + 1), to_rep(x8)))) yields:
+1) to_rep(last6(mk3((to_rep(lg) + 1), to_rep(x8)))) |-> to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(lg)+1=to_rep(first6(mk3((to_rep(lg) + 1), to_rep(x8))))
+[Debug][Arith][solve_one]
+solving to_rep(lg)+1 = to_rep(first6(mk3((to_rep(lg) + 1), to_rep(x8)))) yields:
+1) to_rep(first6(mk3((to_rep(lg) + 1), to_rep(x8)))) |-> to_rep(lg)+1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(x8)=to_rep(last6(mk3((to_rep(lg) + 1), to_rep(x8))))
+[Debug][Arith][solve_one]
+solving to_rep(x8) = to_rep(last6(mk3((to_rep(lg) + 1), to_rep(x8)))) yields:
+1) to_rep(last6(mk3((to_rep(lg) + 1), to_rep(x8)))) |-> to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve abs((to_rep(x8) * to_rep5(x7)))=-safe_comp_mod((to_rep(x8) * 
+                                                          to_rep5(x7)),
+                                            100)-100*to_rep(lg)
+[Debug][Arith][solve_one]
+solving abs((to_rep(x8) * to_rep5(x7))) = -safe_comp_mod((to_rep(x8) * 
+                                                           to_rep5(x7)),
+                                             100)-100*to_rep(lg) yields:
+1) abs((to_rep(x8) * to_rep5(x7))) |-> -safe_comp_mod((to_rep(x8) * to_rep5(
+                                                                    x7)),
+                                          100)-100*to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=0
+[Debug][Arith][solve_one] solving to_rep5(x7) = 0 yields:
+                          1) to_rep5(x7) |-> 0
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 0=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*to_rep(lg)
+[Debug][Arith][solve_one]
+solving 0 = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 0=to_rep5(x7)
+[Debug][Arith][solve_one] solving 0 = to_rep5(x7) yields:
+                          1) to_rep5(x7) |-> 0
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=1
+[Debug][Arith][solve_one] solving to_rep5(x7) = 1 yields:
+                          1) to_rep5(x7) |-> 1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 0=to_rep5(x7)
+[Debug][Arith][solve_one] solving 0 = to_rep5(x7) yields:
+                          1) to_rep5(x7) |-> 0
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=1
+[Debug][Arith][solve_one] solving to_rep5(x7) = 1 yields:
+                          1) to_rep5(x7) |-> 1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 1=to_rep5(x7)
+[Debug][Arith][solve_one] solving 1 = to_rep5(x7) yields:
+                          1) to_rep5(x7) |-> 1
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=2
+[Debug][Arith][solve_one] solving to_rep5(x7) = 2 yields:
+                          1) to_rep5(x7) |-> 2
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 2*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 2*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+2*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 2=to_rep5(x7)
+[Debug][Arith][solve_one] solving 2 = to_rep5(x7) yields:
+                          1) to_rep5(x7) |-> 2
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=3
+[Debug][Arith][solve_one] solving to_rep5(x7) = 3 yields:
+                          1) to_rep5(x7) |-> 3
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 3*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 3*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+3*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 3=to_rep5(x7)
+[Debug][Arith][solve_one] solving 3 = to_rep5(x7) yields:
+                          1) to_rep5(x7) |-> 3
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=4
+[Debug][Arith][solve_one] solving to_rep5(x7) = 4 yields:
+                          1) to_rep5(x7) |-> 4
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 4*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 4*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+4*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 4=to_rep5(x7)
+[Debug][Arith][solve_one] solving 4 = to_rep5(x7) yields:
+                          1) to_rep5(x7) |-> 4
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=5
+[Debug][Arith][solve_one] solving to_rep5(x7) = 5 yields:
+                          1) to_rep5(x7) |-> 5
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 5*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 5*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+5*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 5=to_rep5(x7)
+[Debug][Arith][solve_one] solving 5 = to_rep5(x7) yields:
+                          1) to_rep5(x7) |-> 5
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=6
+[Debug][Arith][solve_one] solving to_rep5(x7) = 6 yields:
+                          1) to_rep5(x7) |-> 6
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 6*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 6*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+6*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 6=to_rep5(x7)
+[Debug][Arith][solve_one] solving 6 = to_rep5(x7) yields:
+                          1) to_rep5(x7) |-> 6
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=7
+[Debug][Arith][solve_one] solving to_rep5(x7) = 7 yields:
+                          1) to_rep5(x7) |-> 7
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 7*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 7*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+7*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 7=to_rep5(x7)
+[Debug][Arith][solve_one] solving 7 = to_rep5(x7) yields:
+                          1) to_rep5(x7) |-> 7
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=8
+[Debug][Arith][solve_one] solving to_rep5(x7) = 8 yields:
+                          1) to_rep5(x7) |-> 8
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 8*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 8*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+8*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 8=to_rep5(x7)
+[Debug][Arith][solve_one] solving 8 = to_rep5(x7) yields:
+                          1) to_rep5(x7) |-> 8
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=9
+[Debug][Arith][solve_one] solving to_rep5(x7) = 9 yields:
+                          1) to_rep5(x7) |-> 9
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 9*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 9*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+9*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 9=to_rep5(x7)
+[Debug][Arith][solve_one] solving 9 = to_rep5(x7) yields:
+                          1) to_rep5(x7) |-> 9
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=10
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 10 yields:
+1) to_rep5(x7) |-> 10
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 10*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 10*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+10*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 10=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 10 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 10
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=11
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 11 yields:
+1) to_rep5(x7) |-> 11
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 11*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 11*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+11*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 11=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 11 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 11
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=12
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 12 yields:
+1) to_rep5(x7) |-> 12
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 12*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 12*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+12*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 12=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 12 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 12
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=13
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 13 yields:
+1) to_rep5(x7) |-> 13
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 13*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 13*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+13*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 13=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 13 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 13
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=14
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 14 yields:
+1) to_rep5(x7) |-> 14
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 14*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 14*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+14*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 14=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 14 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 14
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=15
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 15 yields:
+1) to_rep5(x7) |-> 15
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 15*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 15*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+15*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 15=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 15 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 15
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=16
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 16 yields:
+1) to_rep5(x7) |-> 16
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 16*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 16*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+16*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 16=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 16 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 16
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=17
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 17 yields:
+1) to_rep5(x7) |-> 17
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 17*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 17*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+17*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 17=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 17 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 17
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=18
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 18 yields:
+1) to_rep5(x7) |-> 18
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 18*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 18*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+18*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 18=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 18 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 18
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=19
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 19 yields:
+1) to_rep5(x7) |-> 19
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 19*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 19*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+19*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 19=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 19 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 19
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=20
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 20 yields:
+1) to_rep5(x7) |-> 20
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 20*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 20*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+20*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 20=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 20 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 20
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=21
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 21 yields:
+1) to_rep5(x7) |-> 21
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 21*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 21*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+21*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 21=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 21 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 21
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=22
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 22 yields:
+1) to_rep5(x7) |-> 22
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 22*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 22*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+22*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 22=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 22 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 22
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=23
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 23 yields:
+1) to_rep5(x7) |-> 23
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 23*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 23*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+23*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 23=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 23 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 23
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=24
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 24 yields:
+1) to_rep5(x7) |-> 24
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 24*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 24*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+24*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 24=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 24 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 24
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=25
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 25 yields:
+1) to_rep5(x7) |-> 25
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 25*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 25*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+25*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 25=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 25 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 25
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=26
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 26 yields:
+1) to_rep5(x7) |-> 26
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 26*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 26*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+26*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 26=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 26 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 26
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=27
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 27 yields:
+1) to_rep5(x7) |-> 27
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 27*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 27*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+27*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 27=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 27 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 27
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=28
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 28 yields:
+1) to_rep5(x7) |-> 28
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 28*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 28*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+28*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 28=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 28 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 28
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=29
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 29 yields:
+1) to_rep5(x7) |-> 29
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 29*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 29*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+29*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 29=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 29 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 29
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=30
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 30 yields:
+1) to_rep5(x7) |-> 30
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 30*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 30*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+30*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 30=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 30 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 30
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=31
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 31 yields:
+1) to_rep5(x7) |-> 31
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 31*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 31*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+31*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 31=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 31 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 31
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=32
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 32 yields:
+1) to_rep5(x7) |-> 32
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 32*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 32*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+32*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 32=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 32 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 32
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=33
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 33 yields:
+1) to_rep5(x7) |-> 33
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 33*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 33*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+33*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 33=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 33 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 33
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=34
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 34 yields:
+1) to_rep5(x7) |-> 34
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 34*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 34*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+34*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 34=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 34 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 34
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=35
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 35 yields:
+1) to_rep5(x7) |-> 35
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 35*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 35*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+35*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 35=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 35 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 35
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=36
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 36 yields:
+1) to_rep5(x7) |-> 36
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 36*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 36*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+36*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 36=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 36 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 36
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=37
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 37 yields:
+1) to_rep5(x7) |-> 37
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 37*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 37*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+37*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 37=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 37 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 37
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=38
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 38 yields:
+1) to_rep5(x7) |-> 38
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 38*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 38*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+38*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 38=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 38 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 38
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=39
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 39 yields:
+1) to_rep5(x7) |-> 39
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 39*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 39*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+39*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 39=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 39 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 39
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=40
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 40 yields:
+1) to_rep5(x7) |-> 40
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 40*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 40*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+40*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 40=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 40 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 40
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=41
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 41 yields:
+1) to_rep5(x7) |-> 41
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 41*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 41*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+41*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 41=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 41 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 41
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=42
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 42 yields:
+1) to_rep5(x7) |-> 42
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 42*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 42*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+42*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 42=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 42 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 42
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=43
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 43 yields:
+1) to_rep5(x7) |-> 43
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 43*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 43*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+43*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 43=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 43 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 43
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=44
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 44 yields:
+1) to_rep5(x7) |-> 44
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 44*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 44*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+44*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 44=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 44 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 44
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=45
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 45 yields:
+1) to_rep5(x7) |-> 45
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 45*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 45*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+45*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 45=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 45 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 45
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=46
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 46 yields:
+1) to_rep5(x7) |-> 46
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 46*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 46*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+46*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 46=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 46 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 46
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=47
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 47 yields:
+1) to_rep5(x7) |-> 47
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 47*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 47*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+47*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 47=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 47 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 47
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=48
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 48 yields:
+1) to_rep5(x7) |-> 48
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 48*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 48*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+48*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 48=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 48 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 48
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=49
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 49 yields:
+1) to_rep5(x7) |-> 49
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 49*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 49*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+49*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 49=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 49 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 49
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=50
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 50 yields:
+1) to_rep5(x7) |-> 50
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 50*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 50*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+50*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 50=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 50 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 50
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=51
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 51 yields:
+1) to_rep5(x7) |-> 51
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 51*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 51*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+51*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 51=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 51 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 51
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=52
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 52 yields:
+1) to_rep5(x7) |-> 52
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 52*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 52*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+52*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 52=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 52 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 52
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=53
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 53 yields:
+1) to_rep5(x7) |-> 53
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 53*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 53*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+53*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 53=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 53 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 53
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=54
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 54 yields:
+1) to_rep5(x7) |-> 54
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 54*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 54*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+54*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 54=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 54 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 54
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=55
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 55 yields:
+1) to_rep5(x7) |-> 55
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 55*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 55*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+55*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 55=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 55 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 55
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=56
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 56 yields:
+1) to_rep5(x7) |-> 56
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 56*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 56*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+56*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 56=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 56 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 56
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=57
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 57 yields:
+1) to_rep5(x7) |-> 57
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 57*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 57*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+57*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 57=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 57 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 57
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=58
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 58 yields:
+1) to_rep5(x7) |-> 58
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 58*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 58*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+58*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 58=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 58 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 58
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=59
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 59 yields:
+1) to_rep5(x7) |-> 59
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 59*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 59*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+59*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 59=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 59 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 59
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=60
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 60 yields:
+1) to_rep5(x7) |-> 60
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 60*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 60*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+60*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 60=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 60 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 60
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=61
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 61 yields:
+1) to_rep5(x7) |-> 61
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 61*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 61*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+61*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 61=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 61 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 61
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=62
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 62 yields:
+1) to_rep5(x7) |-> 62
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 62*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 62*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+62*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 62=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 62 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 62
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=63
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 63 yields:
+1) to_rep5(x7) |-> 63
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 63*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 63*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+63*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 63=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 63 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 63
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=64
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 64 yields:
+1) to_rep5(x7) |-> 64
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 64*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 64*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+64*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 64=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 64 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 64
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=65
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 65 yields:
+1) to_rep5(x7) |-> 65
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 65*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 65*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+65*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 65=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 65 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 65
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=66
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 66 yields:
+1) to_rep5(x7) |-> 66
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 66*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 66*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+66*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 66=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 66 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 66
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=67
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 67 yields:
+1) to_rep5(x7) |-> 67
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 67*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 67*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+67*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 67=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 67 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 67
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=68
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 68 yields:
+1) to_rep5(x7) |-> 68
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 68*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 68*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+68*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 68=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 68 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 68
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=69
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 69 yields:
+1) to_rep5(x7) |-> 69
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 69*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 69*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+69*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 69=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 69 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 69
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=70
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 70 yields:
+1) to_rep5(x7) |-> 70
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 70*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 70*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+70*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 70=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 70 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 70
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=71
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 71 yields:
+1) to_rep5(x7) |-> 71
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 71*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 71*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+71*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 71=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 71 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 71
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=72
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 72 yields:
+1) to_rep5(x7) |-> 72
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 72*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 72*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+72*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 72=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 72 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 72
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=73
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 73 yields:
+1) to_rep5(x7) |-> 73
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 73*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 73*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+73*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 73=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 73 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 73
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=74
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 74 yields:
+1) to_rep5(x7) |-> 74
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 74*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 74*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+74*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 74=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 74 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 74
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=75
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 75 yields:
+1) to_rep5(x7) |-> 75
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 75*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 75*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+75*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 75=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 75 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 75
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=76
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 76 yields:
+1) to_rep5(x7) |-> 76
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 76*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 76*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+76*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 76=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 76 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 76
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=77
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 77 yields:
+1) to_rep5(x7) |-> 77
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 77*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 77*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+77*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 77=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 77 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 77
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=78
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 78 yields:
+1) to_rep5(x7) |-> 78
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 78*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 78*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+78*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 78=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 78 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 78
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=79
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 79 yields:
+1) to_rep5(x7) |-> 79
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 79*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 79*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+79*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 79=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 79 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 79
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=80
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 80 yields:
+1) to_rep5(x7) |-> 80
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 80*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 80*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+80*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 80=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 80 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 80
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=81
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 81 yields:
+1) to_rep5(x7) |-> 81
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 81*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 81*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+81*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 81=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 81 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 81
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=82
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 82 yields:
+1) to_rep5(x7) |-> 82
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 82*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 82*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+82*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 82=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 82 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 82
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=83
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 83 yields:
+1) to_rep5(x7) |-> 83
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 83*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 83*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+83*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 83=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 83 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 83
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=84
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 84 yields:
+1) to_rep5(x7) |-> 84
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 84*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 84*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+84*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 84=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 84 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 84
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=85
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 85 yields:
+1) to_rep5(x7) |-> 85
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 85*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 85*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+85*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 85=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 85 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 85
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=86
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 86 yields:
+1) to_rep5(x7) |-> 86
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 86*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 86*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+86*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 86=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 86 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 86
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=87
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 87 yields:
+1) to_rep5(x7) |-> 87
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 87*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 87*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+87*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 87=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 87 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 87
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=88
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 88 yields:
+1) to_rep5(x7) |-> 88
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 88*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 88*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+88*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 88=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 88 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 88
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=89
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 89 yields:
+1) to_rep5(x7) |-> 89
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 89*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 89*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+89*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 89=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 89 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 89
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=90
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 90 yields:
+1) to_rep5(x7) |-> 90
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 90*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 90*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+90*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 90=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 90 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 90
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=91
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 91 yields:
+1) to_rep5(x7) |-> 91
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 91*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 91*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+91*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 91=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 91 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 91
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=92
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 92 yields:
+1) to_rep5(x7) |-> 92
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 92*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 92*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+92*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 92=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 92 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 92
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=93
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 93 yields:
+1) to_rep5(x7) |-> 93
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 93*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 93*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+93*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 93=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 93 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 93
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=94
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 94 yields:
+1) to_rep5(x7) |-> 94
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 94*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 94*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+94*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 94=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 94 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 94
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=95
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 95 yields:
+1) to_rep5(x7) |-> 95
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 95*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 95*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+95*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 95=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 95 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 95
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=96
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 96 yields:
+1) to_rep5(x7) |-> 96
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 96*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 96*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+96*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 96=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 96 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 96
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=97
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 97 yields:
+1) to_rep5(x7) |-> 97
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 97*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 97*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+97*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 97=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 97 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 97
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=98
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 98 yields:
+1) to_rep5(x7) |-> 98
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 98*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 98*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+98*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 98=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 98 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 98
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=99
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 99 yields:
+1) to_rep5(x7) |-> 99
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 99*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 99*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+99*
+to_rep(x8)
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve 99=to_rep5(x7)
+[Debug][Arith][solve_one]
+solving 99 = to_rep5(x7) yields:
+1) to_rep5(x7) |-> 99
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux] we solve to_rep5(x7)=100
+[Debug][Arith][solve_one]
+solving to_rep5(x7) = 100 yields:
+1) to_rep5(x7) |-> 100
+
+[Debug][Arith][solve] Try solving with unsafe mode.
+[Debug][Arith][solve_aux]
+we solve 100*to_rep(x8)=safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg)
+[Debug][Arith][solve_one]
+solving 100*to_rep(x8) = safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100)+100*
+to_rep(lg) yields:
+1) safe_comp_mod((to_rep(x8) * to_rep5(x7)), 100) |-> -100*to_rep(lg)+100*
+to_rep(x8)
+

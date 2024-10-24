@@ -159,7 +159,11 @@ module Table : Hashtbl.S with type key = t
 module Set : Set.S with type elt = t
 module Map : Map.S with type key = t
 
-type subst = t Var.Map.t * Ty.subst
+(* module Subst : sig
+   type nonrec t = t Var.Map.t * Ty.subst
+
+   val pp : t Fmt.t
+   end *)
 
 type lit_view = private
   | Eq of t * t

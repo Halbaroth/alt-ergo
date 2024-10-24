@@ -861,7 +861,8 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
         let new_terms =
           SAT.assume env.satml unit nunit f ~cnumber:0 activate ~dec_lvl
         in
-        env.inst <- Inst.add_terms env.inst new_terms (mk_gf E.vrai)
+        ()
+      (*         env.inst <- Inst.add_terms env.inst new_terms (mk_gf E.vrai) *)
       with
       | Satml.Unsat (lc) -> raise (IUnsat (env, make_explanation lc))
       | Satml.Sat _ -> assert false
@@ -1172,8 +1173,10 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
     | Satml.Sat new_terms ->
       try
         env.inst <- Inst.add_terms env.inst new_terms (mk_gf E.vrai);
+        Logs.debug (fun k -> k"add the new terms:@, %a"
+                       Fmt.(braces @@ iter ~sep:comma E.Set.iter E.print) new_terms);
         let new_terms = do_case_split env Util.BeforeMatching in
-        env.inst <- Inst.add_terms env.inst new_terms (mk_gf E.vrai);
+        (* env.inst <- Inst.add_terms env.inst new_terms (mk_gf E.vrai); *)
         may_update_last_saved_model env (Options.get_every_interpretation ());
         let () =
           env.nb_mrounds <- env.nb_mrounds + 1
@@ -1192,7 +1195,7 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
         let dec_lvl = SAT.decision_level env.satml in
         let updated = instantiation env strat dec_lvl in
         let new_terms = do_case_split env Util.AfterMatching in
-        env.inst <- Inst.add_terms env.inst new_terms (mk_gf E.vrai);
+        (* env.inst <- Inst.add_terms env.inst new_terms (mk_gf E.vrai); *)
         let updated =
           if not updated && strat != Auto then instantiation env Auto dec_lvl
           else updated

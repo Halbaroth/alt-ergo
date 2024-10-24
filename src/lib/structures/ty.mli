@@ -193,24 +193,25 @@ val trecord :
 
 (** {2 Substitutions} *)
 
-module M : Map.S with type key = int
-(** Maps from type variables identifiers. *)
+module Subst : sig
+  type subst
 
-type subst = t M.t
-(** The type of substitution, i.e. maps
-    from type variables identifiers to types.*)
+  val id : subst
+  (** The identity. *)
 
-val compare_subst : subst -> subst -> int
-(** Comparison of substitutions. *)
+  val eval : subst -> tvar -> t
 
-val equal_subst : subst -> subst -> bool
-(** Equality of substitutions. *)
+  val compare : subst -> subst -> int
+  (** Comparison of substitutions. *)
 
-val print_subst: Format.formatter -> subst -> unit
-(** Print function for substitutions. *)
+  val equal : subst -> subst -> bool
+  (** Equality of substitutions. *)
 
-val esubst : subst
-(** The empty substitution, a.k.a. the identity. *)
+  val pp : t Fmt.t
+  (** Print function for substitutions. *)
+end
+
+type subst = Subst.subst
 
 val apply_subst : subst -> t -> t
 (** Substitution application. *)
