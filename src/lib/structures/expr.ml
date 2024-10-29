@@ -507,7 +507,7 @@ module SmtPrinter = struct
       Fmt.pf ppf "@[<2>(ae.mapsto %a %a@])" Var.print v pp t
 
     | Sy.In (_lb, _rb), [_t] ->
-      (* WARNING: we don't print the content of this semantic trigger as
+      (* WARNING: we do not print the content of this semantic trigger as
          it requires to write a SMT-LIB compliant printer for bounds. *)
       Fmt.pf ppf "ae.in"
 
@@ -524,7 +524,214 @@ module SmtPrinter = struct
 
   and pp_boxed ppf = Fmt.box pp_silent ppf
 
-  (* Not displaying types when int SMT format *)
+  (* Not displaying types when in SMT format *)
+  and pp_verbose ppf t = pp_boxed ppf t
+
+  and pp ppf t =
+    if Options.get_debug () then pp_verbose ppf t
+    else pp_boxed ppf t
+
+end
+
+module DebugPrinter = struct
+  let is_zero sy =
+    match sy with
+    | Sy.Int i when Z.(equal i zero) -> true
+    | Sy.Real q when Q.(equal q zero) -> true
+    | _ -> false
+
+  let pp_rational ppf q =
+    if Z.equal (Q.den q) Z.one then
+      Fmt.pf ppf "%a.0" Z.pp_print (Q.num q)
+    else if Q.sign q = -1 then
+      Fmt.pf ppf "((- %a) /@ %a)"
+        Z.pp_print (Z.abs (Q.num q))
+        Z.pp_print (Q.den q)
+    else
+      Fmt.pf ppf "(%a /@ %a)" Z.pp_print (Q.num q) Z.pp_print (Q.den q)
+
+  let pp_binder ppf (var, ty) =
+    Fmt.pf ppf "(%a :@ %a)" Var.print var Ty.pp_smtlib ty
+
+  let pp_binders = Fmt.(box @@ iter_bindings ~sep:sp Var.Map.iter pp_binder)
+
+  let pp_bind ppf b =
+    match b with
+    | `Forall -> Fmt.pf ppf "∀"
+    | `Exists -> Fmt.pf ppf "∃"
+
+  (* This printer follows the convention used to print
+     type variables in the module [Ty]. *)
+  let pp_tyvar ppf v = Fmt.pf ppf "A%d" v
+
+  let rec pp_main bind ppf { user_trs; main; binders; _ } =
+    if not @@ Var.Map.is_empty binders then
+      Fmt.pf ppf "(%a (%a)@, %a@, %a)@]"
+        pp_bind bind
+        pp_binders binders
+        pp_boxed main
+        pp_triggers user_trs
+    else
+      pp_boxed ppf main
+
+  and pp_quantified bind ppf q =
+    if q.toplevel && not @@ Ty.Svty.is_empty q.main.vty then
+      Fmt.pf ppf "(∀%a@, %a)"
+        Fmt.(box @@ iter ~sep:comma Ty.Svty.iter pp_tyvar) q.main.vty
+        (pp_main bind) q
+    else
+      pp_main bind ppf q
+
+  and pp_lemma ppf = pp_quantified `Forall ppf
+
+  and pp_skolem ppf = pp_quantified `Exists ppf
+
+  and pp_formula ppf form xs bind =
+    match form, xs, bind with
+    | Sy.F_Unit _, [f1; f2], _ ->
+      Fmt.pf ppf "(%a ∧@ %a)" pp_boxed f1 pp_boxed f2
+
+    | Sy.F_Iff, [f1; f2], _ ->
+      Fmt.pf ppf "(%a ↔@ %a)" pp_boxed f1 pp_boxed f2
+
+    | Sy.F_Xor, [f1; f2], _ ->
+      Fmt.pf ppf "(%a xor@ %a)" pp_boxed f1 pp_boxed f2
+
+    | Sy.F_Clause _, [f1; f2], _ ->
+      Fmt.pf ppf "(%a ∨@ %a)" pp_boxed f1 pp_boxed f2
+
+    | Sy.F_Lemma, [], B_lemma q ->
+      Fmt.pf ppf "@[(! %a :named %s@])" pp_lemma q q.name
+
+    | Sy.F_Skolem, [], B_skolem q ->
+      Fmt.pf ppf "@[(! %a :named %s@])" pp_skolem q q.name
+
+    | _ -> assert false
+
+  and pp_lit ppf lit xs =
+    match lit, xs with
+    | Sy.L_eq, a::l ->
+      Fmt.pf ppf "(%a =@ %a)"
+        pp a (fun ppf -> List.iter (Fmt.pf ppf " %a" pp)) l
+
+    | Sy.L_neg_eq, _ :: _ ->
+      Fmt.pf ppf "(distinct %a)" Fmt.(list ~sep:sp pp) xs
+
+    | Sy.L_built Sy.LE, [a;b] ->
+      Fmt.pf ppf "(%a ≤@ %a)" pp a pp b
+
+    | Sy.L_built Sy.LT, [a;b] ->
+      Fmt.pf ppf "(%a <@ %a)" pp a pp b
+
+    | Sy.L_neg_built Sy.LE, [a; b] ->
+      Fmt.pf ppf "(%a >@ %a)" pp a pp b
+
+    | Sy.L_neg_built Sy.LT, [a; b] ->
+      Fmt.pf ppf "(%a >=@ %a)" pp a pp b
+
+    | Sy.L_built Sy.BVULE, [a;b] ->
+      Fmt.pf ppf "bvule(%a,@ %a)" pp a pp b
+
+    | Sy.L_neg_built Sy.BVULE, [a;b] ->
+      Fmt.pf ppf "bvugt(%a,@ %a)" pp a pp b
+
+    | Sy.L_neg_pred, [a] ->
+      Fmt.pf ppf "(not@ %a)" pp a
+
+    | Sy.L_built (Sy.IsConstr hs), [e] ->
+      Fmt.pf ppf "@[<2>((_ is %a)@ %a@])" DE.Term.Const.print hs pp e
+
+    | Sy.L_neg_built (Sy.IsConstr hs), [e] ->
+      Fmt.pf ppf "(not @[<2>((_ is %a)@ %a@]))"
+        DE.Term.Const.print hs pp e
+
+    | (Sy.L_built (Sy.LT | Sy.LE | Sy.BVULE)
+      | Sy.L_neg_built (Sy.LT | Sy.LE | Sy.BVULE)
+      | Sy.L_neg_pred | Sy.L_eq | Sy.L_neg_eq
+      | Sy.L_built (Sy.IsConstr _)
+      | Sy.L_neg_built (Sy.IsConstr _)), _ ->
+      assert false
+
+  and pp_silent ppf t =
+    let { f ; xs ; ty; bind; _ } = t in
+    match f, xs with
+    | Sy.Form form, xs -> pp_formula ppf form xs bind
+
+    | Sy.Lit lit, xs -> pp_lit ppf lit xs
+
+    | Sy.Let, [] ->
+      let x = match bind with B_let x -> x | _ -> assert false in
+      Fmt.pf ppf "@[<2>(let@ ((%a %a))@ %a@])"
+        Var.print x.let_v
+        pp x.let_e
+        pp_boxed x.in_e
+
+    | Sy.Op op, [] -> Symbols.pp_debug_operator ppf op
+
+    | Sy.Op Minus, [e1; { f = Sy.Real q; _ }] when is_zero e1.f ->
+      pp_rational ppf (Q.neg q)
+
+    | Sy.Op Minus, [e1; e2] when is_zero e1.f ->
+      Fmt.pf ppf "(- %a)" pp e2
+
+    | Sy.Op op, _ :: _ ->
+      Fmt.pf ppf "(%a %a)"
+        Symbols.pp_debug_operator op
+        Fmt.(list ~sep:sp pp |> box) xs
+
+    | Sy.True, [] -> Fmt.(styled (`Fg `Green) pf) ppf "⊤"
+
+    | Sy.False, [] -> Fmt.(styled (`Fg `Red) pf) ppf  "⊥"
+
+    | Sy.Name { ns = Abstract; hs = n; _ }, [] ->
+      Fmt.pf ppf "(as %a %a)" Id.pp n Ty.pp_smtlib ty
+
+    | Sy.Name { hs = n; _ }, [] -> Id.pp ppf n
+
+    | Sy.Name { hs = n; _ }, _ :: _ ->
+      Fmt.pf ppf "(%a %a)"
+        Id.pp n
+        Fmt.(box @@ list ~sep:sp pp) xs
+
+    | Sy.Var v, [] -> Var.print ppf v
+
+    | Sy.Int i, [] ->
+      if Z.sign i = -1 then
+        Fmt.pf ppf "(- %a)" Z.pp_print (Z.abs i)
+      else
+        Fmt.pf ppf "%a" Z.pp_print i
+
+    | Sy.Real q, [] ->
+      pp_rational ppf q
+
+    | Sy.Bitv (n, s), [] ->
+      if n mod 4 = 0 then
+        Fmt.pf ppf "#x%s" (Z.format (Fmt.str "%%0%dx" (n / 4)) s)
+      else
+        Fmt.pf ppf "#b%s" (Z.format (Fmt.str "%%0%db" n) s)
+
+    | Sy.MapsTo v, [t] ->
+      Fmt.pf ppf "@[<2>(ae.mapsto %a %a@])" Var.print v pp t
+
+    | Sy.In (_lb, _rb), [_t] ->
+      (* WARNING: we do not print the content of this semantic trigger as
+         it requires to write a SMT-LIB compliant printer for bounds. *)
+      Fmt.pf ppf "ae.in"
+
+    | Sy.(True | False | Let | Var _ | Int _ | Real _ | Bitv _
+         | MapsTo _ | In _), _ ->
+      (* All the cases have been excluded by the parser. *)
+      assert false
+
+  and pp_trigger ppf { content; _ } =
+    Fmt.(box @@ braces @@ list ~sep:comma pp) ppf content
+
+  and pp_triggers ppf trs =
+    Fmt.(box @@ braces @@ list ~sep:sp pp_trigger) ppf trs
+
+  and pp_boxed ppf = Fmt.box pp_silent ppf
+
+  (* Not displaying types when in SMT format *)
   and pp_verbose ppf t = pp_boxed ppf t
 
   and pp ppf t =
@@ -723,6 +930,8 @@ let print_list_sep sep =
 let print_list ppf = print_list_sep "," ppf
 
 let pp_smtlib = SmtPrinter.pp
+
+let pp_debug = DebugPrinter.pp
 
 let pp_binders ppf =
   if Options.get_output_smtlib ()

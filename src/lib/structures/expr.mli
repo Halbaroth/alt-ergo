@@ -209,6 +209,8 @@ val pp_smtlib : t Fmt.t
 (** [pp_smtlib ppf e] prints the expression [e] on the formatter
     [ppf] using the SMT-LIB standard. *)
 
+val pp_debug : t Fmt.t
+
 (** Comparison and hashing functions *)
 
 val compare : t -> t -> int

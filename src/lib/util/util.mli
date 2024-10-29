@@ -50,6 +50,8 @@ type case_split_policy =
 
 type inst_kind = Normal | Forward | Backward
 
+val pp_inst_kind : inst_kind Fmt.t
+
 type sat_solver =
   | Tableaux
   | Tableaux_CDCL

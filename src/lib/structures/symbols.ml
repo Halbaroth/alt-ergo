@@ -445,78 +445,140 @@ module AEPrinter = struct
     | MapsTo v -> Fmt.pf ppf "%a |->" Var.print v
 end
 
-module SmtPrinter = struct
-  let pp_operator ppf op =
-    match op with
-    (* Core theory *)
-    |Tite -> Fmt.pf ppf "ite"
-
-    (* Reals and Ints theories *)
-    | Plus -> Fmt.pf ppf "+"
-    | Minus -> Fmt.pf ppf "-"
-    | Mult -> Fmt.pf ppf "*"
-    | Div -> Fmt.pf ppf "/"
-    | Modulo -> Fmt.pf ppf "%%"
-
-    (* Reals_Ints theory *)
-    | Abs_int | Abs_real -> Fmt.pf ppf "abs"
-    | Real_of_int -> Fmt.pf ppf "to_real"
-    | Real_is_int -> Fmt.pf ppf "is_int"
-    | Int_floor -> Fmt.pf ppf "to_int"
-
-    (* FixedSizedBitVectors theory *)
-    | Extract (i, j) -> Fmt.pf ppf "(_ extract %d %d)" j i
-    | Concat -> Fmt.pf ppf "concat"
-    | Sign_extend i -> Fmt.pf ppf "(_ sign_extend %d)" i
-    | Repeat i -> Fmt.pf ppf "(_ repeat %d)" i
-    | BV2Nat -> Fmt.pf ppf "bv2nat"
-    | BVnot -> Fmt.pf ppf "bvnot"
-    | BVand -> Fmt.pf ppf "bvand"
-    | BVor -> Fmt.pf ppf "bvor"
-    | BVxor -> Fmt.pf ppf "bvxor"
-
-    (* BV logic *)
-    | BVadd -> Fmt.pf ppf "bvadd"
-    | BVsub -> Fmt.pf ppf "bvsub"
-    | BVmul -> Fmt.pf ppf "bvmul"
-    | BVudiv -> Fmt.pf ppf "bvudiv"
-    | BVurem -> Fmt.pf ppf "bvurem"
-    | BVshl -> Fmt.pf ppf "bvshl"
-    | BVlshr -> Fmt.pf ppf "bvlshr"
-
-    (* ArraysEx theory *)
-    | Get -> Fmt.pf ppf "select"
-    | Set -> Fmt.pf ppf "store"
-
-    (* DT theory *)
-    | Record -> ()
-    | Access tcst | Constr tcst | Destruct tcst ->
-      DE.Term.Const.print ppf tcst
-
-    (* Float theory *)
-    | Float -> Fmt.pf ppf "ae.round"
-
-    (* Not in the SMT-LIB standard *)
-    | Int2BV n -> Fmt.pf ppf "(_ int2bv %d)" n
-    | Not_theory_constant -> Fmt.pf ppf "ae.not_theory_constant"
-    | Is_theory_constant -> Fmt.pf ppf "ae.is_theory_constant"
-    | Linear_dependency -> Fmt.pf ppf "ae.linear_dependency"
-    | Sqrt_real -> Fmt.pf ppf "ae.sqrt_real"
-    | Sqrt_real_default -> Fmt.pf ppf "ae.sqrt_real_default"
-    | Sqrt_real_excess -> Fmt.pf ppf "ae.sqrt_real_excess"
-    | Int_ceil -> Fmt.pf ppf "ae.int_ceil"
-    | Max_real -> Fmt.pf ppf "ae.max_real"
-    | Max_int -> Fmt.pf ppf "ae.max_int"
-    | Min_real -> Fmt.pf ppf "ae.min_real"
-    | Min_int -> Fmt.pf ppf "ae.min_int"
-    | Integer_log2 -> Fmt.pf ppf "ae.integer_log2"
-    | Integer_round -> Fmt.pf ppf "ae.integer_round"
-    | Pow -> Fmt.pf ppf "ae.pow"
-
-end
-
 let pp_ae_operator = AEPrinter.pp_operator
-let pp_smtlib_operator = SmtPrinter.pp_operator
+
+let pp_smtlib_operator ppf op =
+  match op with
+  (* Core theory *)
+  | Tite -> Fmt.pf ppf "ite"
+
+  (* Reals and Ints theories *)
+  | Plus -> Fmt.pf ppf "+"
+  | Minus -> Fmt.pf ppf "-"
+  | Mult -> Fmt.pf ppf "*"
+  | Div -> Fmt.pf ppf "/"
+  | Modulo -> Fmt.pf ppf "%%"
+
+  (* Reals_Ints theory *)
+  | Abs_int | Abs_real -> Fmt.pf ppf "abs"
+  | Real_of_int -> Fmt.pf ppf "to_real"
+  | Real_is_int -> Fmt.pf ppf "is_int"
+  | Int_floor -> Fmt.pf ppf "to_int"
+
+  (* FixedSizedBitVectors theory *)
+  | Extract (i, j) -> Fmt.pf ppf "(_ extract %d %d)" j i
+  | Concat -> Fmt.pf ppf "concat"
+  | Sign_extend i -> Fmt.pf ppf "(_ sign_extend %d)" i
+  | Repeat i -> Fmt.pf ppf "(_ repeat %d)" i
+  | BV2Nat -> Fmt.pf ppf "bv2nat"
+  | BVnot -> Fmt.pf ppf "bvnot"
+  | BVand -> Fmt.pf ppf "bvand"
+  | BVor -> Fmt.pf ppf "bvor"
+  | BVxor -> Fmt.pf ppf "bvxor"
+
+  (* BV logic *)
+  | BVadd -> Fmt.pf ppf "bvadd"
+  | BVsub -> Fmt.pf ppf "bvsub"
+  | BVmul -> Fmt.pf ppf "bvmul"
+  | BVudiv -> Fmt.pf ppf "bvudiv"
+  | BVurem -> Fmt.pf ppf "bvurem"
+  | BVshl -> Fmt.pf ppf "bvshl"
+  | BVlshr -> Fmt.pf ppf "bvlshr"
+
+  (* ArraysEx theory *)
+  | Get -> Fmt.pf ppf "select"
+  | Set -> Fmt.pf ppf "store"
+
+  (* DT theory *)
+  | Constr tcst | Destruct tcst -> DE.Term.Const.print ppf tcst
+
+  (* Float theory *)
+  | Float -> Fmt.pf ppf "ae.round"
+
+  (* Not in the SMT-LIB standard *)
+  | Int2BV n -> Fmt.pf ppf "(_ int2bv %d)" n
+  | Not_theory_constant -> Fmt.pf ppf "ae.not_theory_constant"
+  | Is_theory_constant -> Fmt.pf ppf "ae.is_theory_constant"
+  | Linear_dependency -> Fmt.pf ppf "ae.linear_dependency"
+  | Sqrt_real -> Fmt.pf ppf "ae.sqrt_real"
+  | Sqrt_real_default -> Fmt.pf ppf "ae.sqrt_real_default"
+  | Sqrt_real_excess -> Fmt.pf ppf "ae.sqrt_real_excess"
+  | Int_ceil -> Fmt.pf ppf "ae.int_ceil"
+  | Max_real -> Fmt.pf ppf "ae.max_real"
+  | Max_int -> Fmt.pf ppf "ae.max_int"
+  | Min_real -> Fmt.pf ppf "ae.min_real"
+  | Min_int -> Fmt.pf ppf "ae.min_int"
+  | Integer_log2 -> Fmt.pf ppf "ae.integer_log2"
+  | Integer_round -> Fmt.pf ppf "ae.integer_round"
+  | Pow -> Fmt.pf ppf "ae.pow"
+
+let pp_debug_operator ppf op =
+  match op with
+  (* Core theory *)
+  | Tite -> Fmt.pf ppf "ite"
+
+  (* Reals and Ints theories *)
+  | Plus -> Fmt.pf ppf "+"
+  | Minus -> Fmt.pf ppf "-"
+  | Mult -> Fmt.pf ppf "*"
+  | Div -> Fmt.pf ppf "/"
+  | Modulo -> Fmt.pf ppf "%%"
+
+  (* Reals_Ints theory *)
+  | Abs_int | Abs_real -> Fmt.pf ppf "abs"
+  | Real_of_int -> Fmt.pf ppf "to_real"
+  | Real_is_int -> Fmt.pf ppf "is_int"
+  | Int_floor -> Fmt.pf ppf "to_int"
+
+  (* FixedSizedBitVectors theory *)
+  | Extract (i, j) -> Fmt.pf ppf "(_ extract %d %d)" j i
+  | Concat -> Fmt.pf ppf "concat"
+  | Sign_extend i -> Fmt.pf ppf "(_ sign_extend %d)" i
+  | Repeat i -> Fmt.pf ppf "(_ repeat %d)" i
+  | BV2Nat -> Fmt.pf ppf "bv2nat"
+  | BVnot -> Fmt.pf ppf "bvnot"
+  | BVand -> Fmt.pf ppf "bvand"
+  | BVor -> Fmt.pf ppf "bvor"
+  | BVxor -> Fmt.pf ppf "bvxor"
+
+  (* BV logic *)
+  | BVadd -> Fmt.pf ppf "bvadd"
+  | BVsub -> Fmt.pf ppf "bvsub"
+  | BVmul -> Fmt.pf ppf "bvmul"
+  | BVudiv -> Fmt.pf ppf "bvudiv"
+  | BVurem -> Fmt.pf ppf "bvurem"
+  | BVshl -> Fmt.pf ppf "bvshl"
+  | BVlshr -> Fmt.pf ppf "bvlshr"
+
+  (* ArraysEx theory *)
+  | Get -> Fmt.pf ppf "select"
+  | Set -> Fmt.pf ppf "store"
+
+  (* DT theory *)
+  | Constr tcst ->
+    Fmt.styled (`Fg `Blue) DE.Term.Const.print ppf tcst
+  | Destruct tcst ->
+    Fmt.styled (`Fg `Red) DE.Term.Const.print ppf tcst
+
+  (* Float theory *)
+  | Float -> Fmt.pf ppf "ae.round"
+
+  (* Not in the SMT-LIB standard *)
+  | Int2BV n -> Fmt.pf ppf "(_ int2bv %d)" n
+  | Not_theory_constant -> Fmt.pf ppf "ae.not_theory_constant"
+  | Is_theory_constant -> Fmt.pf ppf "ae.is_theory_constant"
+  | Linear_dependency -> Fmt.pf ppf "ae.linear_dependency"
+  | Sqrt_real -> Fmt.pf ppf "ae.sqrt_real"
+  | Sqrt_real_default -> Fmt.pf ppf "ae.sqrt_real_default"
+  | Sqrt_real_excess -> Fmt.pf ppf "ae.sqrt_real_excess"
+  | Int_ceil -> Fmt.pf ppf "ae.int_ceil"
+  | Max_real -> Fmt.pf ppf "ae.max_real"
+  | Max_int -> Fmt.pf ppf "ae.max_int"
+  | Min_real -> Fmt.pf ppf "ae.min_real"
+  | Min_int -> Fmt.pf ppf "ae.min_int"
+  | Integer_log2 -> Fmt.pf ppf "ae.integer_log2"
+  | Integer_round -> Fmt.pf ppf "ae.integer_round"
+  | Pow -> Fmt.pf ppf "ae.pow"
 
 let print_clean = AEPrinter.pp ~show_vars:false
 let print = AEPrinter.pp ~show_vars:true

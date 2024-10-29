@@ -111,11 +111,19 @@ module Domain = struct
 
   let equal d1 d2 = TSet.equal d1.constrs d2.constrs
 
+  let pp_constrs ppf constrs =
+    Fmt.(box @@ braces
+         @@ iter ~sep:comma TSet.iter
+         @@ styled (`Fg `Blue)
+         @@ DE.Term.Const.print) ppf constrs
+
   let pp ppf d =
-    Fmt.(braces @@
-         iter ~sep:comma TSet.iter DE.Term.Const.print) ppf d.constrs;
-    if Options.(get_verbose () || get_unsat_core ()) then
-      Fmt.pf ppf " %a" (Fmt.box Ex.print) d.ex
+    if Options.(get_verbose () || get_unsat_core ())
+    && not @@ Ex.is_empty d.ex then
+      Fmt.(box @@ parens @@ pair ~sep:comma pp_constrs Ex.print)
+        ppf (d.constrs, d.ex)
+    else
+      pp_constrs ppf d.constrs
 
   let intersect ~ex d1 d2 =
     let constrs = TSet.inter d1.constrs d2.constrs in
@@ -159,10 +167,10 @@ module Domains = struct
   type _ Uf.id += Id : t Uf.id
 
   let pp ppf t =
-    Fmt.(iter_bindings ~sep:semi MX.iter
-           (box @@ pair ~sep:(any " ->@ ") X.print Domain.pp)
-         |> braces
-        )
+    Fmt.(box
+         @@ braces
+         @@ iter_bindings ~sep:semi MX.iter
+         @@ pair ~sep:(any " ->@ ") X.print Domain.pp)
       ppf t.domains
 
   let empty = { domains = MX.empty; enums = SX.empty; changed = SX.empty }

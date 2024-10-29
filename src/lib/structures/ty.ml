@@ -619,7 +619,8 @@ let vty_of t =
 let print_subst =
   let sep ppf () = Fmt.pf ppf " -> " in
   Fmt.(box @@ braces
-       @@ iter_bindings ~sep:comma M.iter (pair ~sep int print))
+       @@ iter_bindings ~sep:comma M.iter
+       @@ pair ~sep int print)
 
 let print_full =
   fst (print_generic (Some type_body)) (Some type_body)

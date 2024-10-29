@@ -29,6 +29,8 @@ module E = Expr
 module ME = E.Map
 module SubstE = Var.Map
 
+module MT = Matching_types
+
 let src = Logs.Src.create ~doc:"Matching" __MODULE__
 module Log = (val Logs.src_log src : Logs.LOG)
 
@@ -94,91 +96,82 @@ module Make (X : Arg) : S with type theory = X.t = struct
   (*BISECT-IGNORE-BEGIN*)
   module Debug = struct
     open Printer
-    let add_term t =
-      if Options.get_debug_matching() >= 3 then
-        print_dbg
-          ~module_name:"Matching" ~function_name:"add_term"
-          "add_term:  %a" E.print t
-
-    let matching tr =
-      if Options.get_debug_matching() >= 3 then
+    (* let matching tr =
+       if Options.get_debug_matching() >= 1 then
         print_dbg
           ~module_name:"Matching" ~function_name:"matching"
           "@[<v 0>(multi-)trigger: %a@ \
            ========================================================@]"
-          E.print_list tr.E.content
+          E.pp_debug_list tr.E.content *)
+
+    let pp_pat ppf Matching_types.{ trigger; _ } =
+      Expr.print_triggers ppf [trigger]
+
+    let matching env =
+      Log.debug (fun k ->
+          k "start matching round with known terms:@ %a@ and patterns:@ %a"
+            Fmt.(box @@ braces
+                 @@ iter_bindings ~sep:comma ME.iter
+                 @@ pair E.pp_debug nop) env.info
+            Fmt.(box @@ braces
+                 @@ list ~sep:comma pp_pat) env.pats)
 
     let match_pats_modulo pat lsubsts =
       if Options.get_debug_matching() >= 3 then
         let print fmt Matching_types.{ sbs; sty; _ } =
           Format.fprintf fmt ">>> sbs= %a | sty= %a@ "
-            (SubstE.pp E.print) sbs Ty.print_subst sty
+            (SubstE.pp E.pp_debug) sbs Ty.print_subst sty
         in
         print_dbg
           ~module_name:"Matching" ~function_name:"match_pats_modulo"
           "@[<v 2>match_pat_modulo: %a  with accumulated substs@ %a@]"
-          E.print pat (pp_list_no_space print) lsubsts
+          E.pp_debug pat (pp_list_no_space print) lsubsts
 
     let match_one_pat Matching_types.{ sbs; sty; _ } pat0 =
-      if Options.get_debug_matching() >= 3 then
+      if Options.get_debug_matching() >= 1 then
         print_dbg
           ~module_name:"Matching" ~function_name:"match_one_pat"
           "match_pat: %a with subst: sbs= %a | sty= %a"
-          E.print pat0 (SubstE.pp E.print) sbs Ty.print_subst sty
+          E.pp_debug pat0 (SubstE.pp E.pp_debug) sbs Ty.print_subst sty
 
 
     let match_one_pat_against Matching_types.{ sbs; sty; _ } pat0 t =
-      if Options.get_debug_matching() >= 3 then
+      if Options.get_debug_matching() >= 1 then
         print_dbg
           ~module_name:"Matching" ~function_name:"match_one_pat_against"
           "@[<v 0>match_pat: %a against term %a@ \
            with subst:  sbs= %a | sty= %a@]"
-          E.print pat0
-          E.print t
-          (SubstE.pp E.print) sbs
+          E.pp_debug pat0
+          E.pp_debug t
+          (SubstE.pp E.pp_debug) sbs
           Ty.print_subst sty
 
-    let match_term Matching_types.{ sbs; sty; _ } t pat =
-      if Options.get_debug_matching() >= 3 then
-        print_dbg
-          ~module_name:"Matching" ~function_name:"match_term"
-          "I match %a against %a with subst: sbs=%a | sty= %a"
-          E.print pat E.print t (SubstE.pp E.print) sbs Ty.print_subst sty
-
     let match_list Matching_types.{ sbs; sty; _ } pats xs =
-      if Options.get_debug_matching() >= 3 then
+      if Options.get_debug_matching() >= 1 then
         print_dbg
           ~module_name:"Matching" ~function_name:"match_list"
           "I match %a against %a with subst: sbs=%a | sty= %a"
-          E.print_list pats
-          E.print_list xs
-          (SubstE.pp E.print) sbs
+          Fmt.(list ~sep:comma E.pp_debug) pats
+          Fmt.(list ~sep:comma E.pp_debug) xs
+          (SubstE.pp E.pp_debug) sbs
           Ty.print_subst sty
 
     let match_class_of t cl =
-      if Options.get_debug_matching() >= 3 then
-        print_dbg
-          ~module_name:"Matching" ~function_name:"match_class_of"
-          "class_of (%a) = { %a }"
-          E.print t
-          (fun fmt -> E.Set.iter (Format.fprintf fmt "%a , " E.print)) cl
+      Log.debug (fun k -> k
+                    "class_of (%a) = %a"
+                    E.pp_debug t
+                    Fmt.(box @@ braces @@ list ~sep:comma E.pp_debug) cl)
 
     let candidate_substitutions pat_info res =
-      let open Matching_types in
-      if Options.get_debug_matching () >= 1 then
-        print_dbg
-          ~module_name:"Matching" ~function_name:"candidate_substitutions"
-          "@[<v 2>%3d candidate substitutions for Axiom %a with trigger %a@ "
-          (List.length res)
-          E.print pat_info.trigger_orig
-          E.print_list pat_info.trigger.E.content;
-      if Options.get_debug_matching() >= 2 then
-        List.iter
-          (fun gsbt ->
-             print_dbg ~header:false
-               ">>> sbs = %a  and  sbty = %a@ "
-               (SubstE.pp E.print) gsbt.sbs Ty.print_subst gsbt.sty
-          )res
+      if not @@ Compat.List.is_empty res then
+        Log.debug
+          (fun k -> k
+              "found %d candidate substitutions for the axiom %a with \
+               the multi-trigger:@ %a"
+              (List.length res)
+              E.pp_debug pat_info.MT.trigger_orig
+              Fmt.(box @@ braces @@ list ~sep:comma E.pp_debug)
+              pat_info.trigger.E.content);
 
   end
   (*BISECT-IGNORE-END*)
@@ -191,7 +184,7 @@ module Make (X : Arg) : S with type theory = X.t = struct
 
   let add_term info t env =
     let open Matching_types in
-    Debug.add_term t;
+    Log.debug (fun k -> k"add term: %a" E.pp_debug t);
     let rec add_rec env t =
       if ME.mem t env.info then env
       else
@@ -377,7 +370,15 @@ module Make (X : Arg) : S with type theory = X.t = struct
       ({ sty = s_ty; gen = g; goal = b; _ } as sg : Matching_types.gsubst)
       pat t =
     Options.exec_thread_yield ();
-    Debug.match_term sg t pat;
+    Log.debug
+      (fun k ->
+         k "@[match term@ '%a' against pattern@,'%a' with \
+            substitution@ (%a, %a)"
+           E.pp_debug t
+           E.pp_debug pat
+           (SubstE.pp E.pp_debug)
+           sg.sbs
+           Ty.print_subst sg.sty);
     let { E.f = f_pat; xs = pats; ty = ty_pat; _ } = E.term_view pat in
     match f_pat with
     |  Symbols.Var v when Var.equal v Var.underscore ->
@@ -407,7 +408,6 @@ module Make (X : Arg) : S with type theory = X.t = struct
           let cl = if mconf.Util.no_ematching then E.Set.singleton t
             else X.class_of tbox t
           in
-          Debug.match_class_of t cl;
           let cl =
             E.Set.fold
               (fun t l ->
@@ -435,7 +435,6 @@ module Make (X : Arg) : S with type theory = X.t = struct
       with Ty.TypeClash _ -> raise Echec
 
   and match_list mconf env tbox sg pats xs =
-    Debug.match_list sg pats xs;
     try
       List.fold_left2
         (fun sb_l pat arg ->
@@ -450,8 +449,7 @@ module Make (X : Arg) : S with type theory = X.t = struct
 
   let match_one_pat mconf env tbox pat0 lsbt_acc sg =
     Steps.incr (Steps.Matching);
-    Debug.match_one_pat sg pat0;
-    let pat = E.apply_subst (sg.sbs, sg.sty) pat0 in
+    let pat = E.apply_subst (sg.MT.sbs, sg.sty) pat0 in
     let { E.f = f; xs = pats; ty = ty; _ } = E.term_view pat in
     match f with
     | Symbols.Var v -> all_terms v ty env tbox sg lsbt_acc
@@ -463,7 +461,6 @@ module Make (X : Arg) : S with type theory = X.t = struct
         if too_big then lsbt
         else
           try
-            Debug.match_one_pat_against sg pat0 t;
             let s_ty = Ty.matching sty ty (E.type_info t) in
             let gen, but = infos max (||) t g b env in
             let sg =
@@ -479,14 +476,13 @@ module Make (X : Arg) : S with type theory = X.t = struct
       with Not_found -> lsbt_acc
 
   let match_pats_modulo mconf env tbox lsubsts pat =
-    Debug.match_pats_modulo pat lsubsts;
     List.fold_left (match_one_pat mconf env tbox pat) [] lsubsts
 
   let matching mconf env tbox pat_info =
     let open Matching_types in
     let pats = pat_info.trigger in
     let pats_list = pats.E.content in
-    Debug.matching pats;
+    Debug.matching env;
     if List.length pats_list > Options.get_max_multi_triggers_size () then
       pat_info, []
     else
@@ -504,7 +500,6 @@ module Make (X : Arg) : S with type theory = X.t = struct
       | [_] ->
         let res =
           List.fold_left (match_pats_modulo mconf env tbox) [egs] pats_list in
-        Debug.candidate_substitutions pat_info res;
         pat_info, res
       | _ ->
         let cpt = ref 1 in
@@ -526,7 +521,7 @@ module Make (X : Arg) : S with type theory = X.t = struct
             Printer.print_dbg
               ~module_name:"Matching" ~function_name:"matching"
               "skip matching for %a : cpt = %d"
-              E.print pat_info.trigger_orig !cpt;
+              E.pp_debug pat_info.trigger_orig !cpt;
           pat_info, []
 
   let reset_cache_refs () =
@@ -657,17 +652,17 @@ module Make (X : Arg) : S with type theory = X.t = struct
       (fun lem (guard, age, dep) env ->
          match E.form_view lem with
          | E.Lemma ({ E.main = f; name; _ } as q) ->
-           let tgs, kind =
+           let tgs =
              match mconf.Util.backward with
-             | Util.Normal   -> triggers_of q mconf, "Normal"
-             | Util.Backward -> backward_triggers q, "Backward"
-             | Util.Forward  -> forward_triggers q, "Forward"
+             | Util.Normal   -> triggers_of q mconf
+             | Util.Backward -> backward_triggers q
+             | Util.Forward  -> forward_triggers q
            in
-           if Options.get_debug_triggers () then
-             Printer.print_dbg
-               ~module_name:"Matching" ~function_name:"add_triggers"
-               "@[<v 2>%s triggers of %s are:@ %a@]"
-               kind name E.print_triggers tgs;
+           Log.debug (fun k ->
+               k "add %a triggers of the axiom %s:@ %a"
+                 Util.pp_inst_kind mconf.Util.backward
+                 name
+                 E.print_triggers tgs);
            List.fold_left
              (fun env tr ->
                 let info =

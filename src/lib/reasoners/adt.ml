@@ -105,20 +105,23 @@ module Shostak (X : ALIEN) = struct
     | Some c -> c
     | None -> Alien r
 
-  let pp_field ppf (lbl, v) =
-    Fmt.pf ppf "%a : %a" DE.Term.Const.print lbl X.print v
-
   let print ppf = function
     | Alien x ->
       X.print ppf x
 
     | Constr { c_name; c_args; _ } ->
-      Fmt.pf ppf "%a@[(%a@])"
-        DE.Term.Const.print c_name
-        Fmt.(list ~sep:semi pp_field) c_args
+      if Compat.List.is_empty c_args then
+        Fmt.pf ppf "%a"
+          (Fmt.styled (`Fg `Blue) DE.Term.Const.print) c_name
+      else
+        Fmt.pf ppf "(%a %a)"
+          (Fmt.styled (`Fg `Blue) DE.Term.Const.print) c_name
+          Fmt.(list ~sep:sp @@ pair nop X.print) c_args
 
     | Select d ->
-      Fmt.pf ppf "%a#!!%a" X.print d.d_arg DE.Term.Const.print d.d_name
+      Fmt.pf ppf "(%a %a)"
+        X.print d.d_arg
+        (Fmt.styled (`Fg `Red) DE.Term.Const.print) d.d_name
 
 
   let is_mine u =
@@ -168,10 +171,7 @@ module Shostak (X : ALIEN) = struct
 
   let make t =
     assert (not @@ Options.get_disable_adts ());
-    if Options.get_debug_adt () then
-      Printer.print_dbg
-        ~module_name:"Adt" ~function_name:"make"
-        "make %a" E.print t;
+    Log.debug (fun k -> k"make@ '%a'" E.pp_debug t);
     let { E.f; xs; ty; _ } = E.term_view t in
     let sx, ctx =
       List.fold_left
@@ -360,10 +360,7 @@ module Shostak (X : ALIEN) = struct
     List.exists (fun y -> X.equal x y) (X.leaves e)
 
   let solve r1 r2 pb =
-    if Options.get_debug_adt () then
-      Printer.print_dbg
-        ~module_name:"Adt" ~function_name:"solve"
-        "solve %a = %a" X.print r1 X.print r2;
+    Log.debug (fun k -> k "solve:@ '%a' = '%a'" X.print r1 X.print r2);
     assert (not @@ Options.get_disable_adts ());
     match embed r1, embed r2 with
     | Select _, _ | _, Select _ -> assert false (* should be eliminated *)

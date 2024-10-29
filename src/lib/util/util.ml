@@ -64,6 +64,11 @@ type case_split_policy =
 
 type inst_kind = Normal | Forward | Backward
 
+let pp_inst_kind ppf = function
+  | Normal -> Fmt.pf ppf "normal"
+  | Forward -> Fmt.pf ppf "forward"
+  | Backward -> Fmt.pf ppf "backward"
+
 type sat_solver =
   | Tableaux
   | Tableaux_CDCL

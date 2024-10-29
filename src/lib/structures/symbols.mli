@@ -215,6 +215,8 @@ val pp_smtlib_operator : operator Fmt.t
 (* [pp_smtlib_operator ppf op] prints the operator symbol [op] on the
    formatter [ppf] using the SMT-LIB format. *)
 
+val pp_debug_operator : operator Fmt.t
+
 (*val dummy : t*)
 
 val fresh_skolem_var : string -> Var.t
