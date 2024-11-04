@@ -1182,18 +1182,6 @@ let mk_forall_ter =
         F_Htbl.add env f pos;
         pos
 
-let has_semantic_triggers trs =
-  List.exists (fun tr -> tr.semantic != []) trs
-
-let has_hypotheses trs =
-  List.exists (fun tr -> tr.hyp != []) trs
-
-let no_occur_check v e =
-  not (Var.Map.mem v e.vars)
-
-let no_vtys l =
-  List.for_all (fun e -> Ty.Svty.is_empty e.vty) l
-
 (** smart constructors for literals *)
 
 (* unused
@@ -1525,88 +1513,7 @@ and mk_forall_bis (q : quantified) =
     Var.Map.filter (fun v _ -> Var.Map.mem v q.main.vars) q.binders
   in
   if Var.Map.is_empty binders && Ty.Svty.is_empty q.main.vty then q.main
-  else
-    let q = {q with binders} in
-    (* Attempt to reduce the number of quantifiers. We try to find a
-       particular substitution [sbs] such that the application of [sbs]
-       on [q.main] produces a formula [g] such that
-       - [g] has less free term variables than [q.main] in [binders];
-       - the universal closures of [f] and [g] are equivalent. *)
-    match find_particular_subst binders q.user_trs q.main with
-    | None -> mk_forall_ter q
-
-    | Some sbs ->
-      let subst = sbs, Ty.esubst in
-      let f = apply_subst_aux subst q.main in
-      if is_ground f then f
-      else
-        let trs = List.map (apply_subst_trigger subst) q.user_trs in
-        let sko_v   = List.map (apply_subst_aux subst) q.sko_v in
-        let binders =
-          Var.Map.filter (fun x _ -> not (Var.Map.mem x sbs)) binders
-        in
-        let q = {q with binders; user_trs = trs; sko_v; main = f } in
-        mk_forall_bis q
-
-(* If [f] is a formula of the form [x = a -> P(x)] where [a] doesn't content
-   [x], this function produces the substitution { x |-> a }.
-
-   Notice that formulas [x = a -> P(x)] are represented by
-   [Clause (x <> a, P(x), _)] or [Clause (P(x), x <> a, _)].
-
-   {b Note}: this heuristic is not used if the user has defined filters.
-
-   @return [None] if the formula hasn't the right form. *)
-and find_particular_subst =
-  let exception Found of Var.t * t in
-  let rec find_subst v tv f =
-    match form_view f with
-    | Unit _ | Lemma _ | Skolem _ | Let _ | Iff _ | Xor _ -> ()
-    | Clause(f1, f2,_) -> find_subst v tv f1; find_subst v tv f2
-    | Literal a ->
-      match lit_view a with
-      | Distinct [a;b] when
-          equal tv a && no_occur_check v b && no_vtys [tv;a] ->
-        (* TODO: should unify when type variables are present *)
-        raise (Found (v, b))
-
-      | Distinct [a;b] when
-          equal tv b && no_occur_check v a && no_vtys [tv; b] ->
-        (* TODO: should unify when type variables are present *)
-        raise (Found (v, a))
-
-      | Pred (t, is_neg) when equal tv t ->
-        raise (Found (v, if is_neg then vrai else faux))
-
-      | _ -> ()
-  in
-  fun binders trs f ->
-    (* TODO: move the test for `trs` outside. *)
-    if not (Ty.Svty.is_empty f.vty) || has_hypotheses trs ||
-       has_semantic_triggers trs
-    then
-      None
-    else
-      begin
-        assert (not (Var.Map.is_empty binders));
-        let sbt =
-          Var.Map.fold
-            (fun v ty sbt ->
-               try
-                 let f = apply_subst_aux (sbt, Ty.esubst) f in
-                 find_subst v (mk_term (Sy.var v) [] ty) f;
-                 sbt
-               with Found (x, t) ->
-                 assert (not (Var.Map.mem x sbt));
-                 let one_sbt = Var.Map.singleton x t, Ty.esubst in
-                 let sbt = Var.Map.map (apply_subst_aux one_sbt) sbt in
-                 Var.Map.add x t sbt
-            )
-            binders Var.Map.empty
-        in
-        if Var.Map.is_empty sbt then None else Some sbt
-      end
-
+  else mk_forall_ter { q with binders }
 
 let apply_subst, clear_subst_cache =
   let (cache : t Msbty.t Msbt.t TMap.t ref) = ref TMap.empty in
