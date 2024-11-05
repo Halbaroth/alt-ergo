@@ -28,11 +28,8 @@ theory Simple_FPA extends FPA =
         x in [i, j],
         i2 |-> float(m, p, mode, i),
         j2 |-> float(m, p, mode, j)
-     ]
-     {
-        i <= x,
-        x <= j
-     }.
+     ].
+     i <= x and x <= j ->
      i2 <= float(m, p, mode, x) <= j2
 
 
@@ -47,11 +44,8 @@ theory Simple_FPA extends FPA =
         x in [i, j],
         i2 |-> integer_round(mode, i),
         j2 |-> integer_round(mode, j)
-     ]
-     {
-        i <= x,
-        x <= j
-     }.
+     ].
+     i <= x and x <= j ->
      i2 <= integer_round(mode, x) <= j2
 
 
@@ -77,11 +71,8 @@ theory Simple_FPA extends FPA =
                )
              ) - prec (* we can improve by -1 for some rounding modes *)
            )
-     ]
-     {
-        i <= x,
-        x <= j
-     }.
+     ].
+     i <= x and x <= j ->
      - k <=  float(prec, exp_min, NearestTiesToEven, x) - x <= k
 
 
@@ -108,11 +99,8 @@ theory Simple_FPA extends FPA =
                )
              ) - prec + 1(* we can improve by -1 for some rounding modes *)
            )
-     ]
-     {
-        i <= x,
-        x <= j
-     }.
+     ].
+     i <= x and x <= j ->
      - k <=  float(prec, exp_min, mode, x) - x <= k
 
    axiom monotonicity_contrapositive_1 :
@@ -126,11 +114,8 @@ theory Simple_FPA extends FPA =
          is_theory_constant(mode),
          float(prec, exp_min, mode, x) in [?, i[,
          k |-> float(prec, exp_min, Up, i)
-      ]
-      {
-         float(prec, exp_min, mode, x) < i
-      }.
-      (*float(prec, exp_min, mode, x) < i ->*)
+      ].
+      float(prec, exp_min, mode, x) < i ->
       x < k
 
 
@@ -145,11 +130,8 @@ theory Simple_FPA extends FPA =
          is_theory_constant(mode),
          float(prec, exp_min, mode, x) in ]i, ?],
          k |-> float(prec, exp_min, Down, i)
-      ]
-      {
-         float(prec, exp_min, mode, x) > i
-      }.
-      (*float(prec, exp_min, mode, x) > i ->*)
+      ].
+      float(prec, exp_min, mode, x) > i ->
       x > k
 
    (* Remark: should add semantic trigger 'x <= y'
@@ -207,8 +189,8 @@ theory Simple_FPA extends FPA =
          is_theory_constant(exp_min),
          is_theory_constant(mode),
          float(prec, exp_min, mode, x) in [?, i]
-      ]
-      { float(prec, exp_min, mode, x) <= i }.
+      ].
+      float(prec, exp_min, mode, x) <= i ->
       float(prec, exp_min, mode, x) = i or float(prec, exp_min, mode, x) < i
 
    axiom contrapositive_enabeler_2 :
@@ -221,8 +203,8 @@ theory Simple_FPA extends FPA =
          is_theory_constant(exp_min),
          is_theory_constant(mode),
          float(prec, exp_min, mode, x) in [i, ?]
-      ]
-      { float(prec, exp_min, mode, x) >= i }.
+      ].
+      float(prec, exp_min, mode, x) >= i ->
       float(prec, exp_min, mode, x) = i or float(prec, exp_min, mode, x) > i
 
 
@@ -325,11 +307,8 @@ theory Simple_FPA extends FPA =
         is_theory_constant(mode),
         float(m, p, mode, x) in [i, ?],
         k |-> float(m, p, Up, i)
-     ]
-     {
-        i <= float(m, p, mode, x)
-     }.
-     (*i < k -> not needed => subsumed *)
+     ].
+     i <= float(m, p, mode, x) ->
      k <= float(m, p, mode, x)
 
    axiom tighten_float_intervals__2__min_strict : (* add a semantic trigger on o(i) - i *)
@@ -344,11 +323,8 @@ theory Simple_FPA extends FPA =
         is_theory_constant(mode),
         float(m, p, mode, x) in ]i, ?],
         k |-> float(m, p, Up, i)
-     ]
-     {
-        i < float(m, p, mode, x)
-     }. (* we can improve even if this condition is not true, with epsilon *)
-     (*i < k -> not needed => subsumed*)
+     ].
+     i < float(m, p, mode, x) ->
      k <= float(m, p, mode, x)
 
    axiom tighten_float_intervals_3__max_large : (* add a semantic trigger on o(i) - i *)
@@ -363,10 +339,8 @@ theory Simple_FPA extends FPA =
         is_theory_constant(mode),
         float(m, p, mode, x) in [?, i],
         k |-> float(m, p, Down, i)
-     ]
-     {
-        i >= float(m, p, mode, x)
-     }.
+     ].
+        i >= float(m, p, mode, x) ->
      (*k < i -> not needed => subsumed*)
      k >= float(m, p, mode, x)
 
@@ -382,10 +356,8 @@ theory Simple_FPA extends FPA =
         is_theory_constant(mode),
         float(m, p, mode, x) in [?, i[,
         k |-> float(m, p, Down, i)
-     ]
-     {
-        float(m, p, mode, x) < i
-     }. (* we can improve even if this condition is not true, with epsilon *)
+     ].
+        float(m, p, mode, x) < i ->
      (*k < i -> not needed => subsumed*)
      float(m, p, mode, x) <= k
 
@@ -418,11 +390,9 @@ theory Simple_FPA extends FPA =
         real_of_int(x) + (2 **. prec)  in [0., ?],
         real_of_int(x) - (2 **. prec) in [?, 0.],
         k |-> 2 **. prec
-     ]
-     {
-        -k <= real_of_int(x),
-        real_of_int(x) <= k
-     }.
+     ].
+        -k <= real_of_int(x) and
+        real_of_int(x) <= k ->
      float(prec, exp_min, mode, real_of_int(x)) = real_of_int(x)
 
 
@@ -459,11 +429,9 @@ theory Simple_FPA extends FPA =
         i2 |-> float(m, p, Up, i + (2 **. (2 * (- p)))),
         j2 |-> float(m, p, Down, j - (2 **. (2 * (- p))))
         (* pow_real_int(2.,2 * (- p)) is smaller than any gap between two successive floats *)
-     ]
-     {
-        float(m, p, mode, x) > i,
-        float(m, p, mode, x) < j
-     }.
+     ].
+        float(m, p, mode, x) > i and
+        float(m, p, mode, x) < j ->
      i = float(m, p, mode, i) ->
      j = float(m, p, mode, j) ->
      i2 <= float(m, p, mode, x) <= j2

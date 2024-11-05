@@ -916,6 +916,8 @@ let separate_semantic_triggers content =
   syn, sem
 
 let mk_trigger ?user:(from_user = false) ?depth ?(hyp = []) content =
+  (* Only should occur in preludes. *)
+  assert (Compat.List.is_empty hyp);
   let t_depth =
     match depth with
     | Some t_depth -> t_depth

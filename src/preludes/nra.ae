@@ -13,9 +13,9 @@ theory Principal_Sqrt_real extends NRA = (* some axioms about sqrt: shoud add mo
 
 axiom sqrt_bounds:
       forall x, i, j : real
-      [sqrt_real(x), x in [i,j]]
+      [sqrt_real(x), x in [i,j]].
       (* x may be a constant. i.e. x = i = j and sqrt_real(x) is not exact *)
-      {i <= x, x <= j}.
+      i <= x and x <= j ->
       sqrt_real_default(i) <= sqrt_real(x) <= sqrt_real_excess(j)
 
 axiom sqrt_real_is_positive:
@@ -79,8 +79,8 @@ theory Linearization extends NRA =
             not_theory_constant(x),
             not_theory_constant(y),
             y in [a,?]
-         ]
-         {a <= y}.
+         ].
+         a <= y ->
          x >= 0. ->
          x*a <= x*y
 
@@ -98,8 +98,8 @@ theory Linearization extends NRA =
             not_theory_constant(x),
             not_theory_constant(y),
             y in [a,?]
-         ]
-         {a <= y}.
+         ].
+         a <= y ->
          x <= 0. ->
          x*a >= x*y
 
@@ -117,8 +117,8 @@ theory Linearization extends NRA =
             not_theory_constant(x),
             not_theory_constant(y),
             y in [?,b]
-         ]
-         {y <= b}.
+         ].
+         y <= b ->
          x >= 0. ->
          x*y <= x*b
 
@@ -136,8 +136,8 @@ theory Linearization extends NRA =
             not_theory_constant(x),
             not_theory_constant(y),
             y in [?,b]
-         ]
-         {y <= b}.
+         ].
+         y <= b ->
          x <= 0. ->
          x*y >= x*b
 
@@ -157,8 +157,8 @@ theory Linearization extends NRA =
             not_theory_constant(x),
             not_theory_constant(y),
             y in [a,?]
-         ]
-         {a <= y}.
+         ].
+         a <= y ->
          x >= 0. ->
          a*x <= y*x
 
@@ -176,8 +176,8 @@ theory Linearization extends NRA =
             not_theory_constant(x),
             not_theory_constant(y),
             y in [a,?]
-         ]
-         {a <= y}.
+         ].
+         a <= y ->
          x <= 0. ->
          a*x >= y*x
 
@@ -195,8 +195,8 @@ theory Linearization extends NRA =
             not_theory_constant(x),
             not_theory_constant(y),
             y in [?,b]
-         ]
-         {y <= b}.
+         ].
+         y <= b ->
          x >= 0. ->
          y*x <= b*x
 
@@ -214,8 +214,8 @@ theory Linearization extends NRA =
             not_theory_constant(x),
             not_theory_constant(y),
             y in [?,b]
-         ]
-         {y <= b}.
+         ].
+         y <= b ->
          x <= 0. ->
          y*x >= b*x
 
@@ -227,8 +227,8 @@ theory Linearization extends NRA =
        a/b,
        not_theory_constant(b),
        a/b in [c, ?]
-    ]
-    {a/b >= c}.
+    ].
+    a/b >= c ->
     b > 0. ->
     a >= b * c
 
@@ -239,8 +239,8 @@ theory Linearization extends NRA =
        a/b,
        not_theory_constant(b),
        a/b in [c, ?]
-    ]
-    {a/b >= c}.
+    ].
+    a/b >= c ->
     b < 0. ->
     a <= b * c
 
@@ -251,8 +251,8 @@ theory Linearization extends NRA =
        a/b,
        not_theory_constant(b),
        a/b in [?, c]
-    ]
-    {a/b <= c}.
+    ].
+    a/b <= c ->
     b > 0. ->
     a <= b * c
 
@@ -263,8 +263,8 @@ theory Linearization extends NRA =
        a/b,
        not_theory_constant(b),
        a/b in [?, c]
-    ]
-    {a/b <= c}.
+    ].
+    a/b <= c ->
     b < 0. ->
     a >= b * c
 
@@ -276,8 +276,8 @@ theory Linearization extends NRA =
        a/b,
        not_theory_constant(b),
        a/b in ]c, ?]
-    ]
-    {a/b > c}.
+    ].
+    a/b > c ->
     b > 0. ->
     a > b * c
 
@@ -288,8 +288,8 @@ theory Linearization extends NRA =
        a/b,
        not_theory_constant(b),
        a/b in ]c, ?]
-    ]
-    {a/b > c}.
+    ].
+    a/b > c ->
     b < 0. ->
     a < b * c
 
@@ -300,8 +300,8 @@ theory Linearization extends NRA =
        a/b,
        not_theory_constant(b),
        a/b in [?, c[
-    ]
-    {a/b < c}.
+    ].
+    a/b < c ->
     b > 0. ->
     a < b * c
 
@@ -312,8 +312,8 @@ theory Linearization extends NRA =
        a/b,
        not_theory_constant(b),
        a/b in [?, c[
-    ]
-    {a/b < c}.
+    ].
+    a/b < c ->
     b < 0. ->
     a > b * c
 
@@ -325,8 +325,8 @@ theory Linearization extends NRA =
         not_theory_constant(x),
         not_theory_constant(y),
         x in [0., 1.]
-     ]
-     {0. <= x, x <= 1.}. (* needs cs on y an sem trigger on y *)
+     ].
+     0. <= x and x <= 1. -> (* needs cs on y an sem trigger on y *)
      y >= 0. ->
      x*y <= y
 
@@ -337,7 +337,8 @@ theory Linearization extends NRA =
         not_theory_constant(x),
         not_theory_constant(y),
         x in [0., 1.]
-     ]{0. <= x, x <= 1.}. (* needs cs on y an sem trigger on y *)
+     ].
+     0. <= x and x <= 1. -> (* needs cs on y an sem trigger on y *)
      y >= 0. ->
      y*x <= y
 
@@ -348,7 +349,8 @@ theory Linearization extends NRA =
         not_theory_constant(x),
         not_theory_constant(y),
         x in [0., 1.]
-     ]{0. <= x, x <= 1.}. (* needs cs on y an sem trigger on y *)
+     ].
+     0. <= x and x <= 1. -> (* needs cs on y an sem trigger on y *)
      y <= 0. ->
      y <= x*y
 
@@ -359,7 +361,8 @@ theory Linearization extends NRA =
         not_theory_constant(x),
         not_theory_constant(y),
         x in [0., 1.]
-     ]{0. <= x, x <= 1.}. (* needs cs on y an sem trigger on y *)
+     ].
+     0. <= x and x <= 1. -> (* needs cs on y an sem trigger on y *)
      y <= 0. ->
      y <= y*x
 
@@ -370,7 +373,8 @@ theory Linearization extends NRA =
         not_theory_constant(x),
         not_theory_constant(y),
         -x in [0., 1.]
-     ]{-1. <= x, x <= 0.}. (* needs cs on y an sem trigger on y *)
+     ].
+     -1. <= x and x <= 0. -> (* needs cs on y an sem trigger on y *)
      y >= 0. ->
      x*y <= y
 
@@ -381,7 +385,8 @@ theory Linearization extends NRA =
         not_theory_constant(x),
         not_theory_constant(y),
         -x in [0., 1.]
-     ]{-1. <= x, x <= 0.}. (* needs cs on y an sem trigger on y *)
+     ].
+     -1. <= x and x <= 0. -> (* needs cs on y an sem trigger on y *)
      y >= 0. ->
      y*x <= y
 
@@ -392,7 +397,8 @@ theory Linearization extends NRA =
         not_theory_constant(x),
         not_theory_constant(y),
         -x in [0., 1.]
-     ]{-1. <= x, x <= 0.}. (* needs cs on y an sem trigger on y *)
+     ].
+     -1. <= x and x <= 0. -> (* needs cs on y an sem trigger on y *)
      y <= 0. ->
      y <= x*y
 
@@ -403,7 +409,8 @@ theory Linearization extends NRA =
         not_theory_constant(x),
         not_theory_constant(y),
         -x in [0., 1.]
-     ]{-1. <= x, x <= 0.}. (* needs cs on y an sem trigger on y *)
+     ].
+     -1. <= x and x <= 0. -> (* needs cs on y an sem trigger on y *)
      y <= 0. ->
      y <= y*x
 
