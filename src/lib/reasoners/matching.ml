@@ -231,14 +231,14 @@ module Make (X : Arg) : S with type theory = X.t = struct
 
   let add_term info t env =
     match E.type_info t with
-    | Trecord { record_constr; lbs; _ } as ty -> (
+    | Trecord { lbs; _ } as ty -> (
         let xs =
           List.map
             (fun (lb, ty) ->
                E.mk_term Symbols.(Op (Access lb)) [t] ty
             ) lbs
         in
-        let c = E.mk_constr record_constr xs ty in
+        let c = E.mk_term Symbols.(Op Record) xs ty in
         add_term info c env)
     | _ -> add_term info t env
 
