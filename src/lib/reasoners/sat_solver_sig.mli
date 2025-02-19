@@ -58,7 +58,7 @@ module type S = sig
   val declare : t -> Id.typed -> unit
   (** [declare env id] declares a new identifier [id].
 
-      If the environment [env] isn't unsatisfiable and the model generation
+      If the environment [env] is not unsatisfiable and the model generation
       is enabled, the solver produces a model term for [id] which can be
       retrieved with [get_model]. *)
 
@@ -89,14 +89,9 @@ module type S = sig
   (** [assume env f exp] assumes a new formula [f] with the explanation [exp]
       in the theory environment of [env]. *)
 
-  val pred_def :
-    t ->
-    Expr.t ->
-    string ->
-    Explanation.t ->
-    Dolmen.Std.Loc.loc ->
-    unit
-  (** [pred_def env f] assumes a new predicate definition [f] in [env]. *)
+  val define : t -> Expr.def -> Explanation.t -> unit
+  (** [define env def ex] assumes the definition of the function/predicate
+      [def]. The argument [ex] is used during unsat core generation. *)
 
   val optimize : t -> Objective.Function.t -> unit
   (** [optimize env fn] registers the objective function [fn].

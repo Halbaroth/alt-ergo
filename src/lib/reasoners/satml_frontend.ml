@@ -455,21 +455,19 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
          | _   -> assert false
       )acc l
 
-
-  let pred_def env f name dep _loc =
+  let define env def dep =
     (* dep currently not used. No unsat-cores in satML yet *)
-    Debug.pred_def f;
+    (*     Debug.pred_def f; *)
     let guard = env.guards.current_guard in
-    env.inst <- Inst.add_predicate env.inst ~guard ~name (mk_gf f) dep
+    env.inst <- Inst.add_definition env.inst ~guard def dep
 
   let axiom_def env gf ex =
     env.inst <- Inst.add_lemma env.inst gf ex
 
   let internal_axiom_def ax a at inst =
     Debug.internal_axiom_def ax a at;
-    let gax = mk_gf ax in
     let ex = Ex.singleton (Ex.Literal at) in
-    Inst.add_lemma inst gax ex
+    Inst.add_lemma inst ax ex
 
   let register_abstraction env new_abstr_vars (f, (af, at)) =
     if Options.(get_debug_sat () && get_verbose ()) then
@@ -498,13 +496,13 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
         end
     in
     if Atom.level at = 0 then (* at is necessarily assigned if lvl = 0 *)
-      if Atom.is_true at then
-        let () = axiom_def env (mk_gf f) Ex.empty in
+      if Atom.is_true at then (
+        axiom_def env f Ex.empty;
         new_abstr_vars
-      else begin
+      ) else (
         assert (Atom.is_true (Atom.neg at));
         assert false (* FF.simplify invariant: should not happen *)
-      end
+      )
     else begin
       (* FF.simplify invariant: should not happen *)
       assert (Atom.level at < 0);
@@ -782,7 +780,7 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
           env.gamma <- ME.add f (env.nb_mrounds, None) env.gamma;
           env.conj <- FF.Map.add ff (env.nb_mrounds, SE.add f old_sf) env.conj;
           (* This assert is not true assert (dec_lvl = 0); *)
-          axiom_def env gf Ex.empty;
+          axiom_def env gf.E.ff Ex.empty;
           {acc with updated = true}
 
         | E.Unit _ | E.Clause _ | E.Literal _ | E.Skolem _

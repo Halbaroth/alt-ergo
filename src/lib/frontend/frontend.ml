@@ -145,7 +145,7 @@ module type S = sig
 
   val assume : (string * E.t * bool) process
 
-  val pred_def : (string * E.t) process
+  val def : Expr.def process
 
   val query : (string * E.t * Ty.goal_sort) process
 
@@ -350,20 +350,24 @@ module Make(SAT : Sat_solver_sig.S) : S with type sat_env = SAT.t = struct
       | `Unsat ->
         env.expl <- expl
 
-  let internal_pred_def ?(loc = DStd.Loc.dummy) (name, f) env =
-    if not (unused_context name env.used_context) then
-      let expl = mk_root_dep name f loc in
-      SAT.pred_def env.sat_env f name expl loc;
-      env.expl <- expl
+  let internal_def ?(loc = DStd.Loc.dummy)
+      (E.{ name; body; kind; axiom; _ } as def) env =
+    (*     if not (unused_context name env.used_context) then *)
+    let ex = mk_root_dep name body loc in
+    SAT.define env.sat_env def ex;
+    env.expl <- ex;
+    match kind with
+    | E.Dpredicate -> ()
+    | E.Dfunction -> internal_assume ~loc (name, axiom, true) env
 
-  let internal_query ?(loc = DStd.Loc.dummy) (n, f, sort) env =
+  let internal_query ?(loc = DStd.Loc.dummy) (name, f, sort) env =
     ignore loc;
     let expl =
       match env.res with
       | `Sat | `Unknown ->
         let expl' = SAT.unsat env.sat_env
             {E.ff=f;
-             origin_name = n;
+             origin_name = name;
              hdist = -1;
              gdist = 0;
              trigger_depth = max_int;
@@ -380,7 +384,7 @@ module Make(SAT : Sat_solver_sig.S) : S with type sat_env = SAT.t = struct
       | `Unsat -> env.expl
     in
     if get_debug_unsat_core () then check_produced_unsat_core expl;
-    if get_save_used_context () then output_used_context n expl;
+    if get_save_used_context () then output_used_context name expl;
     env.res <- `Unsat;
     env.expl <- expl
 
@@ -431,7 +435,7 @@ module Make(SAT : Sat_solver_sig.S) : S with type sat_env = SAT.t = struct
 
   let assume = wrap_f internal_assume
 
-  let pred_def = wrap_f internal_pred_def
+  let def = wrap_f internal_def
 
   let query = wrap_f internal_query
 
@@ -445,10 +449,10 @@ module Make(SAT : Sat_solver_sig.S) : S with type sat_env = SAT.t = struct
       | Decl id -> check_if_over (internal_decl ~loc:d.st_loc id) env
       | Push n -> check_if_over (internal_push ~loc:d.st_loc n) env
       | Pop n -> check_if_over (internal_pop ~loc:d.st_loc n) env
-      | Assume (n, f, mf) ->
-        check_if_over (internal_assume ~loc:d.st_loc (n, f, mf)) env
-      | PredDef (f, name) ->
-        check_if_over (internal_pred_def ~loc:d.st_loc (name, f)) env
+      | Assume (name, f, mf) ->
+        check_if_over (internal_assume ~loc:d.st_loc (name, f, mf)) env
+      | Def def ->
+        check_if_over (internal_def ~loc:d.st_loc def) env
       | Query (n, f, sort) ->
         begin
           (* If we have reached an unknown state, we can return it right

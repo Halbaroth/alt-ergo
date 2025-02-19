@@ -252,12 +252,6 @@ module Make (Th : Theory.S) = struct
           "the following %s is unsat ? :@ %a"
           s E.print gf.E.ff
 
-    let pred_def f =
-      if Options.get_debug_sat () then
-        print_dbg
-          ~module_name:"Fun_sat" ~function_name:"pred_def"
-          "I assume a predicate: %a" E.print f
-
     let unsat_rec dep =
       if Options.get_debug_sat () then
         print_dbg
@@ -996,7 +990,7 @@ module Make (Th : Theory.S) = struct
 
           | E.Lemma _ ->
             Options.tool_req 2 "TR-Sat-Assume-Ax";
-            let inst_env = Inst.add_lemma env.inst ff dep in
+            let inst_env = Inst.add_lemma env.inst ff.E.ff dep in
             if Options.get_tableaux_cdcl () then
               cdcl_assume false env [ff,dep];
             {env with inst = inst_env}, true, tcp, ap_delta, lits
@@ -1766,13 +1760,12 @@ module Make (Th : Theory.S) = struct
          'unknown' right away. *)
       {env with unknown_reason = Some (Step_limit n)}
 
-  let pred_def env f name dep _loc =
-    Debug.pred_def f;
-    let gf = mk_gf f name true false in
+  let define env def dep =
+    (*     Log.debug (fun k -> k "Assume definition %a := %a" E.print f E.print body); *)
     let guard = env.guards.current_guard in
-    { env with
-      inst =
-        Inst.add_predicate env.inst ~guard ~name gf dep }
+    let inst = Inst.add_definition env.inst ~guard def dep in
+    (* TODO: probably wrong for functions *)
+    { env with inst }
 
   let unsat env fg =
     Timers.with_timer Timers.M_Sat Timers.F_unsat @@ fun () ->

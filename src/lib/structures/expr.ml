@@ -33,6 +33,16 @@ module DStd = Dolmen.Std
 
 type binders = Ty.t Var.Map.t
 
+type decl_kind =
+  | Dtheory
+  | Daxiom
+  | Dgoal
+  | Dobjective
+
+type def_kind =
+  | Dfunction
+  | Dpredicate
+
 type t = term_view
 
 and term_view = {
@@ -48,14 +58,6 @@ and term_view = {
   pure : bool;
   mutable neg : t option
 }
-
-and decl_kind =
-  | Dtheory
-  | Daxiom
-  | Dgoal
-  | Dpredicate of t
-  | Dfunction of t
-  | Dobjective
 
 and bind_kind =
   | B_none
@@ -101,6 +103,15 @@ and trigger = {
   hyp : t list;
   t_depth : int;
   from_user : bool;
+}
+
+type def = {
+  name : string;
+  args : (Var.t * Ty.t) list;
+  body : t;
+  axiom : t;
+  triggers : trigger list;
+  kind : def_kind;
 }
 
 type expr = t
@@ -1721,10 +1732,6 @@ let resolution_triggers ~is_back { kind; main = f; binders; _ } =
   if Options.get_no_backward () then []
   else
     match kind with
-    | Dpredicate t | Dfunction t ->
-      if type_info t != Ty.Tbool then []
-      else
-        [ mk_trigger ~depth:t.depth [t] ]
     | Dtheory | Dobjective -> []
     | Daxiom
     | Dgoal ->
@@ -2454,15 +2461,6 @@ module Triggers = struct
       | Dtheory, _ ->
         (* TODO: Add Dobjective here. We never generate triggers for them. *)
         assert false
-      | (Dpredicate e | Dfunction e), _ ->
-        let defn = match f with
-          | { f = (Sy.Form Sy.F_Iff | Sy.Lit Sy.L_eq) ; xs = [e1; e2]; _ } ->
-            if equal e e1 then e2 else if equal e e2 then e1 else f
-          | _ -> f
-        in
-        let tt = max_terms defn ~exclude:e in
-        let tt = List.fast_sort (fun a b -> depth b - depth a) tt in
-        filter_good_triggers (vterm, vtype) @@ triggers_of_list [[e]; tt]
 
       | _, { f = (Sy.Form Sy.F_Iff) ; xs = [e1; e2]; _ } when is_literal e1 ->
         let f_trs1, lets = potential_triggers (vterm, vtype) e1 in
@@ -2524,12 +2522,6 @@ let make_triggers = Triggers.make
 let clean_trigger = Triggers.clean_trigger
 
 let mk_forall name loc binders trs f ~toplevel ~decl_kind =
-  let decl_kind =
-    if toplevel then decl_kind
-    else match decl_kind with
-      | Dpredicate  _ | Dfunction _ -> Daxiom (* pred and func only toplevel*)
-      | _ -> decl_kind
-  in
   let binders =
     (* ignore binders that are not used in f ! already done in mk_forall_bis
        but maybe usefull for triggers inference *)
@@ -2772,6 +2764,47 @@ let purify_literal a =
 let purify_form f =
   Purification.lets_counter := 0;
   Purification.purify_form f
+
+let mk_definition ~loc ~name def_kind args body =
+  let defn =
+    let xs =
+      List.map
+        (fun (v, ty) -> mk_term (Sy.var v) [] ty) args
+    in
+    let f = Sy.name ~defined:true name in
+    mk_term f xs (type_info body)
+  in
+  let binders = Var.Map.of_seq @@ List.to_seq args in
+  let iff =
+    match def_kind with
+    | Dfunction -> Ty.equal (type_info body) Ty.Tbool
+    | Dpredicate -> true
+  in
+  let triggers =
+    let vtype = body.vty in
+    let vterm =
+      Var.Map.fold (fun v _ s -> Var.Set.add v s) binders Var.Set.empty
+    in
+    let tt =
+      Triggers.max_terms body ~exclude:defn
+      |> List.fast_sort (fun a b -> depth b - depth a)
+    in
+    Triggers.(filter_good_triggers (vterm, vtype) @@ triggers_of_list [[defn]; tt])
+  in
+  let axiom =
+    mk_eq ~iff defn body
+    |> mk_forall name loc binders [] ~toplevel:true ~decl_kind:Daxiom
+    |> purify_form
+  in
+  if not @@ (Var.Map.is_empty (free_vars axiom Var.Map.empty)) then
+    invalid_arg "mk_definition";
+  let axiom =
+    if Ty.TvSet.is_empty (free_type_vars axiom) then axiom
+    else
+      mk_forall
+        name loc Var.Map.empty [] axiom ~toplevel:true ~decl_kind:Daxiom
+  in
+  { name; args; body; axiom; triggers; kind = def_kind }
 
 module Set = TSet
 module Map = TMap

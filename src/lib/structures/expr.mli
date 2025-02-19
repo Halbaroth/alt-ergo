@@ -29,15 +29,18 @@
 
 type binders = Ty.t Var.Map.t
 
-type t
-
 type decl_kind =
   | Dtheory
   | Daxiom
   | Dgoal
-  | Dpredicate of t
-  | Dfunction of t
   | Dobjective
+
+type def_kind =
+  | Dfunction
+  | Dpredicate
+  (** Kind of definition, see [def]. *)
+
+type t
 
 type term_view = private {
   f: Symbols.t;
@@ -100,7 +103,7 @@ and quantified = private {
   user_trs : trigger list;
   (** List of the triggers defined by the user.
 
-      The solver doesn't generate multi-triggers if the user has defined
+      The solver does not generate multi-triggers if the user has defined
       some multi-triggers. *)
 
   binders : binders;
@@ -154,6 +157,31 @@ and trigger = private {
   t_depth : int;
   from_user : bool;
 }
+
+type def = private {
+  name : string;
+  (** Name of the function or predicate. *)
+
+  args : (Var.t * Ty.t) list;
+  (** Argument variables used in [body] expression with their types. *)
+
+  body : t;
+  (** Body definition. *)
+
+  axiom : t;
+  (** Definition of the. This formula is equivalent to
+       ∀x1:t1, ... ∀xn:tn, f(x1, ..., xn) = body
+
+      In case of predicate, the equality is replaced with an equivalence. *)
+
+  triggers : trigger list;
+  (** List of multi-triggers associated with [axiom]. *)
+
+  kind : def_kind;
+  (** Kind of definition. Predicate are exactly functions returning boolean
+      values. *)
+}
+(** Type of definition for function or predicate. *)
 
 module Table : Hashtbl.S with type key = t
 module Set : Set.S with type elt = t
@@ -394,6 +422,14 @@ val mk_exists :
   t
 
 val mk_let : Var.t -> t -> t -> t
+
+val mk_definition :
+  loc:Dolmen.Std.Loc.loc ->
+  name:string ->
+  def_kind ->
+  (Var.t * Ty.t) list ->
+  t ->
+  def
 
 val skolemize : quantified -> t
 

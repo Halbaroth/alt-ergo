@@ -1806,72 +1806,36 @@ let make file acc stmt =
       append @@
       List.filter_map (fun (def : Typer_Pipe.def) ->
           match def with
-          | `Term_def ( _, ({ path; tags; _ } as tcst), tyvars, terml, body) ->
+          | `Term_def ( _, ({ path; tags; _ }), tyvars, terml, body) ->
             Cache.store_tyvl tyvars;
             let name_base = get_basename path in
-
-            let binders, defn =
-              let rty = dty_to_ty body.term_ty in
-              let binders, rev_args =
-                List.fold_left (
-                  fun (binders, acc) (DE.{ path; id_ty; _ } as tv) ->
-                    let ty = dty_to_ty id_ty in
-                    let v = Var.of_string (get_basename path) in
-                    let sy = Sy.var v in
-                    Cache.store_sy tv sy;
-                    let e = E.mk_term sy [] ty in
-                    Var.Map.add v ty binders, e :: acc
-                ) (Var.Map.empty, []) terml
-              in
-              let sy = Cache.find_sy tcst in
-              let e = E.mk_term sy (List.rev rev_args) rty in
-              binders, e
+            let args =
+              List.map (
+                fun (DE.{ path; id_ty; _ } as tv) ->
+                  let ty = dty_to_ty id_ty in
+                  let v = Var.of_string (get_basename path) in
+                  Cache.store_sy tv (Sy.var v);
+                  (v, ty)
+              ) terml
             in
-
-            begin match DStd.Tag.get tags DE.Tags.predicate with
-              | Some () ->
-                let decl_kind = E.Dpredicate defn in
-                let ff =
-                  mk_expr ~loc:st_loc ~name_base
-                    ~toplevel:false ~decl_kind body
-                in
-                let qb = E.mk_eq ~iff:true defn ff in
-                let ff =
-                  E.mk_forall name_base DStd.Loc.dummy binders [] qb
-                    ~toplevel:true ~decl_kind
-                in
-                assert (Var.Map.is_empty (E.free_vars ff Var.Map.empty));
-                let ff = E.purify_form ff in
-                let e =
-                  if Ty.TvSet.is_empty (E.free_type_vars ff) then ff
-                  else
-                    E.mk_forall name_base st_loc
-                      Var.Map.empty [] ff ~toplevel:true ~decl_kind
-                in
-                Some C.{ st_decl = C.PredDef (e, name_base); st_loc }
-              | None ->
-                let decl_kind = E.Dfunction defn in
-                let ff =
-                  mk_expr ~loc:st_loc ~name_base
-                    ~toplevel:false ~decl_kind body
-                in
-                let iff = Ty.equal (Expr.type_info defn) (Ty.Tbool) in
-                let qb = E.mk_eq ~iff defn ff in
-                let ff =
-                  E.mk_forall name_base DStd.Loc.dummy binders [] qb
-                    ~toplevel:true ~decl_kind
-                in
-                assert (Var.Map.is_empty (E.free_vars ff Var.Map.empty));
-                let ff = E.purify_form ff in
-                let e =
-                  if Ty.TvSet.is_empty (E.free_type_vars ff) then ff
-                  else
-                    E.mk_forall name_base st_loc
-                      Var.Map.empty [] ff ~toplevel:true ~decl_kind
-                in
-                if Options.get_verbose () then
-                  Format.eprintf "defining term of %a@." DE.Term.print body;
-                Some C.{ st_decl = C.Assume (name_base, e, true); st_loc }
+            let body =
+              mk_expr
+                ~loc:st_loc ~name_base ~toplevel:false ~decl_kind:Daxiom body
+            in
+            let def_kind =
+              match DStd.Tag.get tags DE.Tags.predicate with
+              | Some () -> E.Dpredicate
+              | None when Ty.equal (E.type_info body) Ty.Tbool -> E.Dpredicate
+              | None -> E.Dfunction
+            in
+            let def =
+              E.mk_definition ~loc:st_loc ~name:name_base def_kind args body
+            in
+            begin match def_kind with
+              | E.Dpredicate ->
+                Some C.{ st_decl = C.Def def; st_loc }
+              | E.Dfunction ->
+                Some C.{st_decl = C.Assume (def.E.name, def.E.axiom, true); st_loc }
             end
           | `Type_alias _ -> None
           | `Instanceof _ ->

@@ -1,5 +1,4 @@
-(**************************************************************************)
-(*                                                                        *)
+(**************************************************************************) (*                                                                        *)
 (*     Alt-Ergo: The SMT Solver For Software Verification                 *)
 (*     Copyright (C) --- OCamlPro SAS                                     *)
 (*                                                                        *)
@@ -72,7 +71,7 @@ module type S = sig
 
   val assume : (string * Expr.t * bool) process
 
-  val pred_def : (string * Expr.t) process
+  val def : Expr.def process
 
   val query : (string * Expr.t * Ty.goal_sort) process
 

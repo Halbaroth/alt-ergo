@@ -39,14 +39,8 @@ module type S = sig
 
   val empty : t
   val add_terms : t -> SE.t -> Expr.gformula -> t
-  val add_lemma : t -> Expr.gformula -> Ex.t -> t
-  val add_predicate :
-    t ->
-    guard:Expr.t ->
-    name:string ->
-    Expr.gformula ->
-    Ex.t ->
-    t
+  val add_lemma : t -> Expr.t -> Ex.t -> t
+  val add_definition : t -> guard:Expr.t -> Expr.def -> Explanation.t -> t
 
   val ground_pred_defn:
     Expr.t -> t -> (Expr.t * Expr.t * Explanation.t) option
@@ -101,8 +95,10 @@ module Make(X : Theory.S) : S with type tbox = X.t = struct
 
   type t = {
     guards : (E.t * bool) list ME.t;
-    (* from guards to list of guarded predicates.
-       bool = true <-> pred is ground *)
+    (* Map of incremental guards to predicate definitions introduced at this
+       assertion level. The boolean term is [true] if and only if the predicate
+       is ground. *)
+
     lemmas : (guard * int * Ex.t) ME.t;
     predicates : (guard * int * Ex.t) ME.t;
     ground_preds : (guard * E.t * Explanation.t) ME.t; (* key <-> f *)
@@ -153,50 +149,60 @@ module Make(X : Theory.S) : S with type tbox = X.t = struct
     { env with
       matching = SE.fold (EM.add_term infos) s env.matching }
 
-  let add_ground_pred env ~guard p np defn ex =
-    let gp = ME.add p (guard, defn, ex) env.ground_preds in
-    let gp = ME.add np (guard, E.neg defn, ex) gp in
-    let guarded = try ME.find guard env.guards with Not_found -> [] in
-    let guarded = (p, true) :: (np, true) :: guarded in
-    { env with ground_preds = gp;
-               guards = ME.add guard guarded env.guards
-    }
+  let add_ground_predicate env ~guard p body ex =
+    let np = E.neg p in
+    let ground_preds =
+      env.ground_preds
+      |> ME.add p (guard, body, ex)
+      |> ME.add np (guard, E.neg body, ex)
+    in
+    let guards =
+      ME.update
+        guard
+        (function
+          | Some guarded -> Some ((p, true) :: (np, true) :: guarded)
+          | None -> Some [ (p, true); (np, true) ])
+        env.guards
+    in
+    { env with ground_preds; guards }
 
-
-  let add_predicate env ~guard ~name gf ex =
-    let { Expr.ff = f; age = age; _ } = gf in
-    let env = { env with
-                matching = EM.max_term_depth env.matching (E.depth f) } in
-    match E.form_view f with
-    | E.Iff(f1, f2) ->
-      let p = E.mk_term (Symbols.name name) [] Ty.Tbool in
-      let np = E.neg p in
-      let defn =
-        if E.equal f1 p then f2
-        else if E.equal f2 p then f1
-        else assert false
-      in
-      add_ground_pred env ~guard p np defn ex
-
-    | E.Literal _ ->
-      let p = E.mk_term (Symbols.name name) [] Ty.Tbool in
-      let np = E.neg p in
-      let defn =
-        if E.equal p f then E.vrai
-        else if E.equal np f then E.faux
-        else assert false
-      in
-      add_ground_pred env ~guard p np defn ex
+  let add_predicate env ~guard def ex =
+    match E.form_view def.E.axiom with
+    | E.Iff _ | E.Literal _ ->
+      let p = E.mk_term (Symbols.name ~defined:true def.E.name) [] Ty.Tbool in
+      add_ground_predicate env ~guard p def.E.body ex
 
     | E.Lemma _ ->
-      let guarded = try ME.find guard env.guards with Not_found -> [] in
-      { env with
-        predicates = ME.add f (guard, age, ex) env.predicates;
-        guards = ME.add guard ((f, false) :: guarded) env.guards
-      }
-    | E.Unit _ | E.Clause _ | E.Xor _
-    | E.Skolem _ | E.Let _ ->
+      let guards =
+        ME.update
+          guard
+          (function
+            | Some guarded -> Some ((def.E.axiom, false) :: guarded)
+            | None -> Some [def.E.axiom, false])
+          env.guards
+      in
+      let predicates = ME.add def.E.axiom (guard, 0, ex) env.predicates in
+      { env with guards; predicates }
+
+    | E.Unit _ | E.Clause _ | E.Xor _ | E.Skolem _ | E.Let _ ->
       assert false
+
+  let add_lemma env f ex =
+    let ex =
+      try
+        let _, _, ex' = ME.find f env.lemmas in
+        Ex.union ex ex'
+      with Not_found -> ex
+    in
+    { env with lemmas = ME.add f (E.vrai, 0, ex) env.lemmas }
+
+  let add_definition env ~guard def ex =
+    let matching = EM.max_term_depth env.matching (E.depth def.E.axiom) in
+    let env = { env with matching } in
+    match def.E.kind with
+    | Dpredicate -> add_predicate env ~guard def ex
+    | _ -> env
+  (*     | Dfunction -> add_lemma env def.E.axiom ex *)
 
   let pop env ~guard =
     try
@@ -383,18 +389,6 @@ module Make(X : Theory.S) : S with type tbox = X.t = struct
   let m_predicates env tbox selector ilvl mconf =
     mround env env.predicates tbox selector ilvl "predicates" mconf
 
-  let add_lemma env gf dep =
-    let guard = E.vrai in
-    (* lemmas are already guarded outside instances.ml *)
-    let { Expr.ff = orig; age = age; _ } = gf in
-    let age, dep =
-      try
-        let _, age' , dep' = ME.find orig env.lemmas in
-        min age age' , Ex.union dep dep'
-      with Not_found -> age, dep
-    in
-    { env with lemmas = ME.add orig (guard, age,dep) env.lemmas }
-
   let matching_terms_info env = EM.terms_info env.matching
 
   let reinit_em_cache () = EM.reinit_caches ()
@@ -409,9 +403,9 @@ module Make(X : Theory.S) : S with type tbox = X.t = struct
     Timers.with_timer Timers.M_Match Timers.F_add_lemma @@ fun () ->
     add_lemma env gf dep
 
-  let add_predicate env ~guard ~name gf =
+  let add_definition env ~guard def ex =
     Timers.with_timer Timers.M_Match Timers.F_add_predicate @@ fun () ->
-    add_predicate env ~guard ~name gf
+    add_definition env ~guard def ex
 
   let m_lemmas mconf env tbox selector ilvl =
     Timers.with_timer Timers.M_Match Timers.F_m_lemmas @@ fun () ->

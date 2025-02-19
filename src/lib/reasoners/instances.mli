@@ -32,14 +32,10 @@ module type S = sig
 
   val empty : t
   val add_terms : t -> Expr.Set.t -> Expr.gformula -> t
-  val add_lemma : t -> Expr.gformula -> Explanation.t -> t
-  val add_predicate :
-    t ->
-    guard:Expr.t ->
-    name:string ->
-    Expr.gformula ->
-    Explanation.t ->
-    t
+
+  val add_lemma : t -> Expr.t -> Explanation.t -> t
+
+  val add_definition : t -> guard:Expr.t -> Expr.def -> Explanation.t -> t
 
   (* the first returned expr is the guard (incremental mode),
      the second one is the defn of the given predicate *)
