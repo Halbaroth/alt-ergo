@@ -1145,10 +1145,10 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
           else
             ta.timp = 1
         in
-        if not th_imp then
-          facts :=
-            (ta.lit, Th_util.Other, ex, dlvl,env.cpt_current_propagations) ::
-            !facts;
+        (*         if not th_imp then *)
+        facts :=
+          (ta.lit, Th_util.Other, ex, dlvl,env.cpt_current_propagations) ::
+          !facts;
         env.cpt_current_propagations <- env.cpt_current_propagations + 1
       done;
       if Options.get_debug_sat () then
