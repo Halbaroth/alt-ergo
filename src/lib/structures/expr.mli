@@ -155,6 +155,27 @@ and trigger = private {
   from_user : bool;
 }
 
+type def = private {
+  name : string;
+  (** Identifier of the function. *)
+
+  args : (Var.t * Ty.t) list;
+  (** Argument variables used in [body] expression with their types. *)
+
+  body : t;
+  (** Body definition. The free term variables of [t] must be in [args]. *)
+
+  axiom : t;
+  (** Definition of the. This formula is equivalent to
+       ∀x1:t1, ... ∀xn:tn, f(x1, ..., xn) = body
+
+      In case of predicate, the equality is replaced with an equivalence. *)
+
+  triggers : trigger list;
+  (** List of multi-triggers associated with [axiom]. *)
+}
+(** Type of definition for functions. *)
+
 module Table : Hashtbl.S with type key = t
 module Set : Set.S with type elt = t
 module Map : Map.S with type key = t
@@ -394,6 +415,13 @@ val mk_exists :
   t
 
 val mk_let : Var.t -> t -> t -> t
+
+val mk_definition :
+  loc:Dolmen.Std.Loc.loc ->
+  name:string ->
+  (Var.t * Ty.t) list ->
+  t ->
+  def
 
 val skolemize : quantified -> t
 

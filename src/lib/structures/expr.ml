@@ -103,6 +103,14 @@ and trigger = {
   from_user : bool;
 }
 
+type def = {
+  name : string;
+  args : (Var.t * Ty.t) list;
+  body : t;
+  axiom : t;
+  triggers : trigger list;
+}
+
 type expr = t
 
 type subst = t Var.Map.t * Ty.subst
@@ -2772,6 +2780,45 @@ let purify_literal a =
 let purify_form f =
   Purification.lets_counter := 0;
   Purification.purify_form f
+
+let mk_definition ~loc ~name args body =
+  let defn =
+    let xs =
+      List.map
+        (fun (v, ty) -> mk_term (Sy.var v) [] ty) args
+    in
+    let f = Sy.name ~defined:true name in
+    mk_term f xs (type_info body)
+  in
+  let binders = Var.Map.of_seq @@ List.to_seq args in
+  let iff = Ty.equal (type_info body) Ty.Tbool in
+  (* XXX: temporary, we will support function definition later. *)
+  assert (iff);
+  let triggers =
+    let vtype = body.vty in
+    let vterm =
+      Var.Map.fold (fun v _ s -> Var.Set.add v s) binders Var.Set.empty
+    in
+    let tt =
+      Triggers.max_terms body ~exclude:defn
+      |> List.fast_sort (fun a b -> depth b - depth a)
+    in
+    Triggers.(filter_good_triggers (vterm, vtype) @@ triggers_of_list [[defn]; tt])
+  in
+  let axiom =
+    mk_eq ~iff defn body
+    |> mk_forall name loc binders [] ~toplevel:true ~decl_kind:Daxiom
+    |> purify_form
+  in
+  if not @@ (Var.Map.is_empty (free_vars axiom Var.Map.empty)) then
+    invalid_arg "mk_definition";
+  let axiom =
+    if Ty.TvSet.is_empty (free_type_vars axiom) then axiom
+    else
+      mk_forall
+        name loc Var.Map.empty [] axiom ~toplevel:true ~decl_kind:Daxiom
+  in
+  { name; args; body; axiom; triggers }
 
 module Set = TSet
 module Map = TMap
