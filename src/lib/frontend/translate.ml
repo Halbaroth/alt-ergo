@@ -1830,25 +1830,41 @@ let make file acc stmt =
 
             begin match DStd.Tag.get tags DE.Tags.predicate with
               | Some () ->
-                let decl_kind = E.Dpredicate defn in
-                let ff =
-                  mk_expr ~loc:st_loc ~name_base
+                (* let decl_kind = E.Dpredicate defn in
+                   let ff =
+                   mk_expr ~loc:st_loc ~name_base
                     ~toplevel:false ~decl_kind body
-                in
-                let qb = E.mk_eq ~iff:true defn ff in
-                let ff =
-                  E.mk_forall name_base DStd.Loc.dummy binders [] qb
+                   in
+                   let qb = E.mk_eq ~iff:true defn ff in
+                   let ff =
+                   E.mk_forall name_base DStd.Loc.dummy binders [] qb
                     ~toplevel:true ~decl_kind
-                in
-                assert (Var.Map.is_empty (E.free_vars ff Var.Map.empty));
-                let ff = E.purify_form ff in
-                let e =
-                  if Ty.TvSet.is_empty (E.free_type_vars ff) then ff
-                  else
+                   in
+                   assert (Var.Map.is_empty (E.free_vars ff Var.Map.empty));
+                   let ff = E.purify_form ff in
+                   let e =
+                   if Ty.TvSet.is_empty (E.free_type_vars ff) then ff
+                   else
                     E.mk_forall name_base st_loc
                       Var.Map.empty [] ff ~toplevel:true ~decl_kind
+                   in *)
+                let args =
+                  List.map (
+                    fun (DE.{ path; id_ty; _ } as tv) ->
+                      let ty = dty_to_ty id_ty in
+                      let v = Var.of_string (get_basename path) in
+                      Cache.store_sy tv (Sy.var v);
+                      (v, ty)
+                  ) terml
                 in
-                Some C.{ st_decl = C.PredDef (e, name_base); st_loc }
+                let body =
+                  mk_expr
+                    ~loc:st_loc ~name_base ~toplevel:false ~decl_kind:Daxiom body
+                in
+                let def =
+                  E.mk_definition ~loc:st_loc ~name:name_base args body
+                in
+                Some C.{ st_decl = C.PredDef def; st_loc }
               | None ->
                 let decl_kind = E.Dfunction defn in
                 let ff =

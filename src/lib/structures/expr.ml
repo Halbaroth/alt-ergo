@@ -2820,6 +2820,9 @@ let mk_definition ~loc ~name args body =
   in
   { name; args; body; axiom; triggers }
 
+(* TODO: create a better pretty printer. *)
+let pp_definition ppf { name; _ } = Fmt.string ppf name
+
 module Set = TSet
 module Map = TMap
 

@@ -423,6 +423,8 @@ val mk_definition :
   t ->
   def
 
+val pp_definition : def Fmt.t
+
 val skolemize : quantified -> t
 
 val elim_let : recursive:bool -> letin -> t

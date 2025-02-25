@@ -145,7 +145,7 @@ module type S = sig
 
   val assume : (string * E.t * bool) process
 
-  val pred_def : (string * E.t) process
+  val pred_def : E.def process
 
   val query : (string * E.t * Ty.goal_sort) process
 
@@ -350,10 +350,10 @@ module Make(SAT : Sat_solver_sig.S) : S with type sat_env = SAT.t = struct
       | `Unsat ->
         env.expl <- expl
 
-  let internal_pred_def ?(loc = DStd.Loc.dummy) (name, f) env =
+  let internal_pred_def ?(loc = DStd.Loc.dummy) (E.{ name; axiom; _ } as def) env =
     if not (unused_context name env.used_context) then
-      let expl = mk_root_dep name f loc in
-      SAT.pred_def env.sat_env f name expl loc;
+      let expl = mk_root_dep name def.E.axiom loc in
+      SAT.pred_def env.sat_env axiom name expl loc;
       env.expl <- expl
 
   let internal_query ?(loc = DStd.Loc.dummy) (n, f, sort) env =
@@ -447,8 +447,8 @@ module Make(SAT : Sat_solver_sig.S) : S with type sat_env = SAT.t = struct
       | Pop n -> check_if_over (internal_pop ~loc:d.st_loc n) env
       | Assume (n, f, mf) ->
         check_if_over (internal_assume ~loc:d.st_loc (n, f, mf)) env
-      | PredDef (f, name) ->
-        check_if_over (internal_pred_def ~loc:d.st_loc (name, f)) env
+      | PredDef def ->
+        check_if_over (internal_pred_def ~loc:d.st_loc def) env
       | Query (n, f, sort) ->
         begin
           (* If we have reached an unknown state, we can return it right
