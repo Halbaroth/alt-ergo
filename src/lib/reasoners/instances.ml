@@ -43,8 +43,7 @@ module type S = sig
   val add_predicate :
     t ->
     guard:Expr.t ->
-    name:string ->
-    Expr.gformula ->
+    Expr.def ->
     Ex.t ->
     t
 
@@ -162,11 +161,9 @@ module Make(X : Theory.S) : S with type tbox = X.t = struct
                guards = ME.add guard guarded env.guards
     }
 
-
-  let add_predicate env ~guard ~name gf ex =
-    let { Expr.ff = f; age = age; _ } = gf in
-    let env = { env with
-                matching = EM.max_term_depth env.matching (E.depth f) } in
+  let add_predicate env ~guard E.{ name; axiom = f; _ } ex =
+    let matching = EM.max_term_depth env.matching (E.depth f) in
+    let env = { env with matching } in
     match E.form_view f with
     | E.Iff(f1, f2) ->
       let p = E.mk_term (Symbols.name name) [] Ty.Tbool in
@@ -191,7 +188,7 @@ module Make(X : Theory.S) : S with type tbox = X.t = struct
     | E.Lemma _ ->
       let guarded = try ME.find guard env.guards with Not_found -> [] in
       { env with
-        predicates = ME.add f (guard, age, ex) env.predicates;
+        predicates = ME.add f (guard, 0, ex) env.predicates;
         guards = ME.add guard ((f, false) :: guarded) env.guards
       }
     | E.Unit _ | E.Clause _ | E.Xor _
@@ -409,9 +406,9 @@ module Make(X : Theory.S) : S with type tbox = X.t = struct
     Timers.with_timer Timers.M_Match Timers.F_add_lemma @@ fun () ->
     add_lemma env gf dep
 
-  let add_predicate env ~guard ~name gf =
+  let add_predicate env ~guard def dep =
     Timers.with_timer Timers.M_Match Timers.F_add_predicate @@ fun () ->
-    add_predicate env ~guard ~name gf
+    add_predicate env ~guard def dep
 
   let m_lemmas mconf env tbox selector ilvl =
     Timers.with_timer Timers.M_Match Timers.F_m_lemmas @@ fun () ->

@@ -36,8 +36,7 @@ module type S = sig
   val add_predicate :
     t ->
     guard:Expr.t ->
-    name:string ->
-    Expr.gformula ->
+    Expr.def ->
     Explanation.t ->
     t
 

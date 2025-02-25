@@ -456,11 +456,11 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
       )acc l
 
 
-  let pred_def env f name dep _loc =
+  let pred_def env def dep =
     (* dep currently not used. No unsat-cores in satML yet *)
-    Debug.pred_def f;
+    Debug.pred_def def.E.axiom;
     let guard = env.guards.current_guard in
-    env.inst <- Inst.add_predicate env.inst ~guard ~name (mk_gf f) dep
+    env.inst <- Inst.add_predicate env.inst ~guard def dep
 
   let axiom_def env gf ex =
     env.inst <- Inst.add_lemma env.inst gf ex

@@ -352,8 +352,8 @@ module Make(SAT : Sat_solver_sig.S) : S with type sat_env = SAT.t = struct
 
   let internal_pred_def ?(loc = DStd.Loc.dummy) (E.{ name; axiom; _ } as def) env =
     if not (unused_context name env.used_context) then
-      let expl = mk_root_dep name def.E.axiom loc in
-      SAT.pred_def env.sat_env axiom name expl loc;
+      let expl = mk_root_dep name axiom loc in
+      SAT.pred_def env.sat_env def expl;
       env.expl <- expl
 
   let internal_query ?(loc = DStd.Loc.dummy) (n, f, sort) env =

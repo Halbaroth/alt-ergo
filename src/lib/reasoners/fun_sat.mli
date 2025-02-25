@@ -50,8 +50,7 @@ module Make (_ : Theory.S) : sig
 
   val assume_th_elt : t -> Expr.th_elt -> Explanation.t -> t
 
-  val pred_def :
-    t -> Expr.t -> string -> Explanation.t -> Dolmen.Std.Loc.loc -> t
+  val pred_def : t -> Expr.def -> Explanation.t -> t
 
   val unsat : t -> Expr.gformula -> Explanation.t
 

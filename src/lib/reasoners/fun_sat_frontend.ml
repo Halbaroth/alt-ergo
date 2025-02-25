@@ -48,8 +48,8 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
   let assume_th_elt t th expl =
     exn_handler (fun env -> t := FS.assume_th_elt env th expl) t
 
-  let pred_def t expr n expl loc =
-    exn_handler (fun env -> t := FS.pred_def env expr n expl loc) t
+  let pred_def t def expl =
+    exn_handler (fun env -> t := FS.pred_def env def expl) t
 
   let unsat t g =
     exn_handler (fun env -> FS.unsat env g) t

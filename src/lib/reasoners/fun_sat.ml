@@ -1766,13 +1766,11 @@ module Make (Th : Theory.S) = struct
          'unknown' right away. *)
       {env with unknown_reason = Some (Step_limit n)}
 
-  let pred_def env f name dep _loc =
-    Debug.pred_def f;
-    let gf = mk_gf f name true false in
+  let pred_def env def dep =
+    Debug.pred_def def.E.axiom;
     let guard = env.guards.current_guard in
-    { env with
-      inst =
-        Inst.add_predicate env.inst ~guard ~name gf dep }
+    let inst = Inst.add_predicate env.inst ~guard def dep in
+    { env with inst }
 
   let unsat env fg =
     Timers.with_timer Timers.M_Sat Timers.F_unsat @@ fun () ->
