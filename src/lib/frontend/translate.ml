@@ -1806,12 +1806,12 @@ let make file acc stmt =
       append @@
       List.filter_map (fun (def : Typer_Pipe.def) ->
           match def with
-          | `Term_def ( _, ({ path; _ } as tcst), tyvars, terml, body) ->
+          | `Term_def ( _, ({ path; tags; _ } as tcst), tyvars, terml, body) ->
             Cache.store_tyvl tyvars;
             let name_base = get_basename path in
 
-            let rty = dty_to_ty body.term_ty in
             let binders, defn =
+              let rty = dty_to_ty body.term_ty in
               let binders, rev_args =
                 List.fold_left (
                   fun (binders, acc) (DE.{ path; id_ty; _ } as tv) ->
@@ -1827,8 +1827,9 @@ let make file acc stmt =
               let e = E.mk_term sy (List.rev rev_args) rty in
               binders, e
             in
-            begin match rty with
-              | Ty.Tbool ->
+
+            begin match DStd.Tag.get tags DE.Tags.predicate with
+              | Some () ->
                 let decl_kind = E.Dpredicate defn in
                 let ff =
                   mk_expr ~loc:st_loc ~name_base
@@ -1848,7 +1849,7 @@ let make file acc stmt =
                       Var.Map.empty [] ff ~toplevel:true ~decl_kind
                 in
                 Some C.{ st_decl = C.PredDef (e, name_base); st_loc }
-              | _ ->
+              | None ->
                 let decl_kind = E.Dfunction defn in
                 let ff =
                   mk_expr ~loc:st_loc ~name_base
