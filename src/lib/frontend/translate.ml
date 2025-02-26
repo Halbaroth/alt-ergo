@@ -1806,7 +1806,7 @@ let make file acc stmt =
       append @@
       List.filter_map (fun (def : Typer_Pipe.def) ->
           match def with
-          | `Term_def ( _, ({ path; tags; _ } as tcst), tyvars, terml, body) ->
+          | `Term_def ( _, ({ path; _ } as tcst), tyvars, terml, body) ->
             Cache.store_tyvl tyvars;
             let name_base = get_basename path in
 
@@ -1827,52 +1827,28 @@ let make file acc stmt =
               let e = E.mk_term sy (List.rev rev_args) rty in
               binders, e
             in
-
-            begin match DStd.Tag.get tags DE.Tags.predicate with
-              | Some () ->
-                let decl_kind = E.Dpredicate defn in
-                let ff =
-                  mk_expr ~loc:st_loc ~name_base
-                    ~toplevel:false ~decl_kind body
-                in
-                let qb = E.mk_eq ~iff:true defn ff in
-                let ff =
-                  E.mk_forall name_base DStd.Loc.dummy binders [] qb
-                    ~toplevel:true ~decl_kind
-                in
-                assert (Var.Map.is_empty (E.free_vars ff Var.Map.empty));
-                let ff = E.purify_form ff in
-                let e =
-                  if Ty.TvSet.is_empty (E.free_type_vars ff) then ff
-                  else
-                    E.mk_forall name_base st_loc
-                      Var.Map.empty [] ff ~toplevel:true ~decl_kind
-                in
-                Some C.{ st_decl = C.PredDef (e, name_base); st_loc }
-              | None ->
-                let decl_kind = E.Dfunction defn in
-                let ff =
-                  mk_expr ~loc:st_loc ~name_base
-                    ~toplevel:false ~decl_kind body
-                in
-                let iff = Ty.equal (Expr.type_info defn) (Ty.Tbool) in
-                let qb = E.mk_eq ~iff defn ff in
-                let ff =
-                  E.mk_forall name_base DStd.Loc.dummy binders [] qb
-                    ~toplevel:true ~decl_kind
-                in
-                assert (Var.Map.is_empty (E.free_vars ff Var.Map.empty));
-                let ff = E.purify_form ff in
-                let e =
-                  if Ty.TvSet.is_empty (E.free_type_vars ff) then ff
-                  else
-                    E.mk_forall name_base st_loc
-                      Var.Map.empty [] ff ~toplevel:true ~decl_kind
-                in
-                if Options.get_verbose () then
-                  Format.eprintf "defining term of %a@." DE.Term.print body;
-                Some C.{ st_decl = C.Assume (name_base, e, true); st_loc }
-            end
+            let decl_kind = E.Dfunction defn in
+            let ff =
+              mk_expr ~loc:st_loc ~name_base
+                ~toplevel:false ~decl_kind body
+            in
+            let iff = Ty.equal (Expr.type_info defn) (Ty.Tbool) in
+            let qb = E.mk_eq ~iff defn ff in
+            let ff =
+              E.mk_forall name_base DStd.Loc.dummy binders [] qb
+                ~toplevel:true ~decl_kind
+            in
+            assert (Var.Map.is_empty (E.free_vars ff Var.Map.empty));
+            let ff = E.purify_form ff in
+            let e =
+              if Ty.TvSet.is_empty (E.free_type_vars ff) then ff
+              else
+                E.mk_forall name_base st_loc
+                  Var.Map.empty [] ff ~toplevel:true ~decl_kind
+            in
+            if Options.get_verbose () then
+              Format.eprintf "defining term of %a@." DE.Term.print body;
+            Some C.{ st_decl = C.Assume (name_base, e, true); st_loc }
           | `Type_alias _ -> None
           | `Instanceof _ ->
             (* These statements are only used in models when completing a
