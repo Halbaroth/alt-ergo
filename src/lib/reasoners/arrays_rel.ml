@@ -87,6 +87,24 @@ end
 
 let timer = Timers.M_Arrays
 
+module Witness = struct
+  include Map.Make (struct
+      type t = E.t * E.t
+
+      let compare (a1, b1) (a2, b2) =
+        let c = E.compare a1 a2 in
+        if c <> 0 then c
+        else E.compare b1 b2
+    end)
+
+  let normalize a b =
+    if E.compare a b > 0 then (b, a)
+    else (a, b)
+
+  let add a b = add (normalize a b)
+  let find a b = find (normalize a b)
+end
+
 module H = Ephemeron.K1.Make (Expr)
 
 type t = {
@@ -118,6 +136,12 @@ type t = {
   (* Cache used to prevent from generating several times the same instantiation
      in [get_of_set]. *)
 
+  witnesses : E.t Witness.t;
+  (* Cache for extensionality witnesses. For each disequality `a != b` of
+     arrays, the [extensionality] propagator generates a fresh index [wit]
+     and propagates the literal `(select a wit) != (select b wit)`.
+     This cache ensures that these are not duplicated. *)
+
   new_terms : E.Set.t;
   (* Set of get and set terms produced by the theory. These terms
      are supposed to be sent to the instantiation engine. *)
@@ -135,6 +159,7 @@ let empty uf = {
   conseq   = LRmap.empty;
   seen  = Tmap.empty;
   new_terms = E.Set.empty;
+  witnesses = Witness.empty;
   (* size_splits = Numbers.Q.one; *)
   cached_relevant_terms = H.create 1024;
 }, Uf.domains uf
@@ -398,16 +423,19 @@ let extensionality accu la =
        | A.Distinct(false, [r;s]) ->
          begin
            match X.type_info r, X.term_extract r, X.term_extract s with
-           | Ty.Tfarray (ty, _), (Some t1, _), (Some t2, _)  ->
-             let i  = E.fresh_name ty in
-             let g1 = E.ArraysEx.select t1 i in
-             let g2 = E.ArraysEx.select t2 i in
-             let d  = E.mk_distinct ~iff:false [g1;g2] in
-             let acc = Conseq.add (d, dep) acc in
-             let env =
-               {env with new_terms =
-                           E.Set.add g2 (E.Set.add g1 env.new_terms) } in
-             env, acc
+           | Ty.Tfarray (ty, _), (Some t1, _), (Some t2, _)  -> (
+               match Witness.find t1 t2 env.witnesses with
+               | exception Not_found ->
+                 let wit = E.fresh_name ty in
+                 let g1 = E.ArraysEx.select t1 wit in
+                 let g2 = E.ArraysEx.select t2 wit in
+                 let d = E.mk_distinct ~iff:false [g1;g2] in
+                 let acc = Conseq.add (d, dep) acc in
+                 let new_terms = E.Set.add g2 (E.Set.add g1 env.new_terms) in
+                 let witnesses = Witness.add t1 t2 wit env.witnesses in
+                 let env = { env with new_terms; witnesses } in
+                 env, acc
+               | _ -> accu)
            | _ -> accu
          end
        | _ -> accu
