@@ -56,17 +56,20 @@ module type OrderedType = sig
 end
 
 module type S = sig
+  type ctx
+  val make_ctx : unit -> ctx
+
   type elt
   type t
 
-  val make : elt view -> t
+  val make : ctx -> elt view -> t
   val view : t -> elt view
   val atom_view : t -> elt atom_view * bool (* is_negated ? *)
 
-  val mk_eq : elt -> elt -> t
-  val mk_distinct : bool -> elt list -> t
-  val mk_builtin : bool -> builtin -> elt list -> t
-  val mk_pred : elt -> bool -> t
+  val mk_eq : ctx -> elt -> elt -> t
+  val mk_distinct : ctx -> bool -> elt list -> t
+  val mk_builtin : ctx -> bool -> builtin -> elt list -> t
+  val mk_pred : ctx -> elt -> bool -> t
 
   val mkv_eq : elt -> elt -> elt view
   val mkv_distinct : bool -> elt list -> elt view
@@ -83,10 +86,10 @@ module type S = sig
   val uid : t -> int
   val elements : t -> elt list
 
-  val save_cache : unit -> unit
+  val save_cache : ctx -> unit
   (** Saves the modules cache  *)
 
-  val reinit_cache: unit -> unit
+  val reinit_cache: ctx -> unit
   (** Reinitializes the module's cache *)
 
   module Map : Map.S with type key = t

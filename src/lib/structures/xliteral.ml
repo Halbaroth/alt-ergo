@@ -55,17 +55,20 @@ module type OrderedType = sig
 end
 
 module type S = sig
+  type ctx
+  val make_ctx : unit -> ctx
+
   type elt
   type t
 
-  val make : elt view -> t
+  val make : ctx -> elt view -> t
   val view : t -> elt view
   val atom_view : t -> elt atom_view * bool (* is_negated ? *)
 
-  val mk_eq : elt -> elt -> t
-  val mk_distinct : bool -> elt list -> t
-  val mk_builtin : bool -> builtin -> elt list -> t
-  val mk_pred : elt -> bool -> t
+  val mk_eq : ctx -> elt -> elt -> t
+  val mk_distinct : ctx -> bool -> elt list -> t
+  val mk_builtin : ctx -> bool -> builtin -> elt list -> t
+  val mk_pred : ctx -> elt -> bool -> t
 
   val mkv_eq : elt -> elt -> elt view
   val mkv_distinct : bool -> elt list -> elt view
@@ -82,9 +85,9 @@ module type S = sig
   val uid : t -> int
   val elements : t -> elt list
 
-  val save_cache : unit -> unit
+  val save_cache : ctx -> unit
 
-  val reinit_cache : unit -> unit
+  val reinit_cache : ctx -> unit
 
   module Map : Map.S with type key = t
   module Set : Set.S with type elt = t
@@ -224,6 +227,10 @@ module Make (X : OrderedType) : S with type elt = X.t = struct
 
   module HC = Hconsing.Make(V)
 
+  type ctx = HC.ctx
+
+  let make_ctx = HC.make_ctx
+
   let normalize_eq_bool t1 t2 is_neg =
     if X.compare t1 X.bot = 0 then Pred(t2, not is_neg)
     else if X.compare t2 X.bot = 0 then Pred(t1, not is_neg)
@@ -248,9 +255,7 @@ module Make (X : OrderedType) : S with type elt = X.t = struct
       Distinct (b, List.fast_sort X.compare l)
     | Builtin (_, _, _) | Pred (_, _) -> t
 
-  let ctx = HC.make_ctx ()
-
-  let make_aux av is_neg =
+  let make_aux ctx av is_neg =
     let av = {value = av; uid = -1} in
     let at = HC.make ctx av in
     if is_neg then
@@ -258,12 +263,12 @@ module Make (X : OrderedType) : S with type elt = X.t = struct
     else
       {at = at; neg = is_neg; tneg = 2*at.uid+1; tpos = 2*at.uid}
 
-  let make t = match normalize_view t with
-    | Eq(t1,t2)       -> make_aux (EQ(t1,t2)) false
-    | Builtin (b,n,l) -> make_aux (BT (n,l)) (not b)
-    | Pred (x,y)      -> make_aux (PR x) y
-    | Distinct(false, [t1;t2]) -> make_aux (EQ(t1,t2)) true
-    | Distinct (b,l)  -> make_aux (EQ_LIST l) (not b)
+  let make ctx t = match normalize_view t with
+    | Eq(t1,t2)       -> make_aux ctx (EQ(t1,t2)) false
+    | Builtin (b,n,l) -> make_aux ctx (BT (n,l)) (not b)
+    | Pred (x,y)      -> make_aux ctx (PR x) y
+    | Distinct(false, [t1;t2]) -> make_aux ctx (EQ(t1,t2)) true
+    | Distinct (b,l)  -> make_aux ctx (EQ_LIST l) (not b)
 
   (************)
 
@@ -295,13 +300,13 @@ module Make (X : OrderedType) : S with type elt = X.t = struct
     | Pred (x,y) -> make_aux (PR x) y
   *)
 
-  let mk_eq t1 t2 = make (Eq(t1,t2))
+  let mk_eq ctx t1 t2 = make ctx (Eq(t1,t2))
 
-  let mk_distinct is_neg tl = make (Distinct(is_neg, tl))
+  let mk_distinct ctx is_neg tl = make ctx (Distinct(is_neg, tl))
 
-  let mk_builtin is_pos n l = make (Builtin(is_pos, n, l))
+  let mk_builtin ctx is_pos n l = make ctx (Builtin(is_pos, n, l))
 
-  let mk_pred t is_neg = make (Pred(t, is_neg))
+  let mk_pred ctx t is_neg = make ctx (Pred(t, is_neg))
 
 
   let mkv_eq t1 t2 = normalize_view (Eq(t1,t2))
@@ -318,10 +323,10 @@ module Make (X : OrderedType) : S with type elt = X.t = struct
     | PR a, _    -> [a]
     | BT (_,l), _ | EQ_LIST l, _ -> l
 
-  let save_cache () =
-    HC.save_cache ctx
+  let save_cache =
+    HC.save_cache
 
-  let reinit_cache () =
-    HC.reinit_cache ctx
+  let reinit_cache =
+    HC.reinit_cache
 
 end
