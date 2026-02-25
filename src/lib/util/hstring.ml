@@ -37,7 +37,9 @@ module HC =
     let disable_weaks () = Options.get_disable_weaks ()
   end)
 
-let make s = HC.make {content = s; id = - 1}
+let ctx = HC.make_ctx ()
+
+let make s = HC.make ctx {content = s; id = - 1}
 
 let view s = s.content
 
@@ -55,11 +57,8 @@ let rec list_assoc x = function
   | [] -> raise Not_found
   | (y, v) :: l -> if equal x y then v else list_assoc x l
 
-let save_cache () =
-  HC.save_cache ()
-
-let reinit_cache () =
-  HC.reinit_cache ()
+let save_cache () = HC.save_cache ctx
+let reinit_cache () = HC.reinit_cache ctx
 
 module Arg = struct type t'= t type t = t' let compare = compare end
 module Set : Set.S with type elt = t = Set.Make(Arg)

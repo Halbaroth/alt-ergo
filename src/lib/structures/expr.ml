@@ -887,6 +887,8 @@ let mk_trigger ?user:(from_user = false) ?depth ?(hyp = []) content =
   let content, semantic = separate_semantic_triggers content in
   { content ; semantic ; hyp ; t_depth ; from_user }
 
+let ctx = HC.make_ctx ()
+
 let mk_term s l ty =
   assert (match s with Sy.Lit _ | Sy.Form _ -> false | _ -> true);
   let d = match l with
@@ -908,16 +910,16 @@ let mk_term s l ty =
   let vty = free_type_vars_non_form l ty in
   let pure = List.for_all (fun e -> e.pure) l && not (is_ite s) in
   let pos =
-    HC.make {f=s; xs=l; ty=ty; depth=d; tag= -42; vars; vty;
-             nb_nodes; neg = None; bind = B_none; pure}
+    HC.make ctx {f=s; xs=l; ty=ty; depth=d; tag= -42; vars; vty;
+                 nb_nodes; neg = None; bind = B_none; pure}
   in
   if ty != Ty.Tbool then pos
   else if pos.neg != None then pos
   else
     let neg_s = Sy.Lit Sy.L_neg_pred in
     let neg =
-      HC.make {f=neg_s; xs=[pos]; ty=ty; depth=d; tag= -42;
-               vars; vty; nb_nodes; neg = None; bind = B_none; pure = false}
+      HC.make ctx {f=neg_s; xs=[pos]; ty=ty; depth=d; tag= -42;
+                   vars; vty; nb_nodes; neg = None; bind = B_none; pure = false}
     in
     assert (neg.neg == None);
     pos.neg <- Some neg;
@@ -930,13 +932,13 @@ let vrai =
     let vars = Var.Map.empty in
     let vty = Ty.TvSet.empty in
     let faux =
-      HC.make
+      HC.make ctx
         {f = Sy.False; xs = []; ty = Ty.Tbool; depth = -2; (*smallest depth*)
          tag = -42; vars; vty; nb_nodes; neg = None; bind = B_none;
          pure = true}
     in
     let vrai =
-      HC.make
+      HC.make ctx
         {f = Sy.True;  xs = []; ty = Ty.Tbool; depth = -1; (*2nd smallest d*)
          tag= -42; vars; vty; nb_nodes; neg = None; bind = B_none;
          pure = true}
@@ -1010,14 +1012,14 @@ let mk_or f1 f2 is_impl =
     let vars = merge_vars f1.vars f2.vars in
     let vty = Ty.TvSet.union f1.vty f2.vty in
     let pos =
-      HC.make {f=Sy.Form (Sy.F_Clause is_impl); xs=[f1; f2]; ty=Ty.Tbool;
-               depth=d; tag= -42; vars; vty; nb_nodes; neg = None;
-               bind = B_none; pure = false}
+      HC.make ctx {f=Sy.Form (Sy.F_Clause is_impl); xs=[f1; f2]; ty=Ty.Tbool;
+                   depth=d; tag= -42; vars; vty; nb_nodes; neg = None;
+                   bind = B_none; pure = false}
     in
     if pos.neg != None then pos
     else
       let neg =
-        HC.make
+        HC.make ctx
           {f=Sy.Form (Sy.F_Unit is_impl); xs=[neg f1; neg f2]; ty=Ty.Tbool;
            depth=d; tag= -42; vars; vty; nb_nodes; neg = None;
            bind = B_none; pure = false}
@@ -1040,14 +1042,14 @@ let mk_iff f1 f2 =
     let vars = merge_vars f1.vars f2.vars in
     let vty = Ty.TvSet.union f1.vty f2.vty in
     let pos =
-      HC.make {f=Sy.Form Sy.F_Iff; xs=[f1; f2]; ty=Ty.Tbool;
-               depth=d; tag= -42; vars; vty; nb_nodes; neg = None;
-               bind = B_none; pure = false}
+      HC.make ctx {f=Sy.Form Sy.F_Iff; xs=[f1; f2]; ty=Ty.Tbool;
+                   depth=d; tag= -42; vars; vty; nb_nodes; neg = None;
+                   bind = B_none; pure = false}
     in
     if pos.neg != None then pos
     else
       let neg =
-        HC.make
+        HC.make ctx
           {f=Sy.Form Sy.F_Xor; xs=[f1; f2]; ty=Ty.Tbool;
            depth=d; tag= -42; vars; vty; nb_nodes; neg = None;
            bind = B_none; pure = false}
@@ -1142,14 +1144,14 @@ let mk_forall_ter =
         in
         let sko = { new_q with main = neg f} in
         let pos =
-          HC.make {f=Sy.Form Sy.F_Lemma; xs=[]; ty=Ty.Tbool;
-                   depth=d; tag= -42; vars; vty; nb_nodes; neg = None;
-                   bind = B_lemma new_q; pure = false}
+          HC.make ctx {f=Sy.Form Sy.F_Lemma; xs=[]; ty=Ty.Tbool;
+                       depth=d; tag= -42; vars; vty; nb_nodes; neg = None;
+                       bind = B_lemma new_q; pure = false}
         in
         let neg =
-          HC.make {f=Sy.Form Sy.F_Skolem; xs=[]; ty=Ty.Tbool;
-                   depth=d; tag= -42; vars; vty; nb_nodes; neg = None;
-                   bind = B_skolem sko; pure = false}
+          HC.make ctx {f=Sy.Form Sy.F_Skolem; xs=[]; ty=Ty.Tbool;
+                       depth=d; tag= -42; vars; vty; nb_nodes; neg = None;
+                       bind = B_skolem sko; pure = false}
         in
         pos.neg <- Some neg;
         neg.neg <- Some pos;
@@ -1192,16 +1194,16 @@ let mk_positive_lit s neg_s l =
   let vars = free_vars_non_form s l ty in
   let vty = free_type_vars_non_form l ty in
   let pos =
-    HC.make {f=s; xs=l; ty=ty; depth=d; tag= -42; vars; vty;
-             nb_nodes; neg = None;
-             bind = B_none; pure = false}
+    HC.make ctx {f=s; xs=l; ty=ty; depth=d; tag= -42; vars; vty;
+                 nb_nodes; neg = None;
+                 bind = B_none; pure = false}
   in
   if pos.neg != None then pos
   else
     let neg =
-      HC.make {f=neg_s; xs=l; ty=ty; depth=d; tag= -42;
-               vars; vty; nb_nodes; neg = None;
-               bind = B_none; pure = false}
+      HC.make ctx {f=neg_s; xs=l; ty=ty; depth=d; tag= -42;
+                   vars; vty; nb_nodes; neg = None;
+                   bind = B_none; pure = false}
     in
     assert (neg.neg == None);
     pos.neg <- Some neg;
@@ -1476,17 +1478,17 @@ and mk_let_aux ({ let_v; let_e; in_e; _ } as x) =
       let vars = merge_vars let_e.vars (Var.Map.remove let_v in_e.vars) in
       let vty = Ty.TvSet.union let_e.vty in_e.vty in
       let pos =
-        HC.make {f=Sy.Let; xs=[]; ty;
-                 depth=d; tag= -42; vars; vty; nb_nodes; neg = None;
-                 bind = B_let x; pure = false}
+        HC.make ctx {f=Sy.Let; xs=[]; ty;
+                     depth=d; tag= -42; vars; vty; nb_nodes; neg = None;
+                     bind = B_let x; pure = false}
       in
       if pos.neg != None || not x.is_bool then pos
       else
         let y = {x with in_e = neg in_e} in
         let neg =
-          HC.make {f=Sy.Let; xs=[]; ty;
-                   depth=d; tag= -42; vars; vty; nb_nodes; neg = None;
-                   bind = B_let y; pure = false}
+          HC.make ctx {f=Sy.Let; xs=[]; ty;
+                       depth=d; tag= -42; vars; vty; nb_nodes; neg = None;
+                       bind = B_let y; pure = false}
         in
         pos.neg <- Some neg;
         neg.neg <- Some pos;
@@ -2817,12 +2819,12 @@ let print_th_elt fmt t =
   Format.fprintf fmt "%s/%s: @[<hov>%a@]" t.th_name t.ax_name print t.ax_form
 
 let save_cache () =
-  HC.save_cache ()
+  HC.save_cache ctx
 
 let reinit_cache () =
   clear_subst_cache ();
   Labels.clear labels;
-  HC.reinit_cache ()
+  HC.reinit_cache ctx
 
 type const =
   | Int of int

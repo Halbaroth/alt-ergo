@@ -72,20 +72,24 @@ module type S = sig
       This signature defines a hashconsing module,
       used to implement maximal sharing of hashconsed values. *)
 
+  type ctx
+
+  val make_ctx : unit -> ctx
+
   type t
   (** The type of value used. *)
 
-  val save_cache: unit -> unit
+  val save_cache: ctx -> unit
   (** Saves the module's cache *)
 
-  val reinit_cache: unit -> unit
+  val reinit_cache: ctx -> unit
   (** Reinitializes the module's cache *)
 
-  val make : t -> t
+  val make : ctx -> t -> t
   (** Hashcons a value [t], either returning [t], or a value equal
       to [t] that was hashconsed previously. *)
 
-  val elements : unit -> t list
+  val elements : ctx -> t list
   (** Returns the list of all unique hashconsed elements. *)
 
 end

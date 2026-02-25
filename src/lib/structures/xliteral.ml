@@ -248,9 +248,11 @@ module Make (X : OrderedType) : S with type elt = X.t = struct
       Distinct (b, List.fast_sort X.compare l)
     | Builtin (_, _, _) | Pred (_, _) -> t
 
+  let ctx = HC.make_ctx ()
+
   let make_aux av is_neg =
     let av = {value = av; uid = -1} in
-    let at = HC.make av in
+    let at = HC.make ctx av in
     if is_neg then
       {at = at; neg = is_neg; tpos = 2*at.uid+1; tneg = 2*at.uid}
     else
@@ -317,9 +319,9 @@ module Make (X : OrderedType) : S with type elt = X.t = struct
     | BT (_,l), _ | EQ_LIST l, _ -> l
 
   let save_cache () =
-    HC.save_cache ()
+    HC.save_cache ctx
 
   let reinit_cache () =
-    HC.reinit_cache ()
+    HC.reinit_cache ctx
 
 end

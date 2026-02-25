@@ -181,13 +181,15 @@ struct
 
   module HC = Hconsing.Make(View)
 
+  let ctx = HC.make_ctx ()
+
   let save_cache () =
-    HC.save_cache ()
+    HC.save_cache ctx
 
   let reinit_cache () =
-    HC.reinit_cache ()
+    HC.reinit_cache ctx
 
-  let hcons v = HC.make v
+  let hcons v = HC.make ctx v
 
   (* end: Hconsing modules and functions *)
 
