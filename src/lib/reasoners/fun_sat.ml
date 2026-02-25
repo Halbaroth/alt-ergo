@@ -1521,9 +1521,10 @@ module Make (Th : Theory.S) = struct
     (* initialize some structures in SAT.empty. Otherwise, E.faux is never
        added as it is replaced with (not E.vrai) *)
     reset_refs ();
+    let lx_ctx = Shostak.L.make_ctx () in
     let gf_true = mk_gf E.vrai "" true true in
     let inst = Inst.empty in
-    let tbox = Th.empty () in
+    let tbox = Th.empty lx_ctx in
     let inst = Inst.add_terms inst (SE.singleton E.vrai) gf_true in
     let inst = Inst.add_terms inst (SE.singleton E.faux) gf_true in
     let tbox = Th.add_term tbox E.vrai ~add_in_cs:true in
@@ -1581,7 +1582,7 @@ module Make (Th : Theory.S) = struct
       end
     | _ -> None
 
-  let reinit_ctx () =
+  let reinit_ctx t =
     (* all_models_sat_env := None; *)
     (* latest_saved_env := None;
        terminated_normally := false; *)
@@ -1597,7 +1598,9 @@ module Make (Th : Theory.S) = struct
     Expr.reinit_cache ();
     Hstring.reinit_cache ();
     Shostak.Combine.reinit_cache ();
-    Uf.reinit_cache ()
+    (* The cache environment is shared between [tbox] and [unit_tbox].
+       We do not need to call it on [unit_tbox]. *)
+    Th.reinit_cache t.tbox
 
   let () =
     Steps.save_steps ();
@@ -1605,6 +1608,7 @@ module Make (Th : Theory.S) = struct
     Expr.save_cache ();
     Hstring.save_cache ();
     Shostak.Combine.save_cache ();
-    Uf.save_cache ()
+    (* FIXME!!! *)
+    (* Uf.save_cache () *)
 
 end

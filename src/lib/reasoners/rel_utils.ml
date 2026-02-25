@@ -28,6 +28,7 @@ module HLR = Hashtbl.Make(LR)
     equations [eqs] both duplicates and those that are implied by the
     assumptions in [la]. *)
 let assume_nontrivial_eqs
+    (lx_ctx : LR.ctx)
     (eqs : X.r Sig_rel.input list)
     (la : X.r Sig_rel.input list)
   : X.r Sig_rel.fact list =
@@ -35,11 +36,11 @@ let assume_nontrivial_eqs
   | [] -> []
   | eqs ->
     let table = HLR.create 17 in
-    List.iter (fun (a, _, _, _) -> HLR.add table (LR.make a) ()) la;
+    List.iter (fun (a, _, _, _) -> HLR.add table (LR.make lx_ctx a) ()) la;
     let eqs =
       List.fold_left
         (fun eqs ((sa, _, _, _) as e) ->
-           let sa = LR.make sa in
+           let sa = LR.make lx_ctx sa in
            if HLR.mem table sa then eqs
            else (
              HLR.replace table sa ();
@@ -205,7 +206,7 @@ end = struct
           | _ -> eqs
         ) [] la
     in
-    env, { Sig_rel.assume = assume_nontrivial_eqs eqs la; remove = [] }
+    env, { Sig_rel.assume = assume_nontrivial_eqs (Uf.get_lx_ctx uf) eqs la; remove = [] }
 
   let iter_delayed f t =
     MX.iter (fun r -> OMap.iter (fun op -> Expr.Set.iter (f r op))) t.used_by

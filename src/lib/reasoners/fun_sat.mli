@@ -57,7 +57,7 @@ module Make (_ : Theory.S) : sig
 
   val reset_refs : unit -> unit
 
-  val reinit_ctx : unit -> unit
+  val reinit_ctx : t -> unit
 
   val get_model: t -> Models.t option
 

@@ -104,6 +104,9 @@ module type SAT_ML = sig
       [env].
 
       @raise invalid_argurment if the decision level of [env] is not zero. *)
+
+  val reinit_cache : t -> unit
+  val save_cache : t -> unit
 end
 
 module Make (Th : Theory.S) : SAT_ML with type th = Th.t

@@ -508,13 +508,13 @@ module Debug = struct
         ~module_name:"IntervalCalculus" ~function_name:"add"
         "@[<v 2>New polynome added: %a]" P.print p
 
-  let assume ~query a expl =
+  let assume ctx ~query a expl =
     if get_debug_fm () then
       print_dbg
         ~module_name:"IntervalCalculus" ~function_name:"assume"
         "@[<v 2>%s We assume: %a@,explanations: %a@]"
         (if query then "[query]" else "")
-        LR.print (LR.make a)
+        LR.print (LR.make ctx a)
         Explanation.print expl
 
   let print_use fmt use =
@@ -549,11 +549,11 @@ module Debug = struct
         "-----------------------------------------------------"
     end
 
-  let implied_equalities l =
+  let implied_equalities ctx l =
     if get_debug_fm () then
       let pp_literal ppf = function
         | Literal.LTerm e -> Expr.print ppf e
-        | LSem ra -> LR.print ppf (LR.make ra)
+        | LSem ra -> LR.print ppf (LR.make ctx ra)
       in
       let print fmt (ra, ex, _) =
         fprintf fmt "@,%a %a"
@@ -733,7 +733,7 @@ let empty uf = {
   improved_x = SX.empty ;
   classes = Uf.cl_extract uf;
   size_splits = Q.one;
-  new_uf = Uf.empty;
+  new_uf = Uf.empty (Uf.get_lx_ctx uf);
 
   rat_sim =
     Sim.Solve.solve
@@ -1633,7 +1633,7 @@ let assume ~query env uf la =
     List.fold_left
       (fun ((env, eqs, new_ineqs, rm) as acc) (a, root, expl, orig) ->
          let a = normal_form a in
-         Debug.assume ~query a expl;
+         Debug.assume (Uf.get_lx_ctx uf) ~query a expl;
          Steps.incr (Interval_Calculus);
          try
            match a with
@@ -1724,8 +1724,8 @@ let assume ~query env uf la =
       let env, eqs = equalities_from_intervals env eqs in
 
       Debug.env env;
-      let to_assume = Rel_utils.assume_nontrivial_eqs eqs la in
-      Debug.implied_equalities to_assume;
+      let to_assume = Rel_utils.assume_nontrivial_eqs (Uf.get_lx_ctx uf) eqs la in
+      Debug.implied_equalities (Uf.get_lx_ctx uf) to_assume;
       env, {Sig_rel.assume = to_assume; remove = to_remove}
   with I.NotConsistent expl ->
     Debug.inconsistent_interval expl ;
@@ -1980,22 +1980,21 @@ let model_from_simplex sim is_int env uf =
       )[] (List.rev main_vars)
 
 
-let model_from_infinite_domains =
+let model_from_infinite_domains env uf =
   let mk_cs acc (x, v, _ex) =
-    ((LR.view (LR.mk_eq x v)), true,
+    ((LR.view (LR.mk_eq (Uf.get_lx_ctx uf) x v)), true,
      Th_util.CS (Th_util.Th_arith, Q.from_int 2)) :: acc
   in
-  fun env uf ->
-    assert (env.int_sim.Sim.Core.status == Sim.Core.SAT);
-    assert (env.rat_sim.Sim.Core.status == Sim.Core.SAT);
-    let rat_sim = env.rat_sim in (* reuse existing rat_sim *)
-    let int_sim = (* create a new int_sim with FM-Simplex encoding *)
-      let sim = fm_simplex_unbounded_integers_encoding env uf in
-      Sim.Solve.solve sim
-    in
-    let l1 = model_from_simplex rat_sim false env uf in
-    let l2 = model_from_simplex int_sim true  env uf in
-    List.fold_left mk_cs (List.fold_left mk_cs [] l1) l2
+  assert (env.int_sim.Sim.Core.status == Sim.Core.SAT);
+  assert (env.rat_sim.Sim.Core.status == Sim.Core.SAT);
+  let rat_sim = env.rat_sim in (* reuse existing rat_sim *)
+  let int_sim = (* create a new int_sim with FM-Simplex encoding *)
+    let sim = fm_simplex_unbounded_integers_encoding env uf in
+    Sim.Solve.solve sim
+  in
+  let l1 = model_from_simplex rat_sim false env uf in
+  let l2 = model_from_simplex int_sim true  env uf in
+  List.fold_left mk_cs (List.fold_left mk_cs [] l1) l2
 
 let mk_const_term c ty =
   match ty with

@@ -125,6 +125,8 @@ type t = {
   cached_relevant_terms : (G.t * S.t TBS.t) H.t;
   (* Weak cache used to accelerate the exploration of new terms in order to
      find new get or set terms. *)
+
+  lx_ctx : Shostak.L.ctx;
 }
 
 
@@ -137,12 +139,13 @@ let empty uf = {
   new_terms = E.Set.empty;
   (* size_splits = Numbers.Q.one; *)
   cached_relevant_terms = H.create 1024;
+  lx_ctx = Uf.get_lx_ctx uf;
 }, Uf.domains uf
 
 (*BISECT-IGNORE-BEGIN*)
 module Debug = struct
-  let assume la =
-    let pp_lit ppf (a, _, _, _) = LR.print ppf (LR.make a) in
+  let assume t la =
+    let pp_lit ppf (a, _, _, _) = LR.print ppf (LR.make t.lx_ctx a) in
     if not @@ Compat.List.is_empty la then
       Log.debug (fun k -> k "assume@ %a"
                     Fmt.(list ~sep:comma pp_lit) la)
@@ -284,9 +287,9 @@ let get_of_set (module Uf : UF) uf gtype (env, acc) =
            let xi, _ = X.make gi in
            let xj, _ = X.make si in
            let get_stab  = E.ArraysEx.select stab gi in
-           let p       = LR.mk_eq xi xj in
+           let p       = LR.mk_eq (Uf.get_lx_ctx uf) xi xj in
            let p_ded   = E.mk_eq ~iff:false get sv in
-           let n     = LR.mk_distinct false [xi;xj] in
+           let n     = LR.mk_distinct (Uf.get_lx_ctx uf) false [xi;xj] in
            let n_ded = E.mk_eq ~iff:false get get_stab in
            let dep =
              match Uf.are_equal uf ~added_terms:true gtab set with
@@ -356,9 +359,9 @@ let get_and_set (module Uf : UF) uf gtype (env, acc) =
            let xj, _ = X.make si in
            let get_stab  = E.ArraysEx.select stab gi in
            let gt_of_st  = E.ArraysEx.select set gi in
-           let p       = LR.mk_eq xi xj in
+           let p       = LR.mk_eq (Uf.get_lx_ctx uf)  xi xj in
            let p_ded   = E.mk_eq ~iff:false gt_of_st sv in
-           let n     = LR.mk_distinct false [xi;xj] in
+           let n     = LR.mk_distinct (Uf.get_lx_ctx uf) false [xi;xj] in
            let n_ded = E.mk_eq ~iff:false gt_of_st get_stab in
            let dep =
              match Uf.are_equal uf ~added_terms:true gtab stab with
@@ -420,7 +423,7 @@ let implied_consequences env eqs la =
   let spl, eqs =
     L.fold_left
       (fun (spl,eqs) (a,_,dep,_) ->
-         let a = LR.make a in
+         let a = LR.make env.lx_ctx a in
          let spl = LRset.remove (LR.neg a) (LRset.remove a spl) in
          let eqs =
            Conseq.fold
@@ -456,7 +459,7 @@ let optimizing_objective _env _uf _o = None
 
 let assume env uf la =
   (* Instantiations of the array axioms. *)
-  Debug.assume la;
+  Debug.assume env la;
   let env = new_terms env la in
   let env, atoms = new_splits (module Uf : UF) uf env in
   let env, atoms = new_equalities env atoms la in

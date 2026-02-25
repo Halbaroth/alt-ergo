@@ -118,7 +118,10 @@ end
 
 module LX = Shostak.L
 
-val empty : t
+val empty : Shostak.L.ctx -> t
+
+val get_lx_ctx : t -> Shostak.L.ctx
+
 val add : t -> Expr.t -> t * Expr.t list
 
 val mem : t -> Expr.t -> bool
@@ -165,7 +168,7 @@ val extract_concrete_model :
   Models.t
 
 (** saves the module's cache *)
-val save_cache : unit -> unit
+val save_cache : t -> unit
 
 (** reinitializes the module's cache with the saved one *)
-val reinit_cache : unit -> unit
+val reinit_cache : t -> unit

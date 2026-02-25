@@ -461,7 +461,7 @@ let assume_literals la uf domains =
 
    Assume that [r] is a contructor application of an alien semantic value
    of type [Ty.Adt]. *)
-let build_constr_eq r c =
+let build_constr_eq uf r c =
   match Th.embed r with
   | Alien r ->
     begin match X.type_info r with
@@ -476,7 +476,7 @@ let build_constr_eq r c =
            environment. It could be better to do it. See issue
            https://github.com/OCamlPro/alt-ergo/issues/1296 *)
         let r', _ctx = X.make cons in
-        let eq = Shostak.L.(view @@ mk_eq r r') in
+        let eq = Shostak.L.(view @@ mk_eq (Uf.get_lx_ctx uf) r r') in
         Some (eq, cons)
 
       | _ -> assert false
@@ -490,12 +490,12 @@ let build_constr_eq r c =
   | Select _ ->
     assert false
 
-let propagate_domains new_terms domains =
+let propagate_domains uf new_terms domains =
   Domains.propagate
     (fun (eqs, new_terms) rr d ->
        match Domain.as_singleton d with
        | Some (c, ex) ->
-         begin match build_constr_eq rr c with
+         begin match build_constr_eq uf rr c with
            | Some (eq, cons) ->
              let new_terms = SE.add cons new_terms in
              (Literal.LSem eq, ex, Th_util.Other) :: eqs, new_terms
@@ -526,7 +526,7 @@ let assume env uf la =
     with Domain.Inconsistent ex ->
       raise_notrace (Ex.Inconsistent (ex, Uf.cl_extract uf))
   in
-  let (assume, new_terms), domains = propagate_domains env.new_terms domains in
+  let (assume, new_terms), domains = propagate_domains uf env.new_terms domains in
   let assume = List.rev_append assume result.assume in
   let env = {
     delayed;
@@ -632,7 +632,7 @@ let pick_domain ~for_model uf =
 let split_domain ~for_model env uf =
   let* cd, r, c = pick_domain ~for_model uf in
   if for_model || can_split env (Numbers.Q.from_int cd) then
-    let eq, _ = Option.get @@ build_constr_eq r c in
+    let eq, _ = Option.get @@ build_constr_eq uf r c in
     Some eq
   else
     None

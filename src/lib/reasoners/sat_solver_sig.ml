@@ -133,8 +133,8 @@ module type S = sig
 
   val reset_refs : unit -> unit
 
-  val reinit_ctx : unit -> unit
-  (** [reinit_ctx ()] reinitializes the solving context. *)
+  val reinit_ctx : t -> unit
+  (** [reinit_ctx t] reinitializes the solving context of [t]. *)
 
   val get_model: t -> Models.t option
   (** [get_model t] produces the current first-order model.

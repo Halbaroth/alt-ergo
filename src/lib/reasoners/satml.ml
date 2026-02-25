@@ -138,6 +138,8 @@ module type SAT_ML = sig
 
   val optimize : t -> Objective.Function.t -> unit
 
+  val reinit_cache : t -> unit
+  val save_cache : t -> unit
 end
 
 module MFF = FF.Map
@@ -441,6 +443,7 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
   (*module Make (Dummy : sig end) = struct*)
 
   let create hcons_env =
+    let lx_ctx = Shostak.L.make_ctx () in
     {
       hcons_env;
 
@@ -507,11 +510,11 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
 
       nb_init_clauses = 0;
 
-      tenv = Th.empty();
+      tenv = Th.empty lx_ctx;
 
-      unit_tenv = Th.empty();
+      unit_tenv = Th.empty lx_ctx;
 
-      tenv_queue = Vec.make 100 ~dummy:(Th.empty());
+      tenv_queue = Vec.make 100 ~dummy:(Th.empty lx_ctx);
 
       tatoms_queue = Queue.create ();
 
@@ -2216,4 +2219,14 @@ module Make (Th : Theory.S) : SAT_ML with type th = Th.t = struct
     else
       Vec.replace (fun fns -> fn :: fns) env.objectives
         (Vec.size env.objectives - 1)
+
+  let reinit_cache env =
+    (* The cache environment is shared between [tenv] and [unit_tenv].
+       We do not need to call it on [unit_tenv]. *)
+    Th.reinit_cache env.tenv
+
+  let save_cache env =
+    (* The cache environment is shared between [tenv] and [unit_tenv].
+       We do not need to call it on [unit_tenv]. *)
+    Th.save_cache env.tenv
 end

@@ -1382,7 +1382,7 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
 
   let supports_optimization = true
 
-  let reinit_ctx () =
+  let reinit_ctx env =
     Steps.reinit_steps ();
     Th.reinit_cpt ();
     Id.Namespace.reinit ();
@@ -1395,7 +1395,7 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
     Expr.reinit_cache ();
     Hstring.reinit_cache ();
     Shostak.Combine.reinit_cache ();
-    Uf.reinit_cache ()
+    SAT.reinit_cache env.satml
 
   let () =
     Steps.save_steps ();
@@ -1403,7 +1403,8 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
     Expr.save_cache ();
     Hstring.save_cache ();
     Shostak.Combine.save_cache ();
-    Uf.save_cache ()
+    (* FIXME: we must run SAT.save_cache? *)
+    (* SAT.save_cache env.sat *)
 
 end
 

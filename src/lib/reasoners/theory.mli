@@ -28,7 +28,7 @@
 module type S = sig
   type t
 
-  val empty : unit -> t
+  val empty : Shostak.L.ctx -> t
 
   (* the first int is the decision level (dlvl) and the second one is the
      propagation level (plvl). The facts (first argument) are sorted in
@@ -73,6 +73,9 @@ module type S = sig
   val get_assumed : t -> Expr.Set.t
   val reinit_cpt : unit -> unit
   (** Reinitializes the internal counter. *)
+
+  val reinit_cache : t -> unit
+  val save_cache : t -> unit
 
   val get_objectives : t -> Objective.Model.t
 end

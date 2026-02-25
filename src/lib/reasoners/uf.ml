@@ -180,6 +180,8 @@ type t = {
 
   (*AC rewrite system *)
   ac_rs : SetRL.t RS.t;
+
+  lx_ctx : Shostak.L.ctx;
 }
 
 exception Found_term of E.t
@@ -875,7 +877,7 @@ let union env r1 r2 dep =
 
 let rec distinct env rl dep =
   Debug.all env;
-  let d = LX.mk_distinct false rl in
+  let d = LX.mk_distinct env.lx_ctx false rl in
   Debug.distinct d;
   let env, _, newds =
     List.fold_left
@@ -951,7 +953,7 @@ let are_distinct env t1 t2 =
     Th_util.Entailed { ex; classes }
 
 let already_distinct env lr =
-  let d = LX.mk_distinct false lr in
+  let d = LX.mk_distinct env.lx_ctx false lr in
   try
     List.iter (fun r ->
         let mdis = MapX.find r env.neqs in
@@ -991,7 +993,7 @@ let term_repr uf t =
   try SE.min_elt st
   with Not_found -> t
 
-let empty =
+let empty lx_ctx =
   let env = {
     make  = ME.empty;
     repr = MapX.empty;
@@ -999,12 +1001,15 @@ let empty =
     classes = MapX.empty;
     gamma = MapX.empty;
     neqs = MapX.empty;
-    ac_rs = RS.empty
+    ac_rs = RS.empty;
+    lx_ctx;
   }
   in
   let env, _ = add env E.vrai in
   let env, _ = add env E.faux in
   distinct env [X.top; X.bot] Ex.empty
+
+let get_lx_ctx t = t.lx_ctx
 
 let make uf t = ME.find t uf.make
 
@@ -1076,17 +1081,17 @@ let assign_next env =
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         *)
       let env, _ =  add env s in (* important for termination *)
-      let eq = LX.view (LX.mk_eq rep (make env s)) in
+      let eq = LX.view (LX.mk_eq env.lx_ctx rep (make env s)) in
       [eq, is_cs, Th_util.CS (Th_util.Th_UF, Numbers.Q.one)], env
   in
   Debug.check_invariants "assign_next" env;
   res, env
 
-let save_cache () =
-  LX.save_cache ()
+let save_cache env =
+  LX.save_cache env.lx_ctx
 
-let reinit_cache () =
-  LX.reinit_cache ()
+let reinit_cache env =
+  LX.reinit_cache env.lx_ctx
 
 (****************************************************************************)
 (*                      Model generation functions                          *)

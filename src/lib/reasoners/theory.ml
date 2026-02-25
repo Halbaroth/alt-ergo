@@ -42,7 +42,7 @@ module L = Shostak.Literal
 module type S = sig
   type t
 
-  val empty : unit -> t
+  val empty : Shostak.L.ctx -> t
 
   (* the first int is the decision level (dlvl) and the second one is the
      propagation level (plvl). The facts (first argument) are sorted in
@@ -81,6 +81,8 @@ module type S = sig
 
   val get_assumed : t -> E.Set.t
   val reinit_cpt : unit -> unit
+  val reinit_cache : t -> unit
+  val save_cache : t -> unit
   val get_objectives : t -> Objective.Model.t
 end
 
@@ -96,8 +98,8 @@ module Main_Default : S = struct
   (** the choice, the size, choice_sign,  the explication set,
         the explication for this choice. *)
 
-  let pp_choice ppf (sem_lit, lit_orig, _, ex) =
-    let sem_lit = LR.make sem_lit in
+  let pp_choice ctx ppf (sem_lit, lit_orig, _, ex) =
+    let sem_lit = LR.make ctx sem_lit in
     match (lit_orig : Th_util.lit_origin) with
     | CS (k, _) ->
       Fmt.pf ppf "%a cs: %a (because %a)"
@@ -253,22 +255,22 @@ module Main_Default : S = struct
       in
       assumed, reinit_cpt
 
-    let made_choices ppf choices =
-      Fmt.pf ppf "@[<v 2>Stack of choices:@ %a@]" (Fmt.list pp_choice) choices
+    let made_choices ctx ppf choices =
+      Fmt.pf ppf "@[<v 2>Stack of choices:@ %a@]" (Fmt.list (pp_choice ctx)) choices
 
-    let begin_case_split choices =
+    let begin_case_split ctx choices =
       if Options.get_debug_split () then
         print_dbg
           ~module_name:"Theory" ~function_name:"begin_case_split"
           "%a"
-          made_choices choices
+          (made_choices ctx) choices
 
-    let end_case_split choices =
+    let end_case_split ctx choices =
       if Options.get_debug_split () then
         print_dbg
           ~module_name:"Theory" ~function_name:"end_case_split"
           "%a"
-          made_choices choices
+          (made_choices ctx) choices
 
     (* unused --
        let split_size sz =
@@ -277,28 +279,28 @@ module Main_Default : S = struct
         ">size case-split: %s" (Numbers.Q.to_string sz)
     *)
 
-    let print_lr_view fmt ch = LR.print fmt (LR.make ch)
+    let print_lr_view ctx fmt ch = LR.print fmt (LR.make ctx ch)
 
-    let split_backtrack neg_c ex_c =
+    let split_backtrack ctx neg_c ex_c =
       if Options.get_debug_split () then
         print_dbg
           ~module_name:"Theory" ~function_name:"split_backtrack"
           "I backtrack on %a : %a"
-          print_lr_view neg_c Ex.print ex_c
+          (print_lr_view ctx) neg_c Ex.print ex_c
 
-    let split_assume c ex_c =
+    let split_assume ctx c ex_c =
       if Options.get_debug_split () then
         print_dbg
           ~module_name:"Theory" ~function_name:"split assume"
           "I assume %a : %a"
-          print_lr_view c Ex.print ex_c
+          (print_lr_view ctx) c Ex.print ex_c
 
-    let split_backjump c dep =
+    let split_backjump ctx c dep =
       if Options.get_debug_split () then
         print_dbg
           ~module_name:"Theory" ~function_name:"split_backjump"
           "I backjump on %a : %a"
-          print_lr_view c Ex.print dep
+          (print_lr_view ctx) c Ex.print dep
 
     let query a =
       if Options.get_debug_cc () then
@@ -306,12 +308,12 @@ module Main_Default : S = struct
           ~module_name:"Theory" ~function_name:"query"
           "query : %a" E.print a
 
-    let split_sat_contradicts_cs filt_choices =
+    let split_sat_contradicts_cs ctx filt_choices =
       if Options.get_debug_split () then
         print_dbg
           ~module_name:"Theory" ~function_name:"split_sat_contradicts_cs"
           "The SAT contradicts CS! I'll replay choices@ %a"
-          made_choices filt_choices
+          (made_choices ctx) filt_choices
 
   end
   (*BISECT-IGNORE-END*)
@@ -326,6 +328,7 @@ module Main_Default : S = struct
     gamma_finite : CC_X.t;
     choices : choice list;
     objectives : Objective.Model.t;
+    lx_ctx : Shostak.L.ctx;
   }
 
   let add_explanations_to_split (c, is_cs, size) =
@@ -381,7 +384,7 @@ module Main_Default : S = struct
 
       | ((c, lit_orig, CPos exp, ex_c_exp) as a) :: new_choices ->
         try
-          Debug.split_assume c ex_c_exp;
+          Debug.split_assume env.lx_ctx c ex_c_exp;
           let facts = CC_X.empty_facts () in
           CC_X.add_fact facts (LSem c, ex_c_exp, lit_orig);
           let base_env, sem_facts =
@@ -399,13 +402,13 @@ module Main_Default : S = struct
         match Ex.remove_fresh exp dep with
         | None ->
           (* The choice doesn't participate to the inconsistency. *)
-          Debug.split_backjump c dep;
+          Debug.split_backjump env.lx_ctx c dep;
           Options.tool_req 3 "TR-CCX-CS-Case-Split-Conflict";
           raise (Ex.Inconsistent (dep, classes))
         | Some dep ->
           Options.tool_req 3 "TR-CCX-CS-Case-Split-Progress";
           (* The choice participates to the inconsistency. *)
-          let neg_c = LR.view (LR.neg (LR.make c)) in
+          let neg_c = LR.view (LR.neg (LR.make env.lx_ctx c)) in
           let lit_orig =
             match lit_orig with
             | Th_util.CS (k, sz) -> Th_util.NCS (k, sz)
@@ -415,7 +418,7 @@ module Main_Default : S = struct
                  [Th_util.CS]. *)
               assert false
           in
-          Debug.split_backtrack neg_c dep;
+          Debug.split_backtrack env.lx_ctx neg_c dep;
           if Options.get_bottom_classes () then
             Printer.print_dbg
               "bottom (case-split):%a"
@@ -490,7 +493,7 @@ module Main_Default : S = struct
          and we try to propagate a subset of the choices. *)
   let try_it t facts ~for_model =
     Options.exec_thread_yield ();
-    Debug.begin_case_split t.choices;
+    Debug.begin_case_split t.lx_ctx t.choices;
     let r =
       try
         if t.choices == [] then
@@ -517,17 +520,17 @@ module Main_Default : S = struct
                  safely ignore the explanation which is not useful. *)
               let uf =  CC_X.get_union_find t.gamma in
               let filt_choices = filter_choices uf t.choices in
-              Debug.split_sat_contradicts_cs filt_choices;
+              Debug.split_sat_contradicts_cs t.lx_ctx filt_choices;
               let t = reset_case_split_env t in
               look_for_sat ~for_model
                 { t with choices = [] } [] filt_choices
           end
       with Ex.Inconsistent (dep, classes) ->
-        Debug.end_case_split t.choices;
+        Debug.end_case_split t.lx_ctx t.choices;
         Options.tool_req 3 "TR-CCX-CS-Conflict";
         raise (Ex.Inconsistent (dep, classes))
     in
-    Debug.end_case_split (fst r).choices; r
+    Debug.end_case_split t.lx_ctx (fst r).choices; r
 
 
   let extract_from_semvalues acc l =
@@ -616,10 +619,10 @@ module Main_Default : S = struct
         (fun k -> k "Objective for %a is %a [split: %a]"
             Objective.Function.pp obj
             Objective.Value.pp opt_split.value
-            Shostak.L.print (Shostak.L.make lview));
+            Shostak.L.print (Shostak.L.make t.lx_ctx lview));
       add_objective
         obj opt_split.value
-        (Shostak.(Literal.make @@ LSem (L.make lview)))
+        (Shostak.(Literal.make @@ LSem (L.make t.lx_ctx lview)))
 
   let sat_splits t =
     if Options.get_enable_sat_cs () then
@@ -649,7 +652,7 @@ module Main_Default : S = struct
     match splits with
     | [] -> do_case_split_aux t ~for_model:false
     | (lview, _, _) :: _ ->
-      let lit = Shostak.(Literal.make @@ LSem (L.make lview)) in
+      let lit = Shostak.(Literal.make @@ LSem (L.make t.lx_ctx lview)) in
       acts.Th_util.acts_add_split lit;
       t, SE.empty
 
@@ -824,8 +827,8 @@ module Main_Default : S = struct
     if not add_in_cs then {env with gamma = gm}
     else {env with gamma=gm; gamma_finite=add_term_in_gm env.gamma_finite t}
 
-  let empty () =
-    let env = CC_X.empty in
+  let empty lx_ctx =
+    let env = CC_X.empty lx_ctx in
     let env, _ = CC_X.add_term env (CC_X.empty_facts()) E.vrai Ex.empty in
     let env, _ = CC_X.add_term env (CC_X.empty_facts()) E.faux Ex.empty in
     let t =
@@ -837,6 +840,7 @@ module Main_Default : S = struct
         cs_pending_facts = [];
         terms = Expr.Set.empty;
         objectives = Objective.Model.empty;
+        lx_ctx;
       }
     in
     let a = E.mk_distinct ~iff:false [E.vrai; E.faux] in
@@ -899,14 +903,22 @@ module Main_Default : S = struct
 
   let reinit_cpt () =
     Debug.reinit_cpt ()
+
+  let reinit_cache t = CC_X.reinit_cache t.gamma
+  let save_cache t = CC_X.save_cache t.gamma
 end
 
 module Main_Empty : S = struct
 
-  type t =
-    { assumed_set : E.Set.t }
+  type t = {
+    assumed_set : E.Set.t;
+    dummy_tenv : CC_X.t
+  }
 
-  let empty () = { assumed_set = E.Set.empty }
+  let empty lx_ctx = {
+    assumed_set = E.Set.empty;
+    dummy_tenv = CC_X.empty lx_ctx
+  }
 
   let assume ?ordered:(_=true) in_facts t =
     let assumed_set =
@@ -917,15 +929,15 @@ module Main_Empty : S = struct
            | LSem _ -> assumed_set
         ) t.assumed_set in_facts
     in
-    {assumed_set}, E.Set.empty, 0
+    { t with assumed_set}, E.Set.empty, 0
 
   let query _ _ = Th_util.Unknown
 
   let cl_extract _ = []
   let extract_ground_terms _ = Expr.Set.empty
 
-  let get_real_env _ = CC_X.empty
-  let get_case_split_env _ = CC_X.empty
+  let get_real_env t = t.dummy_tenv
+  let get_case_split_env t = t.dummy_tenv
   let do_optimize ~acts:_ _ = ()
   let do_case_split ?acts:_ env _ = env, E.Set.empty
   let add_term env _ ~add_in_cs:_ = env
@@ -937,7 +949,10 @@ module Main_Empty : S = struct
   let theories_instances ~do_syntactic_matching:_ _ e _ _ _ = e, []
   let get_assumed env = env.assumed_set
   let add_objective env _fn _value = env
+
   let reinit_cpt () = ()
+  let reinit_cache _t = ()
+  let save_cache _t = ()
 
   let get_objectives _env = Objective.Model.empty
 end

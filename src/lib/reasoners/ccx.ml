@@ -41,7 +41,7 @@ module type S = sig
   type t
   type r = Shostak.Combine.r
 
-  val empty : t
+  val empty : Shostak.L.ctx -> t
 
   val empty_facts : unit -> r Sig_rel.facts
 
@@ -91,6 +91,8 @@ module type S = sig
     declared_ids:Id.typed list ->
     t -> Models.t
 
+  val reinit_cache : t -> unit
+  val save_cache : t -> unit
 end
 
 module Main : S = struct
@@ -103,19 +105,21 @@ module Main : S = struct
   type t = {
     use : Use.t;
     uf : Uf.t ;
-    relation : Rel.t
+    relation : Rel.t;
+    lx_ctx : Shostak.L.ctx;
   }
 
   type r = Shostak.Combine.r
 
-  let empty =
-    let uf = Uf.empty in
+  let empty lx_ctx =
+    let uf = Uf.empty lx_ctx in
     let relation, domains = Rel.empty uf in
     let uf = Uf.set_domains uf domains in
     {
       use = Use.empty;
       uf;
       relation;
+      lx_ctx;
     }
 
   let empty_facts () =
@@ -140,13 +144,13 @@ module Main : S = struct
   module Debug = struct
     open Printer
 
-    let facts (f: r Sig_rel.facts) msg =
+    let facts ctx (f: r Sig_rel.facts) msg =
       let aux fmt q =
         Q.iter
           (fun (lit,_,_) ->
              match (lit: r Sig_rel.literal) with
              | LSem sa ->
-               Format.fprintf fmt "  > LSem  %a@." LR.print (LR.make sa)
+               Format.fprintf fmt "  > LSem  %a@." LR.print (LR.make ctx sa)
              | LTerm a ->
                Format.fprintf fmt "  > LTerm %a@."E.print a
           )q
@@ -217,11 +221,11 @@ module Main : S = struct
           "find that %a %a by contra-congruence"
           E.print a Ex.print ex
 
-    let assume_literal sa =
+    let assume_literal ctx sa =
       if Options.get_debug_cc () then
         print_dbg
           ~module_name:"Ccx" ~function_name:"assume_literal"
-          "assume literal : %a" LR.print (LR.make sa)
+          "assume literal : %a" LR.print (LR.make ctx sa)
 
     let congruent a ex =
       if Options.get_debug_cc () then
@@ -449,7 +453,7 @@ module Main : S = struct
         | Some e -> Hashtbl.hash (LR.hash x, E.hash e)
     end)
 
-  let make_unique sa =
+  let make_unique env sa =
     match sa with
     | [] | [ _ ] -> sa
     | _ ->
@@ -460,7 +464,7 @@ module Main : S = struct
               used for partial computations (see {!Rel_utils}). In general, we
               want to make sure that the relations see all the equalities from
               representative changes in the union-find. *)
-           let lra = LR.make ra in
+           let lra = LR.make env.lx_ctx ra in
            match HLR.find table (lra, aopt) with
            | (_, _, _, Th_util.Subst) -> ()
            | _ | exception Not_found -> HLR.replace table (lra, aopt) e
@@ -469,7 +473,7 @@ module Main : S = struct
 
   let replay_atom env sa =
     Options.exec_thread_yield ();
-    let sa = make_unique sa in
+    let sa = make_unique env sa in
     let relation, domains, result = Rel.assume env.relation env.uf sa in
     let env = { env with uf = Uf.set_domains env.uf domains } in
     let env = { env with relation = relation } in
@@ -511,7 +515,7 @@ module Main : S = struct
       let st_uset = Use.congr_add nuse lvs in
 
       (* we check the congruence of each term *)
-      let env = {uf = nuf; use = nuse; relation = rel} in
+      let env = {uf = nuf; use = nuse; relation = rel; lx_ctx = env.lx_ctx} in
       congruents env facts t st_uset;
       env
     end
@@ -577,11 +581,11 @@ module Main : S = struct
   let rec assume_equalities env choices (facts: r Sig_rel.facts) =
     if Q.is_empty facts.equas then env, choices
     else begin
-      Debug.facts facts "equalities";
+      Debug.facts env.lx_ctx facts "equalities";
       let e = Q.pop facts.equas in
       Q.push e facts.ineqs; (*XXX also added in touched by congruence_closure*)
       let env, (sa, _, ex, _) =  semantic_view env e facts in
-      Debug.assume_literal sa;
+      Debug.assume_literal env.lx_ctx sa;
       let env = match sa with
         | A.Pred (r1,neg) ->
           let r2, r3 =  if neg then X.bot, X.top else X.top, X.bot in
@@ -613,11 +617,11 @@ module Main : S = struct
   let rec assume_disequalities env choices (facts: r Sig_rel.facts) =
     if Q.is_empty facts.diseqs then env, choices
     else begin
-      Debug.facts facts "disequalities";
+      Debug.facts env.lx_ctx facts "disequalities";
       let e = Q.pop facts.diseqs in
       Q.push e facts.ineqs;
       let env, (sa, _, ex, orig) = semantic_view env e facts in
-      Debug.assume_literal sa;
+      Debug.assume_literal env.lx_ctx sa;
       let env = match sa with
         | A.Distinct (false, lr) -> assume_dist env facts lr ex
         | A.Distinct (true, _) -> assert false
@@ -662,7 +666,7 @@ module Main : S = struct
     Options.tool_req 3 "TR-CCX-Builtin";
     if Q.is_empty facts.ineqs then env, choices
     else begin
-      Debug.facts facts "inequalities";
+      Debug.facts env.lx_ctx facts "inequalities";
       let env, ineqs = norm_queue env [] facts in
       let ineqs = add_touched env.uf ineqs facts in
       let env, l = replay_atom env ineqs in
@@ -762,4 +766,7 @@ module Main : S = struct
 
   let extract_concrete_model ~prop_model ~declared_ids env =
     Uf.extract_concrete_model ~prop_model ~declared_ids env.uf
+
+  let reinit_cache env = Uf.reinit_cache env.uf
+  let save_cache env = Uf.save_cache env.uf
 end

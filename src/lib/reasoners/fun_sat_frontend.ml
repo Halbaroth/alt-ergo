@@ -59,7 +59,7 @@ module Make (Th : Theory.S) : Sat_solver_sig.S = struct
 
   let reset_refs = FS.reset_refs
 
-  let reinit_ctx = FS.reinit_ctx
+  let reinit_ctx t = FS.reinit_ctx !t
 
   let get_model t = FS.get_model !t
 

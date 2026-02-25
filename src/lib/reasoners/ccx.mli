@@ -32,7 +32,7 @@ module type S = sig
   type t
   type r = Shostak.Combine.r
 
-  val empty : t
+  val empty : Shostak.L.ctx -> t
 
   val empty_facts : unit -> r Sig_rel.facts
 
@@ -81,6 +81,8 @@ module type S = sig
     declared_ids:Id.typed list ->
     t -> Models.t
 
+  val reinit_cache : t -> unit
+  val save_cache : t -> unit
 end
 
 module Main : S
