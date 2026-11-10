@@ -16,6 +16,7 @@ import sources.nixpkgs {
           landmarks-ppx = self.callPackage ./landmarks-ppx.nix { };
           zarith_stubs_js = self.callPackage ./zarith_stubs_js.nix { };
           opam-ed = self.callPackage ./opam-ed.nix { };
+          weak_hashset = self.callPackage ./weak_hashset { };
         };
       in
       {

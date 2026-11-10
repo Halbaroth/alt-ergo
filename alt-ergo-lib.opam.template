@@ -20,4 +20,8 @@ pin-depends: [
     "dolmen_type.dev"
     "git+https://github.com/Gbury/dolmen.git#2d642d2dbecbaeea031f5b6020b818ad01d36a9c"
   ]
+  [
+    "weak_hashset.dev"
+    "git+https://codeberg.org/halbaroth/weak-hashset.git#2000a1104bdb3441da239dc2042c5674970e48f0"
+  ]
 ]

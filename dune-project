@@ -90,6 +90,7 @@ See more details on http://alt-ergo.ocamlpro.com/"
   (dolmen (or (>= 0.10) (= dev)))
   (dolmen_type (or (>= 0.10) (= dev)))
   (dolmen_loop (or (>= 0.10) (= dev)))
+  (weak_hashset (= dev))
   (ocplib-simplex (>= 0.5.1))
   (zarith (>= 1.11))
   seq

@@ -18,4 +18,5 @@
  (name alt_ergo_prelude)
  (package alt-ergo-lib)
  (modules alt_ergo_prelude)
+ (libraries weak_hashset)
 )

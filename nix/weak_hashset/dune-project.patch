@@ -1,0 +1,10 @@
+diff --git a/dune-project b/dune-project
+index aee55c4..67ee2f9 100644
+--- a/dune-project
++++ b/dune-project
+@@ -1,4 +1,4 @@
+-(lang dune 3.23)
++(lang dune 3.21)
+
+ (package
+  (name weak_hashset)

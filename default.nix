@@ -39,6 +39,8 @@ let
       fmt
       dolmen_loop
       camlzip
+      weak_hashset
+      utop
     ];
   };
 

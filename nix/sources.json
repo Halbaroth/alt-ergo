@@ -76,6 +76,12 @@
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz",
         "version": "2.1.0"
     },
+    "weak_hashset": {
+        "branch": "trunk",
+        "repo": "https://codeberg.org/gasche/weak-hashset.git",
+        "rev": "9561f25e3de1707b9748ef60b38ece5b1d5cacb0",
+        "type": "git"
+    },
     "zarith_stubs_js": {
         "branch": "v0.17.0",
         "sha256": "07anr6r4chbpgd7c5ixfqgqr99kb202bd7q350hdqynrn7v6rn20",

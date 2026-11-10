@@ -31,3 +31,5 @@ let ( <= ) (a : int) (b : int) = a <= b
 let ( >= ) (a : int) (b : int) = a >= b
 
 let compare (a : int) (b : int) = Stdlib.compare a b
+
+module Weak = Weak_hashset
